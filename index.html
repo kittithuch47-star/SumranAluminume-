@@ -1107,8 +1107,16 @@
       const newSalesEl = document.getElementById('new-sales-name');
       const s = { id: 'sale-'+Date.now(), name: newSalesEl ? newSalesEl.value : '' };
       if(!s.name) return;
-      if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'sales',s.id), s);
-      else { state.savedSales.push(s); renderDatalists(); openGenericModal('salesModal'); }
+      if(userId&&db) {
+        setDoc(doc(db,'artifacts',appId,'users',userId,'sales',s.id), s).then(() => {
+          renderDatalists();
+          openGenericModal('salesModal');
+        });
+      } else {
+        state.savedSales.push(s);
+        renderDatalists();
+        openGenericModal('salesModal');
+      }
     }
 
     function renderDatalists() {
@@ -1122,7 +1130,8 @@
         sList.innerHTML = '';
         state.savedSales.forEach(s => sList.innerHTML += `<option value="${escapeHtml(s.name)}"></option>`);
       }
-      if(currentModalType) openGenericModal(currentModalType); 
+      // ไม่เปิด Modal อัตโนมัติที่นี่ เพราะ renderDatalists() ถูกเรียกจากหลายจุด
+      // หากเปิด Modal เดิมซ้ำ จะทำให้การบันทึกลูกค้าจากหน้า Editor เด้งกลับไปยัง Modal พนักงานขายได้
     }
 
     function autoFillCustomer() {
