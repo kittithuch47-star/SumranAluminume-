@@ -71,8 +71,10 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 relative">
 
+    <!-- TAB 1: EDITOR -->
     <div id="tab-editor" class="space-y-6">
       
+      <!-- Doc Types -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
           <div><h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-check" class="w-5 h-5 text-sky-600"></i> เลือกประเภทเอกสาร</h2></div>
@@ -86,12 +88,21 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div><label class="block text-xs font-medium text-slate-600 mb-1">เลขที่เอกสาร</label><input type="text" id="docNo" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono"></div>
-          <div><label class="block text-xs font-medium text-slate-600 mb-1">อ้างอิงเอกสารเดิม</label><input type="text" id="refNo" placeholder="อ้างอิงบิลเดิม (ถ้ามี)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono"></div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">เลขที่เอกสาร</label>
+            <input type="text" id="docNo" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">อ้างอิงเอกสารเดิม</label>
+            <input type="text" id="refNo" placeholder="อ้างอิงบิลเดิม (ถ้ามี)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
+          </div>
           <div><label class="block text-xs font-medium text-slate-600 mb-1">วันที่ออกเอกสาร</label><input type="date" id="docDate" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
           <div><label class="block text-xs font-medium text-slate-600 mb-1">กำหนดส่งงาน/ยืนราคา</label><input type="date" id="dueDate" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
           <div>
-            <div class="flex justify-between items-center mb-1"><label class="block text-xs font-medium text-slate-600">ผู้ขาย/ผู้ประสานงาน</label><button onclick="openGenericModal('salesModal')" class="text-[10px] text-sky-600 hover:underline">จัดการรายชื่อ</button></div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-medium text-slate-600">ผู้ขาย/ผู้ประสานงาน</label>
+              <button onclick="openGenericModal('salesModal')" class="text-[10px] text-sky-600 hover:underline">จัดการรายชื่อ</button>
+            </div>
             <input type="text" id="salesName" list="salesList" placeholder="พิมพ์ค้นหา/เพิ่มเซลส์" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500">
             <datalist id="salesList"></datalist>
           </div>
@@ -107,7 +118,11 @@
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label class="block text-xs font-medium text-slate-600 mb-1">ชื่อลูกค้า (พิมพ์เพื่อค้นหา)</label><input type="text" id="custName" list="customerDatalist" onchange="autoFillCustomer()" placeholder="ค้นหาหรือพิมพ์ใหม่..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"><datalist id="customerDatalist"></datalist></div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อลูกค้า (พิมพ์เพื่อค้นหา)</label>
+            <input type="text" id="custName" list="customerDatalist" onchange="autoFillCustomer()" placeholder="ค้นหาหรือพิมพ์ใหม่..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500">
+            <datalist id="customerDatalist"></datalist>
+          </div>
           <div><label class="block text-xs font-medium text-slate-600 mb-1">เบอร์โทรศัพท์ติดต่อ</label><input type="text" id="custPhone" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
           <div><label class="block text-xs font-medium text-slate-600 mb-1">เลขประจำตัวผู้เสียภาษี</label><input type="text" id="custTaxId" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
           <div class="md:col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">ที่อยู่ตามเอกสาร / หน้างานติดตั้ง</label><input type="text" id="custAddress" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
@@ -176,22 +191,6 @@
 
             <div class="pt-3 border-t-2 border-slate-300 flex justify-between items-baseline"><span class="text-sm font-bold text-slate-900 block">ยอดสุทธิรวมทั้งสิ้น:</span><span id="calc-grandtotal" class="text-2xl font-black font-mono text-sky-700">฿0.00</span></div>
             
-            <div class="bg-indigo-50/50 rounded-lg p-3 border border-indigo-100 mt-3">
-              <div class="flex items-center justify-between mb-2">
-                <label class="text-[11px] font-bold text-indigo-900 flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" id="deposit-toggle" onchange="calculateTotals()" class="rounded border-indigo-300 text-indigo-600 w-3.5 h-3.5"> เสนอราคามัดจำ (โชว์ในใบเสนอราคา)
-                </label>
-                <div class="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-indigo-200">
-                  <input type="number" id="deposit-percent" value="50" min="0" max="100" oninput="calculateTotals()" class="w-10 text-right text-[11px] bg-transparent focus:outline-none text-indigo-900 font-bold">
-                  <span class="text-[11px] text-indigo-700">%</span>
-                </div>
-              </div>
-              <div class="flex justify-between items-center text-[11px]">
-                <span class="text-slate-600">ยอดมัดจำที่เรียกเก็บ:</span>
-                <span id="calc-deposit-amt" class="font-mono font-bold text-indigo-800">฿0.00</span>
-              </div>
-            </div>
-
             <div class="bg-sky-100/50 rounded-lg p-3 border border-sky-200 mt-2">
               <label class="text-[11px] font-bold text-sky-900 flex items-center gap-1.5 mb-2 cursor-pointer">
                 <input type="checkbox" id="payment-toggle" onchange="togglePaymentBox()" class="rounded border-sky-300 text-sky-600 w-3.5 h-3.5"> ระบบแบ่งจ่าย / บันทึกรับชำระเงิน
@@ -212,6 +211,7 @@
       </div>
     </div>
 
+    <!-- TAB 2: PREVIEW & PRINT -->
     <div id="tab-preview" class="hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 no-print">
         <button onclick="switchTab('editor')" class="px-3.5 py-1.5 text-xs font-medium border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"><i data-lucide="arrow-left" class="w-4 h-4"></i> กลับไปแก้ไข</button>
@@ -291,13 +291,7 @@
             <div class="flex justify-between py-1.5 border-t-2 border-b-2 border-slate-800 font-bold text-[13px] bg-slate-100 px-2 rounded mt-1"><span>ยอดสุทธิทั้งสิ้น:</span><span id="p-calc-grandtotal" class="font-mono text-slate-900">฿0.00</span></div>
             <div class="text-right text-[10px] text-slate-500 italic pb-2" id="p-baht-text">(ศูนย์บาทถ้วน)</div>
             
-            <div id="p-deposit-request-box" class="mt-2 pt-2 border-t border-dashed border-slate-300 hidden">
-              <div class="flex justify-between py-0.5 font-bold text-indigo-800 text-[12px]">
-                <span id="p-deposit-req-label">ยอดมัดจำที่เรียกเก็บ:</span><span id="p-deposit-req-amt" class="font-mono">฿0.00</span>
-              </div>
-            </div>
-
-            <div id="p-payment-box" class="mt-2 pt-2 border-t border-dashed border-slate-300 hidden">
+            <div id="p-deposit-box" class="mt-2 pt-2 border-t border-dashed border-slate-300 hidden">
               <div class="flex justify-between py-0.5 font-bold text-slate-500" id="p-prev-paid-row"><span>หัก ยอดที่เคยชำระแล้ว:</span><span id="p-prev-paid-amt" class="font-mono">-฿0.00</span></div>
               <div class="flex justify-between py-0.5 font-bold text-sky-800 text-[12px] border-b border-slate-200 pb-1 mb-1">
                 <span id="p-deposit-label">ยอดชำระครั้งนี้:</span><span id="p-deposit-amt" class="font-mono">฿0.00</span>
@@ -332,7 +326,10 @@
       </div>
     </div>
 
+    <!-- TAB 3: HISTORY -->
     <div id="tab-history" class="hidden space-y-4">
+      
+      <!-- Dashboard Summary -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
           <div class="text-[11px] font-bold text-slate-500 mb-1">ยอดขายรวม (ทั้งหมด)</div>
@@ -378,6 +375,7 @@
       </div>
     </div>
 
+    <!-- TAB 4: SETTINGS -->
     <div id="tab-settings" class="hidden space-y-4">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 max-w-3xl mx-auto">
         <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3"><i data-lucide="store" class="w-5 h-5 text-sky-600"></i> ข้อมูลร้านค้าและสเปกมาตรฐาน</h2>
@@ -406,7 +404,7 @@
       </div>
     </div>
 
-    <!-- Generic List Modal -->
+    <!-- Generic List Modal (For Customers, Sales, Presets) -->
     <div id="generic-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
       <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-5 overflow-hidden flex flex-col max-h-[90vh]">
         <div class="flex justify-between items-center border-b pb-3 mb-3">
@@ -421,12 +419,13 @@
     <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium">
       <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i><span id="toast-msg"></span>
     </div>
+
   </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -463,7 +462,6 @@
       notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
       discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
       isLumpSum: false, lumpSumAmt: 0,
-      depositEnabled: false, depositPercent: 50, depositAmt: 0,
       paymentEnabled: false, prevPaid: 0, currentPayment: 0, history: []
     };
 
@@ -471,7 +469,7 @@
     function safeSetText(id, text) { const el = document.getElementById(id); if(el) el.innerText = text || '-'; }
     function safeSetChecked(id, is) { const el = document.getElementById(id); if(el) el.checked = !!is; }
     function escapeHtml(str) { return String(str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-    function showToast(msg) { safeSetText('toast-msg', msg); const t = document.getElementById('toast'); t.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500); }
+    function showToast(msg) { safeSetText('toast-msg', msg); const t = document.getElementById('toast'); if(t) { t.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500); } }
     function formatDateThai(dStr) { if(!dStr) return '-'; const p=dStr.split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${parseInt(p[0])+543}` : dStr; }
     
     function thaiBahtConversion(num) {
@@ -507,7 +505,8 @@
             if (snap.exists()) {
               state.shop = { ...state.shop, ...snap.data() };
               ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
-              if(state.shop.logo) { document.getElementById('setting-logo-preview').src = state.shop.logo; document.getElementById('setting-logo-preview').classList.remove('hidden'); }
+              const logoPrev = document.getElementById('setting-logo-preview');
+              if(state.shop.logo && logoPrev) { logoPrev.src = state.shop.logo; logoPrev.classList.remove('hidden'); }
             }
           });
           onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'presets'), (snap) => {
@@ -531,9 +530,12 @@
       try {
         generateAutoDocNo('quotation');
         await initFirebase();
+        
         safeSetValue('docNo', state.docNo); safeSetValue('docDate', state.docDate); safeSetValue('dueDate', state.dueDate);
         safeSetValue('salesName', state.salesName); safeSetValue('docNotes', state.notes);
+        
         ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
+        
         renderPresets(); renderItems(); calculateTotals();
         if(window.lucide) window.lucide.createIcons();
       } catch (e) { console.error("Init error:", e); }
@@ -542,8 +544,12 @@
     function switchTab(tab) {
       state.currentTab = tab;
       ['editor', 'preview', 'history', 'settings'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
-        document.getElementById(`tab-btn-${t}`).className = t === tab ? "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow" : "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white";
+        const tabEl = document.getElementById(`tab-${t}`);
+        const btnEl = document.getElementById(`tab-btn-${t}`);
+        if(tabEl) tabEl.classList.toggle('hidden', t !== tab);
+        if(btnEl) {
+          btnEl.className = t === tab ? "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow" : "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white";
+        }
       });
       if (tab === 'preview') renderPreview();
       else if (tab === 'history') renderHistory();
@@ -570,6 +576,7 @@
 
     function renderPresets() {
       const container = document.getElementById('presets-container');
+      if(!container) return;
       container.innerHTML = '';
       state.presets.forEach(p => {
         const cl = p.type === 'general' ? 'bg-amber-500/20 text-amber-300 hover:border-amber-400/40' : 'bg-sky-500/20 text-sky-300 hover:border-sky-400/40';
@@ -607,7 +614,7 @@
     }
 
     function renderItems() {
-      const c = document.getElementById('items-list'); c.innerHTML = '';
+      const c = document.getElementById('items-list'); if(!c) return; c.innerHTML = '';
       state.items.forEach((item, idx) => {
         let isAlu = item.type === 'alu';
         let bdg = isAlu ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 ml-2">กxส</span>` : `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 ml-2">ทั่วไป</span>`;
@@ -637,27 +644,33 @@
     }
 
     function toggleLumpSum() {
-      state.isLumpSum = document.getElementById('lump-sum-toggle').checked;
-      document.getElementById('lump-sum-box').style.display = state.isLumpSum ? 'flex' : 'none';
+      const lumpSumToggle = document.getElementById('lump-sum-toggle');
+      const lumpSumBox = document.getElementById('lump-sum-box');
+      if(lumpSumToggle) state.isLumpSum = lumpSumToggle.checked;
+      if(lumpSumBox) lumpSumBox.style.display = state.isLumpSum ? 'flex' : 'none';
       renderItems(); calculateTotals();
     }
 
     function togglePaymentBox() {
-      state.paymentEnabled = document.getElementById('payment-toggle').checked;
-      document.getElementById('payment-box').style.display = state.paymentEnabled ? 'block' : 'none';
+      const paymentToggle = document.getElementById('payment-toggle');
+      const paymentBox = document.getElementById('payment-box');
+      if(paymentToggle) state.paymentEnabled = paymentToggle.checked;
+      if(paymentBox) paymentBox.style.display = state.paymentEnabled ? 'block' : 'none';
       calculateTotals();
     }
 
     function calculateTotals() {
       let sub = 0;
       if (state.isLumpSum) {
-        state.lumpSumAmt = parseFloat(document.getElementById('lump-sum-amt').value) || 0;
+        const lumpSumInput = document.getElementById('lump-sum-amt');
+        state.lumpSumAmt = lumpSumInput ? (parseFloat(lumpSumInput.value) || 0) : 0;
         sub = state.lumpSumAmt;
       } else {
         sub = state.items.reduce((s, i) => s + (i.total || 0), 0);
       }
       
-      let disc = parseFloat(document.getElementById('calc-discount').value) || 0;
+      const discInput = document.getElementById('calc-discount');
+      let disc = discInput ? (parseFloat(discInput.value) || 0) : 0;
       let after = Math.max(0, sub - disc);
       
       let vatEl = document.getElementById('vat-toggle'), whtEl = document.getElementById('wht-toggle');
@@ -665,15 +678,10 @@
       let wht = whtEl?.checked ? +(after * 0.03).toFixed(2) : 0;
       let grand = +(after + vat - wht).toFixed(2);
       
-      // Request Deposit
-      let depEl = document.getElementById('deposit-toggle');
-      state.depositEnabled = depEl ? depEl.checked : false;
-      state.depositPercent = parseFloat(document.getElementById('deposit-percent')?.value) || 0;
-      let depAmt = state.depositEnabled ? +(grand * (state.depositPercent / 100)).toFixed(2) : 0;
-
-      // Installments / Payments
-      state.prevPaid = parseFloat(document.getElementById('prev-paid').value) || 0;
-      state.currentPayment = parseFloat(document.getElementById('current-payment').value) || 0;
+      const prevPaidInput = document.getElementById('prev-paid');
+      const currentPaymentInput = document.getElementById('current-payment');
+      state.prevPaid = prevPaidInput ? (parseFloat(prevPaidInput.value) || 0) : 0;
+      state.currentPayment = currentPaymentInput ? (parseFloat(currentPaymentInput.value) || 0) : 0;
       let remAmt = Math.max(0, grand - state.prevPaid - state.currentPayment);
 
       safeSetText('calc-subtotal', '฿' + sub.toLocaleString('th-TH',{minimumFractionDigits:2}));
@@ -681,27 +689,33 @@
       safeSetText('calc-vat', '฿' + vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-wht', '-฿' + wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-grandtotal', '฿' + grand.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      safeSetText('calc-deposit-amt', '฿' + depAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-remaining-amt', '฿' + remAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
 
       // Calculate Profit
-      state.totalCost = parseFloat(document.getElementById('total-cost').value) || 0;
+      const totalCostInput = document.getElementById('total-cost');
+      state.totalCost = totalCostInput ? (parseFloat(totalCostInput.value) || 0) : 0;
       let profit = after - state.totalCost;
       safeSetText('profit-calc-display', `กำไรสุทธิ: ฿${profit.toLocaleString('th-TH',{minimumFractionDigits:2})}`);
       
       state.subtotal = sub; state.discount = disc; state.afterDiscount = after;
       state.vat = vat; state.vatEnabled = !!vatEl?.checked; state.wht = wht; state.whtEnabled = !!whtEl?.checked;
-      state.grandTotal = grand; state.depositAmt = depAmt; state.remainingAmt = remAmt; state.profit = profit;
+      state.grandTotal = grand; state.remainingAmt = remAmt; state.profit = profit;
       state.bahtText = thaiBahtConversion(grand);
     }
 
     function renderPreview() {
       // Sync Basic fields
-      ['docNo','refNo','docDate','dueDate','salesName','docNotes'].forEach(id => state[id] = document.getElementById(id).value);
+      ['docNo','refNo','docDate','dueDate','salesName','docNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) state[id] = el.value;
+      });
       ['custName','custPhone','custTaxId','custAddress','projectName'].forEach(id => {
-        let k = id==='custName'?'name':id.replace('cust','').toLowerCase();
-        if(id==='projectName') k='project'; if(id==='custTaxId') k='taxId';
-        state.customer[k] = document.getElementById(id).value;
+        const el = document.getElementById(id);
+        if(el) {
+          let k = id==='custName'?'name':id.replace('cust','').toLowerCase();
+          if(id==='projectName') k='project'; if(id==='custTaxId') k='taxId';
+          state.customer[k] = el.value;
+        }
       });
 
       const types = {
@@ -716,9 +730,16 @@
       safeSetText('p-doc-title-badge', m.th); safeSetText('p-doc-title-en', m.en);
       safeSetText('sig1-title', m.s1); safeSetText('sig2-title', m.s2); safeSetText('sig3-title', m.s3);
       
-      document.getElementById('p-due-date-container').style.display = ['delivery','receipt','cashbill'].includes(state.docType) ? 'none' : 'block';
-      if(state.refNo) { document.getElementById('p-ref-no-container').style.display = 'block'; safeSetText('p-ref-no', state.refNo); }
-      else document.getElementById('p-ref-no-container').style.display = 'none';
+      const dueDateContainer = document.getElementById('p-due-date-container');
+      if(dueDateContainer) dueDateContainer.style.display = ['delivery','receipt','cashbill'].includes(state.docType) ? 'none' : 'block';
+      
+      const refNoContainer = document.getElementById('p-ref-no-container');
+      if(state.refNo) { 
+        if(refNoContainer) refNoContainer.style.display = 'block'; 
+        safeSetText('p-ref-no', state.refNo); 
+      } else if(refNoContainer) {
+        refNoContainer.style.display = 'none';
+      }
 
       safeSetText('p-doc-no', state.docNo); safeSetText('p-doc-date', formatDateThai(state.docDate)); safeSetText('p-due-date', formatDateThai(state.dueDate));
       safeSetText('p-sales-name', state.salesName);
@@ -728,45 +749,49 @@
       ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetText('p-shop-'+k, state.shop[k]));
       safeSetText('p-notes', state.docNotes);
 
-      const tb = document.getElementById('p-items-tbody'); tb.innerHTML = '';
-      state.items.forEach((item, idx) => {
-        let sub = item.type==='alu' ? `สี: ${item.aluColor} | กระจก: ${item.glassType}` : '-';
-        let dim = item.type==='alu' ? `${item.width.toFixed(2)}x${item.height.toFixed(2)}` : '-';
-        let area = item.type==='alu' ? item.area.toFixed(2) : '-';
-        let up = state.isLumpSum ? '-' : '฿'+item.unitPrice.toLocaleString('th-TH');
-        let tot = state.isLumpSum ? (idx===0 ? '฿'+state.lumpSumAmt.toLocaleString('th-TH',{minimumFractionDigits:2}) : '-') : '฿'+item.total.toLocaleString('th-TH',{minimumFractionDigits:2});
-        
-        tb.innerHTML += `<tr class="border-b border-slate-100 ${idx%2===0?'bg-white':'bg-slate-50/50'}"><td class="py-1.5 px-2 text-center">${idx+1}</td><td class="py-1.5 px-3"><div class="font-bold text-slate-900">${escapeHtml(item.name)}</div><div class="text-[9px] text-slate-500">${sub}</div></td><td class="py-1.5 px-2 text-center font-mono">${dim}</td><td class="py-1.5 px-2 text-center font-mono">${area}</td><td class="py-1.5 px-2 text-center font-mono">${item.qty} <span class="text-[9px]">${escapeHtml(item.unit)}</span></td><td class="py-1.5 px-2 text-right font-mono">${up}</td><td class="py-1.5 px-2 text-right font-mono font-bold">${tot}</td></tr>`;
-      });
+      const tb = document.getElementById('p-items-tbody'); 
+      if(tb) {
+        tb.innerHTML = '';
+        state.items.forEach((item, idx) => {
+          let sub = item.type==='alu' ? `สี: ${item.aluColor} | กระจก: ${item.glassType}` : '-';
+          let dim = item.type==='alu' ? `${item.width.toFixed(2)}x${item.height.toFixed(2)}` : '-';
+          let area = item.type==='alu' ? item.area.toFixed(2) : '-';
+          let up = state.isLumpSum ? '-' : '฿'+item.unitPrice.toLocaleString('th-TH');
+          let tot = state.isLumpSum ? (idx===0 ? '฿'+state.lumpSumAmt.toLocaleString('th-TH',{minimumFractionDigits:2}) : '-') : '฿'+item.total.toLocaleString('th-TH',{minimumFractionDigits:2});
+          
+          tb.innerHTML += `<tr class="border-b border-slate-100 ${idx%2===0?'bg-white':'bg-slate-50/50'}"><td class="py-1.5 px-2 text-center">${idx+1}</td><td class="py-1.5 px-3"><div class="font-bold text-slate-900">${escapeHtml(item.name)}</div><div class="text-[9px] text-slate-500">${sub}</div></td><td class="py-1.5 px-2 text-center font-mono">${dim}</td><td class="py-1.5 px-2 text-center font-mono">${area}</td><td class="py-1.5 px-2 text-center font-mono">${item.qty} <span class="text-[9px]">${escapeHtml(item.unit)}</span></td><td class="py-1.5 px-2 text-right font-mono">${up}</td><td class="py-1.5 px-2 text-right font-mono font-bold">${tot}</td></tr>`;
+        });
+      }
 
       safeSetText('p-calc-subtotal', '฿' + state.subtotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      document.getElementById('p-discount-row').style.display = state.discount > 0 ? 'flex' : 'none'; safeSetText('p-calc-discount', '-฿' + state.discount.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      document.getElementById('p-vat-row').style.display = state.vatEnabled ? 'flex' : 'none'; safeSetText('p-calc-vat', '฿' + state.vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      document.getElementById('p-wht-row').style.display = state.whtEnabled ? 'flex' : 'none'; safeSetText('p-calc-wht', '-฿' + state.wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      const discountRow = document.getElementById('p-discount-row');
+      if(discountRow) discountRow.style.display = state.discount > 0 ? 'flex' : 'none'; 
+      safeSetText('p-calc-discount', '-฿' + state.discount.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      
+      const vatRow = document.getElementById('p-vat-row');
+      if(vatRow) vatRow.style.display = state.vatEnabled ? 'flex' : 'none'; 
+      safeSetText('p-calc-vat', '฿' + state.vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      
+      const whtRow = document.getElementById('p-wht-row');
+      if(whtRow) whtRow.style.display = state.whtEnabled ? 'flex' : 'none'; 
+      safeSetText('p-calc-wht', '-฿' + state.wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      
       safeSetText('p-calc-grandtotal', '฿' + state.grandTotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('p-baht-text', `(${state.bahtText})`);
 
-      // Deposit Display
-      let depReqBox = document.getElementById('p-deposit-request-box');
-      if (state.depositEnabled) {
-        depReqBox.style.display = 'block';
-        safeSetText('p-deposit-req-label', `ยอดมัดจำที่เรียกเก็บ (${state.depositPercent}%):`);
-        safeSetText('p-deposit-req-amt', '฿' + state.depositAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      } else {
-        if(depReqBox) depReqBox.style.display = 'none';
-      }
-
-      // Payments Display
-      let payBox = document.getElementById('p-payment-box');
-      if (state.paymentEnabled && (state.prevPaid > 0 || state.currentPayment > 0)) {
-        payBox.style.display = 'block';
-        document.getElementById('p-prev-paid-row').style.display = state.prevPaid > 0 ? 'flex' : 'none';
-        safeSetText('p-prev-paid-amt', '-฿' + state.prevPaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
-        safeSetText('p-deposit-label', ['receipt','cashbill'].includes(state.docType) ? 'รับชำระเงินครั้งนี้:' : 'ยอดชำระครั้งนี้:');
-        safeSetText('p-deposit-amt', '฿' + state.currentPayment.toLocaleString('th-TH',{minimumFractionDigits:2}));
-        safeSetText('p-remaining-amt', '฿' + state.remainingAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      } else {
-        if(payBox) payBox.style.display = 'none';
+      let depBox = document.getElementById('p-deposit-box');
+      if (depBox) {
+        if (state.paymentEnabled && (state.prevPaid > 0 || state.currentPayment > 0)) {
+          depBox.style.display = 'block';
+          const prevPaidRow = document.getElementById('p-prev-paid-row');
+          if(prevPaidRow) prevPaidRow.style.display = state.prevPaid > 0 ? 'flex' : 'none';
+          safeSetText('p-prev-paid-amt', '-฿' + state.prevPaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
+          safeSetText('p-deposit-label', ['receipt','cashbill'].includes(state.docType) ? 'รับชำระเงินครั้งนี้:' : 'ยอดชำระครั้งนี้ / มัดจำ:');
+          safeSetText('p-deposit-amt', '฿' + state.currentPayment.toLocaleString('th-TH',{minimumFractionDigits:2}));
+          safeSetText('p-remaining-amt', '฿' + state.remainingAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
+        } else {
+          depBox.style.display = 'none';
+        }
       }
     }
 
@@ -776,11 +801,13 @@
 
     function saveCurrentDoc() {
       calculateTotals();
+      const custNameEl = document.getElementById('custName');
+      const projectNameEl = document.getElementById('projectName');
       const rec = {
         id: 'doc-' + Date.now(),
         docNo: state.docNo, docType: state.docType, refNo: state.refNo,
-        customerName: document.getElementById('custName')?.value || 'ไม่ระบุ',
-        project: document.getElementById('projectName')?.value || '-',
+        customerName: custNameEl ? custNameEl.value : 'ไม่ระบุ',
+        project: projectNameEl ? projectNameEl.value : '-',
         date: state.docDate, grandTotal: state.grandTotal, remainingAmt: state.remainingAmt||0, profit: state.profit||0,
         status: state.history.find(h => h.docNo === state.docNo)?.status || getInitialStatus(state.docType),
         payload: JSON.parse(JSON.stringify(state))
@@ -795,9 +822,10 @@
     }
 
     function renderHistory() {
-      const tb = document.getElementById('history-tbody'); tb.innerHTML = '';
-      let q = document.getElementById('search-history')?.value.toLowerCase() || '';
-      let filtered = state.history.filter(h => h.docNo.toLowerCase().includes(q) || h.customerName.toLowerCase().includes(q) || h.refNo?.toLowerCase().includes(q));
+      const tb = document.getElementById('history-tbody'); if(!tb) return; tb.innerHTML = '';
+      const searchInput = document.getElementById('search-history');
+      let q = searchInput ? searchInput.value.toLowerCase() : '';
+      let filtered = state.history.filter(h => h.docNo.toLowerCase().includes(q) || h.customerName.toLowerCase().includes(q) || (h.refNo && h.refNo.toLowerCase().includes(q)));
       
       let totalSales = 0, totalProfit = 0, totalDebt = 0;
       state.history.forEach(h => {
@@ -843,8 +871,12 @@
     }
 
     function updateDocStatus(id, stat) {
-      if(userId&&db) updateDoc(doc(db,'artifacts',appId,'users',userId,'history',id), {status:stat}).then(()=>showToast('อัปเดตสถานะแล้ว'));
-      else { const h=state.history.find(x=>x.id===id); if(h){h.status=stat; showToast('อัปเดตสถานะ (ออฟไลน์)');} }
+      if(userId && db) {
+        updateDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว'));
+      } else {
+        const h = state.history.find(x => x.id === id); 
+        if(h) { h.status = stat; showToast('อัปเดตสถานะ (ออฟไลน์)'); }
+      }
     }
 
     function generateFlowDoc(oldId, newType) {
@@ -852,7 +884,8 @@
       Object.assign(state, h.payload);
       state.refNo = h.docNo; safeSetValue('refNo', state.refNo);
       
-      document.querySelector(`input[name="docType"][value="${newType}"]`).checked = true;
+      const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
+      if(radioEl) radioEl.checked = true;
       updateDocType(newType); 
       
       if (['receipt','cashbill'].includes(newType)) {
@@ -864,7 +897,8 @@
       }
       
       state.paymentEnabled = true; safeSetChecked('payment-toggle', true);
-      document.getElementById('payment-box').style.display = 'block';
+      const paymentBox = document.getElementById('payment-box');
+      if(paymentBox) paymentBox.style.display = 'block';
       safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', state.currentPayment);
       
       renderItems(); calculateTotals(); switchTab('editor'); showToast(`สร้าง ${newType} อ้างอิง ${h.docNo}`);
@@ -873,16 +907,14 @@
     function loadHistory(id) {
       const h = state.history.find(x => x.id === id); if(!h) return;
       Object.assign(state, h.payload);
-      document.querySelector(`input[name="docType"][value="${state.docType}"]`).checked = true;
+      const radioEl = document.querySelector(`input[name="docType"][value="${state.docType}"]`);
+      if(radioEl) radioEl.checked = true;
       ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
       ['name','phone','taxId','address','project'].forEach(k => safeSetValue(k==='name'?'custName':k==='taxId'?'custTaxId':k==='project'?'projectName':'cust'+k.charAt(0).toUpperCase()+k.slice(1), state.customer[k]));
       safeSetValue('docNotes', state.notes); safeSetValue('calc-discount', state.discount); safeSetValue('total-cost', state.totalCost);
       safeSetChecked('vat-toggle', state.vatEnabled); safeSetChecked('wht-toggle', state.whtEnabled);
       safeSetChecked('lump-sum-toggle', state.isLumpSum); safeSetValue('lump-sum-amt', state.lumpSumAmt); toggleLumpSum();
-      
-      safeSetChecked('deposit-toggle', state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent);
       safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', state.currentPayment); togglePaymentBox();
-      
       renderItems(); calculateTotals(); switchTab('editor'); showToast('โหลดเอกสารแล้ว');
     }
 
@@ -900,7 +932,10 @@
     }
 
     function saveStoreSettings() {
-      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => state.shop[k] = document.getElementById('setting-shop-'+k).value);
+      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => {
+        const el = document.getElementById('setting-shop-'+k);
+        if(el) state.shop[k] = el.value;
+      });
       if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'settings','shopData'), state.shop).then(()=>showToast('บันทึกตั้งค่าขึ้นคลาวด์แล้ว'));
       else showToast('บันทึกตั้งค่าแล้ว');
     }
@@ -910,8 +945,12 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           state.shop.logo = e.target.result;
-          document.getElementById('setting-logo-preview').src = state.shop.logo;
-          document.getElementById('setting-logo-preview').classList.remove('hidden'); showToast('เพิ่มโลโก้สำเร็จ');
+          const logoPreview = document.getElementById('setting-logo-preview');
+          if(logoPreview) {
+            logoPreview.src = state.shop.logo;
+            logoPreview.classList.remove('hidden');
+          }
+          showToast('เพิ่มโลโก้สำเร็จ');
         };
         reader.readAsDataURL(input.files[0]);
       }
@@ -920,32 +959,44 @@
     let currentModalType = '';
     function openGenericModal(type) {
       currentModalType = type;
-      document.getElementById('generic-modal').classList.remove('hidden');
-      document.getElementById('generic-modal').classList.add('flex');
+      const modal = document.getElementById('generic-modal');
+      if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
       const title = document.getElementById('gmodal-title');
-      const list = document.getElementById('gmodal-list'); list.innerHTML = '';
+      const list = document.getElementById('gmodal-list'); 
+      if(list) list.innerHTML = '';
       
       if(type === 'presetModal') {
-        title.innerText = 'จัดการพรีเซ็ตสินค้า';
+        if(title) title.innerText = 'จัดการพรีเซ็ตสินค้า';
         state.presets.forEach((p, idx) => {
-          list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span><span class="font-bold">${escapeHtml(p.name)}</span> <span class="text-slate-400">(${p.type==='alu'?'กระจก':'ทั่วไป'})</span></span><button onclick="deleteData('preset', '${p.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+          if(list) list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span><span class="font-bold">${escapeHtml(p.name)}</span> <span class="text-slate-400">(${p.type==='alu'?'กระจก':'ทั่วไป'})</span></span><button onclick="deleteData('preset', '${p.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
         });
       } else if(type === 'customerModal') {
-        title.innerText = 'จัดการรายชื่อลูกค้า';
+        if(title) title.innerText = 'จัดการรายชื่อลูกค้า';
         state.savedCustomers.forEach((c, idx) => {
-          list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><div><div class="font-bold">${escapeHtml(c.name)}</div><div class="text-slate-500">${escapeHtml(c.phone)}</div></div><button onclick="deleteData('customer', '${c.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+          if(list) list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><div><div class="font-bold">${escapeHtml(c.name)}</div><div class="text-slate-500">${escapeHtml(c.phone)}</div></div><button onclick="deleteData('customer', '${c.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
         });
       } else if(type === 'salesModal') {
-        title.innerText = 'จัดการรายชื่อผู้ขาย';
-        list.innerHTML = `<div class="flex gap-2 mb-3"><input type="text" id="new-sales-name" placeholder="ชื่อเซลส์/ผู้ประสานงาน" class="flex-1 p-2 text-xs border rounded"><button onclick="saveSalesInfo()" class="px-3 py-2 bg-sky-600 text-white text-xs rounded font-bold">เพิ่ม</button></div>`;
-        state.savedSales.forEach((s, idx) => {
-          list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span>${escapeHtml(s.name)}</span><button onclick="deleteData('sales', '${s.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
-        });
+        if(title) title.innerText = 'จัดการรายชื่อผู้ขาย';
+        if(list) {
+          list.innerHTML = `<div class="flex gap-2 mb-3"><input type="text" id="new-sales-name" placeholder="ชื่อเซลส์/ผู้ประสานงาน" class="flex-1 p-2 text-xs border rounded"><button onclick="saveSalesInfo()" class="px-3 py-2 bg-sky-600 text-white text-xs rounded font-bold">เพิ่ม</button></div>`;
+          state.savedSales.forEach((s, idx) => {
+            list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span>${escapeHtml(s.name)}</span><button onclick="deleteData('sales', '${s.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+          });
+        }
       }
       if(window.lucide) window.lucide.createIcons();
     }
 
-    function closeGenericModal() { document.getElementById('generic-modal').classList.add('hidden'); document.getElementById('generic-modal').classList.remove('flex'); }
+    function closeGenericModal() { 
+      const modal = document.getElementById('generic-modal');
+      if(modal) {
+        modal.classList.add('hidden'); 
+        modal.classList.remove('flex'); 
+      }
+    }
 
     function deleteData(type, id, idx) {
       const paths = { preset: 'presets', customer: 'customers', sales: 'sales' };
@@ -959,31 +1010,54 @@
     }
 
     function saveCustomerInfo() {
-      const c = { id: 'cust-'+Date.now(), name: document.getElementById('custName').value, phone: document.getElementById('custPhone').value, taxId: document.getElementById('custTaxId').value, address: document.getElementById('custAddress').value };
+      const nameEl = document.getElementById('custName');
+      const phoneEl = document.getElementById('custPhone');
+      const taxEl = document.getElementById('custTaxId');
+      const addrEl = document.getElementById('custAddress');
+      const c = { 
+        id: 'cust-'+Date.now(), 
+        name: nameEl ? nameEl.value : '', 
+        phone: phoneEl ? phoneEl.value : '', 
+        taxId: taxEl ? taxEl.value : '', 
+        address: addrEl ? addrEl.value : '' 
+      };
       if(!c.name) return showToast('กรุณากรอกชื่อลูกค้า');
       if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'customers',c.id), c).then(()=>showToast('บันทึกลูกค้าขึ้นคลาวด์'));
       else { state.savedCustomers.push(c); renderDatalists(); showToast('บันทึกลูกค้า (ออฟไลน์)'); }
     }
 
     function saveSalesInfo() {
-      const s = { id: 'sale-'+Date.now(), name: document.getElementById('new-sales-name').value };
+      const newSalesEl = document.getElementById('new-sales-name');
+      const s = { id: 'sale-'+Date.now(), name: newSalesEl ? newSalesEl.value : '' };
       if(!s.name) return;
       if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'sales',s.id), s);
       else { state.savedSales.push(s); renderDatalists(); openGenericModal('salesModal'); }
     }
 
     function renderDatalists() {
-      const cList = document.getElementById('customerDatalist'); cList.innerHTML = '';
-      state.savedCustomers.forEach(c => cList.innerHTML += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.phone)}</option>`);
-      const sList = document.getElementById('salesList'); sList.innerHTML = '';
-      state.savedSales.forEach(s => sList.innerHTML += `<option value="${escapeHtml(s.name)}"></option>`);
-      if(currentModalType) openGenericModal(currentModalType);
+      const cList = document.getElementById('customerDatalist'); 
+      if(cList) {
+        cList.innerHTML = '';
+        state.savedCustomers.forEach(c => cList.innerHTML += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.phone)}</option>`);
+      }
+      const sList = document.getElementById('salesList'); 
+      if(sList) {
+        sList.innerHTML = '';
+        state.savedSales.forEach(s => sList.innerHTML += `<option value="${escapeHtml(s.name)}"></option>`);
+      }
+      if(currentModalType) openGenericModal(currentModalType); 
     }
 
     function autoFillCustomer() {
-      const name = document.getElementById('custName').value;
+      const nameEl = document.getElementById('custName');
+      const name = nameEl ? nameEl.value : '';
       const c = state.savedCustomers.find(x => x.name === name);
-      if(c) { safeSetValue('custPhone', c.phone); safeSetValue('custTaxId', c.taxId); safeSetValue('custAddress', c.address); showToast('ดึงข้อมูลลูกค้าประจำ'); }
+      if(c) { 
+        safeSetValue('custPhone', c.phone); 
+        safeSetValue('custTaxId', c.taxId); 
+        safeSetValue('custAddress', c.address); 
+        showToast('ดึงข้อมูลลูกค้าประจำ'); 
+      }
     }
 
     // Expose all globals
