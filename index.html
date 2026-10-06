@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sumran Aluminum - ระบบออกเอกสารและคำนวณราคางาน</title>
+  <title>Sumran Aluminum - ระบบจัดการเอกสาร</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,15 +14,8 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Prompt', 'Sarabun', 'sans-serif'],
-            doc: ['Sarabun', 'sans-serif'],
-          },
-          colors: {
-            primary: {
-              50: '#f0f9ff', 100: '#e0f2fe', 500: '#0284c7', 600: '#0369a1', 700: '#075985', 800: '#0c4a6e',
-            }
-          }
+          fontFamily: { sans: ['Prompt', 'Sarabun', 'sans-serif'], doc: ['Sarabun', 'sans-serif'] },
+          colors: { primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0284c7', 600: '#0369a1', 700: '#075985', 800: '#0c4a6e' } }
         }
       }
     }
@@ -32,21 +25,14 @@
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
-      #print-area {
-        position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; padding: 0 !important; background: white !important; box-shadow: none !important;
-      }
+      #print-area { position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; padding: 0 !important; background: white !important; box-shadow: none !important; }
       .no-print { display: none !important; }
       @page { size: A4 portrait; margin: 10mm; }
     }
-    .a4-page {
-      width: 210mm; min-height: 297mm; padding: 15mm; margin: 0 auto; background: white; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); box-sizing: border-box;
-    }
-    @media (max-width: 820px) {
-      .a4-page { width: 100%; min-height: auto; padding: 12px; }
-    }
+    .a4-page { width: 210mm; min-height: 297mm; padding: 15mm; margin: 0 auto; background: white; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); box-sizing: border-box; }
+    @media (max-width: 820px) { .a4-page { width: 100%; min-height: auto; padding: 12px; } }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    /* Modal Styles */
     .modal-overlay { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
   </style>
 </head>
@@ -62,7 +48,7 @@
           <h1 class="text-lg md:text-xl font-bold tracking-tight flex items-center gap-2">
             Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">Pro</span>
           </h1>
-          <p class="text-xs text-sky-200/80">ระบบคำนวณและออกเอกสารสำหรับธุรกิจรับเหมาติดตั้ง</p>
+          <p class="text-xs text-sky-200/80">ระบบจัดการเอกสารและการเงินครบวงจร</p>
         </div>
       </div>
 
@@ -74,7 +60,7 @@
           <i data-lucide="printer" class="w-4 h-4"></i> พรีวิว & พิมพ์
         </button>
         <button onclick="switchTab('history')" id="tab-btn-history" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white">
-          <i data-lucide="folder-archive" class="w-4 h-4"></i> ประวัติ
+          <i data-lucide="folder-archive" class="w-4 h-4"></i> ประวัติงาน
         </button>
         <button onclick="switchTab('settings')" id="tab-btn-settings" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white">
           <i data-lucide="settings" class="w-4 h-4"></i> ตั้งค่าร้าน
@@ -85,376 +71,305 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 relative">
 
-    <!-- TAB 1: EDITOR -->
     <div id="tab-editor" class="space-y-6">
       
-      <!-- Doc Types -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
-          <div>
-            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <i data-lucide="file-check" class="w-5 h-5 text-sky-600"></i> เลือกประเภทเอกสาร
-            </h2>
-          </div>
-          
+          <div><h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-check" class="w-5 h-5 text-sky-600"></i> เลือกประเภทเอกสาร</h2></div>
           <div class="grid grid-cols-2 md:grid-cols-5 gap-2 w-full md:w-auto">
-            <label class="cursor-pointer">
-              <input type="radio" name="docType" value="quotation" checked onchange="updateDocType(this.value)" class="peer sr-only">
-              <div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600 transition-all">ใบเสนอราคา</div>
-            </label>
-            <label class="cursor-pointer">
-              <input type="radio" name="docType" value="delivery" onchange="updateDocType(this.value)" class="peer sr-only">
-              <div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">ใบส่งของ</div>
-            </label>
-            <label class="cursor-pointer">
-              <input type="radio" name="docType" value="invoice" onchange="updateDocType(this.value)" class="peer sr-only">
-              <div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-600 transition-all">ใบแจ้งหนี้/กำกับ</div>
-            </label>
-            <label class="cursor-pointer">
-              <input type="radio" name="docType" value="receipt" onchange="updateDocType(this.value)" class="peer sr-only">
-              <div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition-all">ใบเสร็จรับเงิน</div>
-            </label>
-            <label class="cursor-pointer">
-              <input type="radio" name="docType" value="cashbill" onchange="updateDocType(this.value)" class="peer sr-only">
-              <div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-slate-700 peer-checked:text-white peer-checked:border-slate-700 transition-all">บิลเงินสด</div>
-            </label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="quotation" checked onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600 transition-all">ใบเสนอราคา</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="delivery" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">ใบส่งของ</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="invoice" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-600 transition-all">ใบแจ้งหนี้/วางบิล</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="receipt" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition-all">ใบเสร็จรับเงิน</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="cashbill" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-slate-700 peer-checked:text-white peer-checked:border-slate-700 transition-all">บิลเงินสด</div></label>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">เลขที่เอกสาร</label><input type="text" id="docNo" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">อ้างอิงเอกสารเดิม</label><input type="text" id="refNo" placeholder="อ้างอิงบิลเดิม (ถ้ามี)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">วันที่ออกเอกสาร</label><input type="date" id="docDate" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">กำหนดส่งงาน/ยืนราคา</label><input type="date" id="dueDate" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
           <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">เลขที่เอกสาร</label>
-            <div class="relative">
-              <input type="text" id="docNo" class="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
-              <i data-lucide="hash" class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5"></i>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">วันที่ออกเอกสาร</label>
-            <input type="date" id="docDate" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">กำหนดส่งงาน/ยืนราคา</label>
-            <input type="date" id="dueDate" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">ผู้ขาย/ผู้ประสานงาน</label>
-            <input type="text" id="salesName" placeholder="เช่น ช่างสมชาย" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            <div class="flex justify-between items-center mb-1"><label class="block text-xs font-medium text-slate-600">ผู้ขาย/ผู้ประสานงาน</label><button onclick="openGenericModal('salesModal')" class="text-[10px] text-sky-600 hover:underline">จัดการรายชื่อ</button></div>
+            <input type="text" id="salesName" list="salesList" placeholder="พิมพ์ค้นหา/เพิ่มเซลส์" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500">
+            <datalist id="salesList"></datalist>
           </div>
         </div>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
-        <h2 class="text-md font-bold text-slate-800 flex items-center gap-2 mb-3">
-          <i data-lucide="user-check" class="w-5 h-5 text-sky-600"></i> ข้อมูลลูกค้า / สถานที่ติดตั้ง
-        </h2>
+        <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-2">
+          <h2 class="text-md font-bold text-slate-800 flex items-center gap-2"><i data-lucide="user-check" class="w-5 h-5 text-sky-600"></i> ข้อมูลลูกค้า / โครงการ</h2>
+          <div class="flex gap-2">
+            <button type="button" onclick="saveCustomerInfo()" class="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded text-[11px] font-semibold border border-sky-200 transition">+ บันทึกลูกค้าประจำ</button>
+            <button type="button" onclick="openGenericModal('customerModal')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300 transition">จัดการลูกค้า</button>
+          </div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อลูกค้า / บริษัท</label>
-            <input type="text" id="custName" placeholder="คุณสมศักดิ์ หรือ บจก. ตัวอย่าง" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">เบอร์โทรศัพท์ติดต่อ</label>
-            <input type="text" id="custPhone" placeholder="081-xxx-xxxx" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">เลขประจำตัวผู้เสียภาษี (ถ้ามี)</label>
-            <input type="text" id="custTaxId" placeholder="13 หลัก (ถ้ามี)" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500">
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs font-medium text-slate-600 mb-1">ที่อยู่ตามเอกสาร / หน้างานติดตั้ง</label>
-            <input type="text" id="custAddress" placeholder="บ้านเลขที่, ซอย, ถนน, ตำบล, อำเภอ, จังหวัด" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อโครงการ / จุดติดตั้ง</label>
-            <input type="text" id="projectName" placeholder="เช่น บ้านเดี่ยว 2 ชั้น (ห้องนอนใหญ่)" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500">
-          </div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">ชื่อลูกค้า (พิมพ์เพื่อค้นหา)</label><input type="text" id="custName" list="customerDatalist" onchange="autoFillCustomer()" placeholder="ค้นหาหรือพิมพ์ใหม่..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"><datalist id="customerDatalist"></datalist></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">เบอร์โทรศัพท์ติดต่อ</label><input type="text" id="custPhone" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">เลขประจำตัวผู้เสียภาษี</label><input type="text" id="custTaxId" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div class="md:col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">ที่อยู่ตามเอกสาร / หน้างานติดตั้ง</label><input type="text" id="custAddress" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">ชื่อโครงการ / จุดติดตั้ง</label><input type="text" id="projectName" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
         </div>
       </div>
 
       <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-sky-950 text-white rounded-2xl p-4 md:p-6 shadow-md border border-slate-700">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
-          <div>
-            <h3 class="text-base font-bold flex items-center gap-2">
-              <i data-lucide="layout-grid" class="w-5 h-5 text-sky-300"></i> เลือกจากแบบมาตรฐาน / สินค้าที่บันทึกไว้
-            </h3>
-            <p class="text-xs text-slate-300">คลิกที่การ์ดเพื่อเพิ่มลงในรายการสินค้า หรือกดเพิ่มแบบใหม่</p>
-          </div>
-          <button type="button" onclick="openPresetModal()" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่ม/แก้ไขพรีเซ็ต
-          </button>
+          <div><h3 class="text-base font-bold flex items-center gap-2"><i data-lucide="layout-grid" class="w-5 h-5 text-sky-300"></i> เลือกจากแบบมาตรฐาน</h3></div>
+          <button type="button" onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">จัดการพรีเซ็ต</button>
         </div>
-
-        <div id="presets-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2">
-          <!-- Dynamic Presets Loaded Here -->
-        </div>
+        <div id="presets-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 pt-2"></div>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="list-plus" class="w-5 h-5 text-sky-600"></i> รายการสินค้า และ บริการ
-          </h2>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list-plus" class="w-5 h-5 text-sky-600"></i> รายการสินค้า และ บริการ</h2>
           <div class="flex items-center gap-2">
-            <button type="button" onclick="addNewItem('alu')" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow">
-              <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มงานอลูมิเนียม (กxส)
-            </button>
-            <button type="button" onclick="addNewItem('general')" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow">
-              <i data-lucide="package-plus" class="w-4 h-4"></i> เพิ่มสินค้าทั่วไป/ค่าแรง
-            </button>
+            <button type="button" onclick="addNewItem('alu')" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow">+ อลูมิเนียม (กxส)</button>
+            <button type="button" onclick="addNewItem('general')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow">+ สินค้าทั่วไป/ค่าแรง</button>
           </div>
         </div>
 
-        <div id="items-list" class="space-y-4">
-          <!-- Dynamic Items injected here -->
+        <div class="mb-4 bg-sky-50 border border-sky-200 rounded-lg p-3 flex justify-between items-center">
+          <label class="flex items-center gap-2 text-sm font-bold text-sky-900 cursor-pointer">
+            <input type="checkbox" id="lump-sum-toggle" onchange="toggleLumpSum()" class="rounded border-sky-400 text-sky-600 w-4 h-4"> คิดราคาเหมา (Lump Sum)
+          </label>
+          <div id="lump-sum-box" class="hidden flex items-center gap-2">
+            <span class="text-xs text-sky-700">ระบุราคาเหมาสุทธิ: ฿</span>
+            <input type="number" id="lump-sum-amt" value="0" min="0" oninput="calculateTotals()" class="w-32 p-1.5 text-right font-bold text-sky-800 bg-white border border-sky-300 rounded focus:ring-2 focus:ring-sky-500">
+          </div>
         </div>
 
+        <div id="items-list" class="space-y-4"></div>
+
         <div class="mt-6 pt-6 border-t border-slate-200 grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <!-- Notes -->
           <div class="lg:col-span-6 space-y-3">
             <label class="block text-xs font-semibold text-slate-700">เงื่อนไขและหมายเหตุท้ายบิล</label>
             <textarea id="docNotes" rows="4" class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+            
+            <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 mt-4">
+              <label class="block text-[11px] font-bold text-amber-900 mb-1">ประมาณการต้นทุนรวม (ดูเฉพาะร้าน ไม่โชว์ในบิล)</label>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-amber-700">฿</span>
+                <input type="number" id="total-cost" value="0" min="0" oninput="calculateTotals()" class="w-32 p-1 text-sm bg-white border border-amber-300 rounded text-right focus:ring-1 focus:ring-amber-500">
+                <span class="text-[10px] text-amber-600 ml-2" id="profit-calc-display">กำไรสุทธิ: -</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Totals Calculation -->
           <div class="lg:col-span-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-slate-600">รวมเป็นเงิน:</span>
-              <span id="calc-subtotal" class="font-mono font-semibold text-slate-800">฿0.00</span>
-            </div>
-
+            <div class="flex justify-between items-center text-sm"><span class="text-slate-600">รวมเป็นเงิน:</span><span id="calc-subtotal" class="font-mono font-semibold text-slate-800">฿0.00</span></div>
             <div class="flex justify-between items-center text-sm gap-2">
               <span class="text-slate-600">ส่วนลดพิเศษ:</span>
               <div class="flex items-center gap-1 w-32">
-                <span class="text-xs text-slate-500">฿</span>
-                <input type="number" id="calc-discount" value="0" min="0" oninput="calculateTotals()" class="w-full text-right p-1 text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-sky-500">
+                <span class="text-xs text-slate-500">฿</span><input type="number" id="calc-discount" value="0" min="0" oninput="calculateTotals()" class="w-full text-right p-1 text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-sky-500">
               </div>
             </div>
+            <div class="flex justify-between items-center text-sm"><span class="text-slate-600">ยอดหลังหักส่วนลด:</span><span id="calc-after-discount" class="font-mono font-semibold text-slate-800">฿0.00</span></div>
 
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-slate-600">ยอดหลังหักส่วนลด:</span>
-              <span id="calc-after-discount" class="font-mono font-semibold text-slate-800">฿0.00</span>
-            </div>
-
-            <!-- Tax Toggles -->
             <div class="pt-2 border-t border-slate-200 grid grid-cols-2 gap-4">
-              <div>
-                <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" id="vat-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> VAT 7%
-                </label>
-                <div id="calc-vat" class="text-xs font-mono text-slate-500 mt-1 pl-6">฿0.00</div>
-              </div>
-              <div>
-                <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" id="wht-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> หัก ณ ที่จ่าย 3%
-                </label>
-                <div id="calc-wht" class="text-xs font-mono text-rose-500 mt-1 pl-6">-฿0.00</div>
-              </div>
+              <div><label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700"><input type="checkbox" id="vat-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> VAT 7%</label><div id="calc-vat" class="text-xs font-mono text-slate-500 mt-1 pl-6">฿0.00</div></div>
+              <div><label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700"><input type="checkbox" id="wht-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> หัก ณ ที่จ่าย 3%</label><div id="calc-wht" class="text-xs font-mono text-rose-500 mt-1 pl-6">-฿0.00</div></div>
             </div>
 
-            <div class="pt-3 border-t-2 border-slate-300 flex justify-between items-baseline">
-              <span class="text-sm font-bold text-slate-900 block">ยอดสุทธิที่ต้องชำระ:</span>
-              <span id="calc-grandtotal" class="text-2xl font-black font-mono text-sky-700">฿0.00</span>
-            </div>
+            <div class="pt-3 border-t-2 border-slate-300 flex justify-between items-baseline"><span class="text-sm font-bold text-slate-900 block">ยอดสุทธิรวมทั้งสิ้น:</span><span id="calc-grandtotal" class="text-2xl font-black font-mono text-sky-700">฿0.00</span></div>
             
-            <!-- Deposit Section -->
-            <div class="bg-sky-100/50 rounded-lg p-3 border border-sky-200 mt-2">
+            <div class="bg-indigo-50/50 rounded-lg p-3 border border-indigo-100 mt-3">
               <div class="flex items-center justify-between mb-2">
-                <label class="text-xs font-semibold text-sky-900 flex items-center gap-1.5">
-                  <input type="checkbox" id="deposit-toggle" checked onchange="calculateTotals()" class="rounded border-sky-300 text-sky-600"> เรียกเก็บมัดจำ
+                <label class="text-[11px] font-bold text-indigo-900 flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" id="deposit-toggle" onchange="calculateTotals()" class="rounded border-indigo-300 text-indigo-600 w-3.5 h-3.5"> เสนอราคามัดจำ (โชว์ในใบเสนอราคา)
                 </label>
-                <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-sky-200">
-                  <input type="number" id="deposit-percent" value="50" min="0" max="100" oninput="calculateTotals()" class="w-12 text-right text-xs bg-transparent focus:outline-none text-sky-900 font-bold">
-                  <span class="text-xs text-sky-700">%</span>
+                <div class="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-indigo-200">
+                  <input type="number" id="deposit-percent" value="50" min="0" max="100" oninput="calculateTotals()" class="w-10 text-right text-[11px] bg-transparent focus:outline-none text-indigo-900 font-bold">
+                  <span class="text-[11px] text-indigo-700">%</span>
                 </div>
               </div>
-              <div class="flex justify-between text-xs text-slate-600">
-                <span>ยอดมัดจำ:</span>
-                <span id="calc-deposit-amt" class="font-mono font-semibold text-sky-800">฿0.00</span>
-              </div>
-              <div class="flex justify-between text-xs text-slate-600 mt-1">
-                <span>ยอดคงเหลือ (จ่ายหลังจบงาน):</span>
-                <span id="calc-remaining-amt" class="font-mono font-semibold text-slate-800">฿0.00</span>
+              <div class="flex justify-between items-center text-[11px]">
+                <span class="text-slate-600">ยอดมัดจำที่เรียกเก็บ:</span>
+                <span id="calc-deposit-amt" class="font-mono font-bold text-indigo-800">฿0.00</span>
               </div>
             </div>
 
-            <!-- Fast Actions -->
+            <div class="bg-sky-100/50 rounded-lg p-3 border border-sky-200 mt-2">
+              <label class="text-[11px] font-bold text-sky-900 flex items-center gap-1.5 mb-2 cursor-pointer">
+                <input type="checkbox" id="payment-toggle" onchange="togglePaymentBox()" class="rounded border-sky-300 text-sky-600 w-3.5 h-3.5"> ระบบแบ่งจ่าย / บันทึกรับชำระเงิน
+              </label>
+              <div id="payment-box" class="hidden space-y-2 pt-2 border-t border-sky-200">
+                <div class="flex justify-between items-center text-[11px]"><span class="text-slate-600">ยอดที่เคยชำระแล้ว (ก่อนหน้า):</span><div class="flex items-center gap-1"><span class="text-slate-400">฿</span><input type="number" id="prev-paid" value="0" min="0" oninput="calculateTotals()" class="w-24 text-right p-1 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-sky-500"></div></div>
+                <div class="flex justify-between items-center text-[11px]"><span class="font-bold text-sky-800">ยอดชำระครั้งนี้:</span><div class="flex items-center gap-1"><span class="text-sky-600 font-bold">฿</span><input type="number" id="current-payment" value="0" min="0" oninput="calculateTotals()" class="w-24 text-right p-1 bg-white border border-sky-400 rounded focus:ring-1 focus:ring-sky-500 font-bold text-sky-700"></div></div>
+                <div class="flex justify-between items-center text-[11px] mt-1 pt-1 border-t border-dashed border-sky-300"><span class="font-bold text-rose-700">ยอดค้างชำระ (คงเหลือ):</span><span id="calc-remaining-amt" class="font-mono font-bold text-rose-700">฿0.00</span></div>
+              </div>
+            </div>
+
             <div class="pt-3 grid grid-cols-2 gap-2">
-              <button type="button" onclick="saveCurrentDoc()" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition">
-                <i data-lucide="save" class="w-4 h-4"></i> บันทึกข้อมูล
-              </button>
-              <button type="button" onclick="switchTab('preview')" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition">
-                <i data-lucide="printer" class="w-4 h-4"></i> ดูบิล & พิมพ์
-              </button>
+              <button type="button" onclick="saveCurrentDoc()" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition"><i data-lucide="save" class="w-4 h-4"></i> บันทึกข้อมูล</button>
+              <button type="button" onclick="switchTab('preview')" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition"><i data-lucide="printer" class="w-4 h-4"></i> ดูบิล & พิมพ์</button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- TAB 2: PREVIEW & PRINT -->
     <div id="tab-preview" class="hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 no-print">
-        <button onclick="switchTab('editor')" class="px-3.5 py-1.5 text-xs font-medium border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5">
-          <i data-lucide="arrow-left" class="w-4 h-4"></i> กลับไปแก้ไข
-        </button>
-        <button onclick="window.print()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm">
-          <i data-lucide="printer" class="w-4 h-4"></i> พิมพ์เอกสาร / บันทึก PDF
-        </button>
+        <button onclick="switchTab('editor')" class="px-3.5 py-1.5 text-xs font-medium border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"><i data-lucide="arrow-left" class="w-4 h-4"></i> กลับไปแก้ไข</button>
+        <button onclick="window.print()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ / Save PDF</button>
       </div>
 
       <div id="print-area" class="a4-page font-doc text-slate-900 border border-slate-200 sm:rounded-lg text-sm">
-        
-        <!-- Print Header -->
         <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-4">
           <div class="flex gap-4 max-w-[62%] items-start">
-            <img id="p-shop-logo" src="" alt="Logo" class="max-h-[70px] max-w-[100px] object-contain hidden border border-slate-200 rounded p-1">
+            <img id="p-shop-logo" src="" alt="Logo" class="max-h-[70px] max-w-[100px] object-contain hidden border-none rounded p-1">
             <div class="space-y-1">
-              <h2 id="p-shop-name" class="text-xl font-bold tracking-tight text-slate-900 leading-tight">อลูมิเนียม แอนด์ กลาส ดีไซน์</h2>
+              <h2 id="p-shop-name" class="text-xl font-bold tracking-tight text-slate-900 leading-tight">อลูมิเนียม แอนด์ กลาส</h2>
               <p id="p-shop-subtitle" class="text-xs text-slate-600"></p>
               <p id="p-shop-address" class="text-xs text-slate-600 pt-1"></p>
-              <div class="flex flex-wrap gap-x-4 text-xs text-slate-600 mt-1">
-                <span>โทร: <strong id="p-shop-phone"></strong></span>
-                <span>Line: <strong id="p-shop-line"></strong></span>
-                <span>เลขผู้เสียภาษี: <strong id="p-shop-taxid"></strong></span>
+              <div class="flex flex-wrap gap-x-4 text-[10px] text-slate-600 mt-1">
+                <span>โทร: <strong id="p-shop-phone"></strong></span><span>Line: <strong id="p-shop-line"></strong></span><span>เลขผู้เสียภาษี: <strong id="p-shop-taxid"></strong></span>
               </div>
             </div>
           </div>
           <div class="text-right">
             <div id="p-doc-title-badge" class="inline-block bg-slate-800 text-white px-4 py-1.5 rounded font-bold text-lg mb-2 uppercase tracking-wide">ใบเสนอราคา</div>
             <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest" id="p-doc-title-en">QUOTATION</div>
-            <div class="mt-2 text-xs space-y-0.5 text-slate-700">
-              <div>เลขที่เอกสาร: <strong id="p-doc-no" class="font-mono text-slate-900"></strong></div>
+            <div class="mt-2 text-[11px] space-y-0.5 text-slate-700 text-right w-full flex flex-col items-end">
+              <div>เลขที่: <strong id="p-doc-no" class="font-mono text-slate-900"></strong></div>
+              <div id="p-ref-no-container" class="hidden text-[10px] text-slate-500">อ้างอิง: <span id="p-ref-no"></span></div>
               <div>วันที่: <span id="p-doc-date"></span></div>
               <div id="p-due-date-container">กำหนด: <span id="p-due-date"></span></div>
             </div>
           </div>
         </div>
 
-        <!-- Print Customer -->
-        <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs mb-4">
+        <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200 text-[11px] mb-4">
           <div>
-            <span class="font-bold text-slate-700 block mb-1">ข้อมูลลูกค้า / ผู้รับ:</span>
-            <div class="font-bold text-sm text-slate-900" id="p-cust-name">-</div>
+            <span class="font-bold text-slate-700 block mb-1">ลูกค้า / ผู้รับ:</span>
+            <div class="font-bold text-[13px] text-slate-900" id="p-cust-name">-</div>
             <div id="p-cust-address" class="text-slate-600 mt-0.5">-</div>
             <div class="mt-1 text-slate-600">โทร: <strong id="p-cust-phone" class="text-slate-800">-</strong> | TAX ID: <span id="p-cust-taxid">-</span></div>
           </div>
           <div class="border-l border-slate-200 pl-4">
             <span class="font-bold text-slate-700 block mb-1">รายละเอียดหน้างาน:</span>
             <div>โครงการ: <strong id="p-project-name" class="text-slate-900">-</strong></div>
-            <div>ผู้รับผิดชอบ/ช่าง: <span id="p-sales-name" class="text-slate-800">-</strong></div>
-            <div class="mt-2 text-[10px] text-slate-500 bg-white p-1 rounded border border-slate-200 italic" id="p-standard-spec">
-              <!-- Standard spec injected here -->
-            </div>
+            <div>ผู้รับผิดชอบ/ช่าง: <span id="p-sales-name" class="text-slate-800">-</span></div>
+            <div class="mt-2 text-[10px] text-slate-500 bg-white p-1.5 rounded border border-slate-200 italic leading-relaxed" id="p-standard-spec"></div>
           </div>
         </div>
 
-        <!-- Print Items Table -->
         <div class="mb-4 min-h-[150px]">
-          <table class="w-full text-xs text-left border-collapse">
+          <table class="w-full text-[11px] text-left border-collapse">
             <thead>
               <tr class="bg-slate-800 text-white font-semibold">
-                <th class="py-2 px-2 text-center w-8 border border-slate-700">#</th>
-                <th class="py-2 px-3 border border-slate-700">รายการสินค้า / รายละเอียด</th>
-                <th class="py-2 px-2 text-center w-16 border border-slate-700">กxส(ม.)</th>
-                <th class="py-2 px-2 text-center w-14 border border-slate-700">ตร.ม.</th>
-                <th class="py-2 px-2 text-center w-16 border border-slate-700">จำนวน/หน่วย</th>
-                <th class="py-2 px-3 text-right w-20 border border-slate-700">ราคา/หน่วย</th>
-                <th class="py-2 px-3 text-right w-24 border border-slate-700">จำนวนเงิน</th>
+                <th class="py-1.5 px-2 text-center w-8 border border-slate-700">#</th>
+                <th class="py-1.5 px-3 border border-slate-700">รายการสินค้า / รายละเอียด</th>
+                <th class="py-1.5 px-2 text-center w-14 border border-slate-700">กxส(ม.)</th>
+                <th class="py-1.5 px-2 text-center w-12 border border-slate-700">ตร.ม.</th>
+                <th class="py-1.5 px-2 text-center w-14 border border-slate-700">จำนวน</th>
+                <th class="py-1.5 px-2 text-right w-20 border border-slate-700">ราคา/หน่วย</th>
+                <th class="py-1.5 px-2 text-right w-24 border border-slate-700">จำนวนเงิน</th>
               </tr>
             </thead>
-            <tbody id="p-items-tbody" class="align-top">
-              <!-- Items injected here -->
-            </tbody>
+            <tbody id="p-items-tbody" class="align-top"></tbody>
           </table>
         </div>
 
-        <!-- Print Summary -->
-        <div class="grid grid-cols-12 gap-4 text-xs mb-6">
+        <div class="grid grid-cols-12 gap-4 text-[11px] mb-6">
           <div class="col-span-7 flex flex-col">
             <div class="bg-slate-50 p-2.5 rounded border border-slate-200 h-full">
-              <span class="font-bold block text-slate-800 mb-1">หมายเหตุและเงื่อนไข:</span>
-              <p id="p-notes" class="text-[11px] text-slate-600 whitespace-pre-line leading-relaxed"></p>
+              <span class="font-bold block text-slate-800 mb-1">หมายเหตุ/เงื่อนไข:</span>
+              <p id="p-notes" class="text-[10px] text-slate-600 whitespace-pre-line leading-relaxed"></p>
             </div>
           </div>
           
           <div class="col-span-5 space-y-1">
-            <div class="flex justify-between py-0.5">
-              <span>รวมเป็นเงิน:</span><span id="p-calc-subtotal" class="font-mono">฿0.00</span>
-            </div>
-            <div class="flex justify-between py-0.5" id="p-discount-row">
-              <span>หักส่วนลด:</span><span id="p-calc-discount" class="font-mono text-rose-600">-฿0.00</span>
-            </div>
-            <div class="flex justify-between py-0.5" id="p-vat-row">
-              <span>VAT 7%:</span><span id="p-calc-vat" class="font-mono">฿0.00</span>
-            </div>
-            <div class="flex justify-between py-0.5" id="p-wht-row">
-              <span>หัก ณ ที่จ่าย 3%:</span><span id="p-calc-wht" class="font-mono text-rose-600">-฿0.00</span>
-            </div>
-            <div class="flex justify-between py-1.5 border-t-2 border-b-2 border-slate-800 font-bold text-sm bg-slate-100 px-2 rounded mt-1">
-              <span>ยอดสุทธิทั้งสิ้น:</span><span id="p-calc-grandtotal" class="font-mono text-slate-900">฿0.00</span>
-            </div>
-            <div class="text-right text-[11px] text-slate-500 italic pb-2" id="p-baht-text">(ศูนย์บาทถ้วน)</div>
+            <div class="flex justify-between py-0.5"><span>รวมเป็นเงิน:</span><span id="p-calc-subtotal" class="font-mono">฿0.00</span></div>
+            <div class="flex justify-between py-0.5 text-rose-600" id="p-discount-row"><span>หักส่วนลด:</span><span id="p-calc-discount" class="font-mono">-฿0.00</span></div>
+            <div class="flex justify-between py-0.5" id="p-vat-row"><span>VAT 7%:</span><span id="p-calc-vat" class="font-mono">฿0.00</span></div>
+            <div class="flex justify-between py-0.5 text-rose-600" id="p-wht-row"><span>หัก ณ ที่จ่าย 3%:</span><span id="p-calc-wht" class="font-mono">-฿0.00</span></div>
+            <div class="flex justify-between py-1.5 border-t-2 border-b-2 border-slate-800 font-bold text-[13px] bg-slate-100 px-2 rounded mt-1"><span>ยอดสุทธิทั้งสิ้น:</span><span id="p-calc-grandtotal" class="font-mono text-slate-900">฿0.00</span></div>
+            <div class="text-right text-[10px] text-slate-500 italic pb-2" id="p-baht-text">(ศูนย์บาทถ้วน)</div>
             
-            <!-- Print Deposit info if active -->
-            <div id="p-deposit-box" class="mt-2 pt-2 border-t border-dashed border-slate-300">
-              <div class="flex justify-between py-0.5 font-bold text-sky-800">
-                <span id="p-deposit-label">มัดจำ (50%):</span><span id="p-deposit-amt" class="font-mono">฿0.00</span>
+            <div id="p-deposit-request-box" class="mt-2 pt-2 border-t border-dashed border-slate-300 hidden">
+              <div class="flex justify-between py-0.5 font-bold text-indigo-800 text-[12px]">
+                <span id="p-deposit-req-label">ยอดมัดจำที่เรียกเก็บ:</span><span id="p-deposit-req-amt" class="font-mono">฿0.00</span>
               </div>
-              <div class="flex justify-between py-0.5 font-bold text-slate-700">
-                <span>ยอดคงเหลือ:</span><span id="p-remaining-amt" class="font-mono">฿0.00</span>
+            </div>
+
+            <div id="p-payment-box" class="mt-2 pt-2 border-t border-dashed border-slate-300 hidden">
+              <div class="flex justify-between py-0.5 font-bold text-slate-500" id="p-prev-paid-row"><span>หัก ยอดที่เคยชำระแล้ว:</span><span id="p-prev-paid-amt" class="font-mono">-฿0.00</span></div>
+              <div class="flex justify-between py-0.5 font-bold text-sky-800 text-[12px] border-b border-slate-200 pb-1 mb-1">
+                <span id="p-deposit-label">ยอดชำระครั้งนี้:</span><span id="p-deposit-amt" class="font-mono">฿0.00</span>
               </div>
+              <div class="flex justify-between py-0.5 font-bold text-rose-700"><span>ยอดคงเหลือค้างชำระ:</span><span id="p-remaining-amt" class="font-mono">฿0.00</span></div>
             </div>
           </div>
         </div>
 
-        <div class="border border-sky-200 bg-sky-50 text-[11px] text-sky-900 p-2 rounded mb-6">
-          <strong>การชำระเงิน:</strong> <span id="p-bank-info">-</span>
-        </div>
+        <div class="border border-sky-200 bg-sky-50 text-[10px] text-sky-900 p-2 rounded mb-6"><strong>การชำระเงิน:</strong> <span id="p-bank-info">-</span></div>
 
-        <!-- Print Signatures -->
-        <div class="grid grid-cols-3 gap-4 text-center text-xs pt-4">
+        <div class="grid grid-cols-3 gap-4 text-center text-[11px] pt-4">
           <div>
-            <div class="h-12 flex items-end justify-center"><div class="w-36 border-b border-dashed border-slate-400"></div></div>
-            <p class="mt-1 text-slate-800">(....................................................)</p>
+            <div class="h-12 flex items-end justify-center"><div class="w-32 border-b border-dashed border-slate-400"></div></div>
+            <p class="mt-1 text-slate-800">(..........................................)</p>
             <p class="text-slate-600 font-bold mt-0.5" id="sig1-title">ผู้เสนอราคา</p>
-            <p class="text-slate-400 text-[10px]">วันที่ ......./......./...........</p>
+            <p class="text-slate-400 text-[9px] mt-0.5">วันที่ ......./......./...........</p>
           </div>
           <div>
-            <div class="h-12 flex items-end justify-center"><div class="w-36 border-b border-dashed border-slate-400"></div></div>
-            <p class="mt-1 text-slate-800">(....................................................)</p>
-            <p class="text-slate-600 font-bold mt-0.5" id="sig2-title">ผู้อนุมัติสั่งซื้อ / ผู้ว่าจ้าง</p>
-            <p class="text-slate-400 text-[10px]">วันที่ ......./......./...........</p>
+            <div class="h-12 flex items-end justify-center"><div class="w-32 border-b border-dashed border-slate-400"></div></div>
+            <p class="mt-1 text-slate-800">(..........................................)</p>
+            <p class="text-slate-600 font-bold mt-0.5" id="sig2-title">ผู้อนุมัติสั่งซื้อ</p>
+            <p class="text-slate-400 text-[9px] mt-0.5">วันที่ ......./......./...........</p>
           </div>
           <div>
-            <div class="h-12 flex items-end justify-center"><div class="w-36 border-b border-dashed border-slate-400"></div></div>
-            <p class="mt-1 text-slate-800">(....................................................)</p>
+            <div class="h-12 flex items-end justify-center"><div class="w-32 border-b border-dashed border-slate-400"></div></div>
+            <p class="mt-1 text-slate-800">(..........................................)</p>
             <p class="text-slate-600 font-bold mt-0.5" id="sig3-title">ผู้มีอำนาจลงนาม</p>
-            <p class="text-slate-400 text-[10px]">วันที่ ......./......./...........</p>
+            <p class="text-slate-400 text-[9px] mt-0.5">วันที่ ......./......./...........</p>
           </div>
         </div>
-
       </div>
     </div>
 
     <div id="tab-history" class="hidden space-y-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="archive" class="w-5 h-5 text-sky-600"></i> ประวัติการออกบิล
-          </h2>
-          <button onclick="createNewDocument()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-semibold">สร้างเอกสารใหม่</button>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div class="text-[11px] font-bold text-slate-500 mb-1">ยอดขายรวม (ทั้งหมด)</div>
+          <div class="text-xl font-black font-mono text-slate-800" id="dash-total-sales">฿0.00</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200 bg-emerald-50/30">
+          <div class="text-[11px] font-bold text-emerald-600 mb-1">กำไรสุทธิโดยประมาณ</div>
+          <div class="text-xl font-black font-mono text-emerald-700" id="dash-total-profit">฿0.00</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-200 bg-rose-50/30">
+          <div class="text-[11px] font-bold text-rose-600 mb-1">หนี้คงค้าง (รอรับชำระ)</div>
+          <div class="text-xl font-black font-mono text-rose-700" id="dash-total-debt">฿0.00</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="archive" class="w-5 h-5 text-sky-600"></i> ประวัติงานและบิลทั้งหมด</h2>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <div class="relative flex-1 sm:w-64">
+              <input type="text" id="search-history" placeholder="ค้นหาเลขที่, ลูกค้า..." onkeyup="renderHistory()" class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500 bg-slate-50">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2"></i>
+            </div>
+            <button onclick="createNewDocument()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-semibold whitespace-nowrap">+ สร้างบิลใหม่</button>
+          </div>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead class="bg-slate-50 border-b border-slate-200">
+          <table class="w-full text-[11px] text-left">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600">
               <tr>
-                <th class="py-2 px-2">เลขที่</th>
+                <th class="py-2 px-2">เลขที่ / อ้างอิง</th>
                 <th class="py-2 px-2">ประเภท</th>
                 <th class="py-2 px-2">ลูกค้า/โครงการ</th>
                 <th class="py-2 px-2">วันที่</th>
-                <th class="py-2 px-2 text-right">ยอดสุทธิ</th>
-                <th class="py-2 px-2 text-center">จัดการ</th>
+                <th class="py-2 px-2 text-right">ยอดสุทธิ (ค้างชำระ)</th>
+                <th class="py-2 px-2 text-center w-32">สถานะงาน</th>
+                <th class="py-2 px-2 text-center w-40">จัดการ</th>
               </tr>
             </thead>
             <tbody id="history-tbody" class="divide-y divide-slate-100"></tbody>
@@ -464,19 +379,13 @@
     </div>
 
     <div id="tab-settings" class="hidden space-y-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6 max-w-3xl mx-auto">
-        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-          <i data-lucide="store" class="w-5 h-5 text-sky-600"></i> ข้อมูลร้านค้าและสเปกมาตรฐาน
-        </h2>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 max-w-3xl mx-auto">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3"><i data-lucide="store" class="w-5 h-5 text-sky-600"></i> ข้อมูลร้านค้าและสเปกมาตรฐาน</h2>
         <div class="space-y-4 text-xs">
-          
           <div class="flex flex-col sm:flex-row gap-4 mb-4 items-start border-b border-slate-100 pb-4">
             <div class="w-32 h-32 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center overflow-hidden relative group">
               <img id="setting-logo-preview" src="" class="w-full h-full object-contain hidden bg-white">
-              <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:bg-slate-900/10 transition cursor-pointer" onclick="document.getElementById('setting-shop-logo').click()">
-                <i data-lucide="image-plus" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px]">คลิกเพิ่มโลโก้</span>
-              </div>
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:bg-slate-900/10 transition cursor-pointer" onclick="document.getElementById('setting-shop-logo').click()"><i data-lucide="image-plus" class="w-6 h-6 mb-1"></i><span class="text-[10px]">เพิ่มโลโก้</span></div>
               <input type="file" id="setting-shop-logo" accept="image/*" class="hidden" onchange="handleLogoUpload(this)">
             </div>
             <div class="flex-1 space-y-4 w-full">
@@ -484,7 +393,6 @@
               <div><label class="block font-medium mb-1">สโลแกน / บริการ</label><input type="text" id="setting-shop-subtitle" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
             </div>
           </div>
-
           <div><label class="block font-medium mb-1">ที่อยู่ร้าน</label><textarea id="setting-shop-address" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></textarea></div>
           <div class="grid grid-cols-3 gap-3">
             <div><label class="block font-medium mb-1">เบอร์โทร</label><input type="text" id="setting-shop-phone" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
@@ -492,38 +400,20 @@
             <div><label class="block font-medium mb-1">เลขผู้เสียภาษี</label><input type="text" id="setting-shop-taxid" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
           </div>
           <div><label class="block font-medium mb-1">บัญชีรับชำระเงิน (แสดงท้ายบิล)</label><input type="text" id="setting-bank-info" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
-          <div>
-            <label class="block font-medium mb-1">ข้อความสเปกมาตรฐาน (แสดงใต้ชื่อลูกค้าเวลาพิมพ์)</label>
-            <textarea id="setting-standard-spec" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500 bg-slate-50"></textarea>
-          </div>
-          <div class="pt-4 flex justify-end">
-            <button onclick="saveStoreSettings()" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold">บันทึกตั้งค่า</button>
-          </div>
+          <div><label class="block font-medium mb-1">ข้อความสเปกมาตรฐาน (แสดงใต้ชื่อลูกค้าเวลาพิมพ์)</label><textarea id="setting-standard-spec" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500 bg-slate-50"></textarea></div>
+          <div class="pt-4 flex justify-end"><button onclick="saveStoreSettings()" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold">บันทึกตั้งค่าร้าน</button></div>
         </div>
       </div>
     </div>
 
-    <!-- Preset Manager Modal -->
-    <div id="preset-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <!-- Generic List Modal -->
+    <div id="generic-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
       <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-5 overflow-hidden flex flex-col max-h-[90vh]">
         <div class="flex justify-between items-center border-b pb-3 mb-3">
-          <h3 class="text-base font-bold text-slate-800">จัดการแบบสินค้า (Presets)</h3>
-          <button onclick="closePresetModal()" class="text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+          <h3 id="gmodal-title" class="text-base font-bold text-slate-800">จัดการข้อมูล</h3>
+          <button onclick="closeGenericModal()" class="text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
-        <div class="flex-1 overflow-y-auto pr-2 space-y-3" id="preset-modal-list">
-          <!-- Populated via JS -->
-        </div>
-        <div class="pt-4 border-t mt-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-          <h4 class="text-xs font-bold mb-2">เพิ่มพรีเซ็ตใหม่ด่วน</h4>
-          <div class="flex gap-2">
-            <input type="text" id="new-preset-name" placeholder="ชื่อแบบสินค้าใหม่" class="flex-1 p-2 text-xs border rounded">
-            <select id="new-preset-type" class="p-2 text-xs border rounded">
-              <option value="alu">งานอลูมิเนียม (กxส)</option>
-              <option value="general">สินค้าทั่วไป</option>
-            </select>
-            <button onclick="createEmptyPreset()" class="px-3 py-2 bg-sky-600 text-white text-xs rounded font-bold">เพิ่ม</button>
-          </div>
-        </div>
+        <div class="flex-1 overflow-y-auto pr-2 space-y-2" id="gmodal-list"></div>
       </div>
     </div>
 
@@ -531,13 +421,12 @@
     <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium">
       <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i><span id="toast-msg"></span>
     </div>
-
   </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -550,79 +439,46 @@
         db = getFirestore(app);
     }
 
-    // System State
     const state = {
-      currentTab: 'editor',
-      docType: 'quotation',
-      docNo: 'QT-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + '-001',
+      currentTab: 'editor', docType: 'quotation',
+      docNo: '', refNo: '',
       docDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-      salesName: 'ช่างบอย',
-      depositEnabled: true,
-      depositPercent: 50,
-      customer: {
-        name: 'คุณวิชัย เจริญกิจ', phone: '081-987-6543', taxId: '', address: '88/12 จ.นนทบุรี', project: 'กั้นห้องกระจกชั้น 1'
-      },
+      salesName: 'พนักงานขาย 1',
+      customer: { name: '', phone: '', taxId: '', address: '', project: '' },
       shop: {
-        name: 'Sumran Aluminum (สำราญ อลูมิเนียม)',
-        subtitle: 'รับติดตั้ง กระจก บานเลื่อน บานสวิง บานกระทุ้ง',
-        address: '45/8 ถ.รัตนาธิเบศร์ จ.นนทบุรี 11000',
-        phone: '089-555-8899', line: '@sumran_alu', taxId: '0125565001234',
+        name: 'Sumran Aluminum (สำราญ อลูมิเนียม)', subtitle: 'รับติดตั้ง กระจก บานเลื่อน บานสวิง บานกระทุ้ง',
+        address: '45/8 ถ.รัตนาธิเบศร์ จ.นนทบุรี 11000', phone: '089-555-8899', line: '@sumran_alu', taxId: '0125565001234',
         bank: 'ธ.กสิกรไทย 045-8-91234-5 ชื่อบัญชี บจก. สำราญ อลูมิเนียม',
-        standardSpec: '* สเปกมาตรฐาน: อลูมิเนียมหนา 1.2 มม. กระจกหนา 6 มม. (มอก.) พร้อมซีลยางกันน้ำ EPDM อย่างดี',
-        logo: null
+        standardSpec: '* สเปกมาตรฐาน: อลูมิเนียมหนา 1.2 มม. กระจกหนา 6 มม. พร้อมซีลยางกันน้ำ', logo: null
       },
       items: [
-        {
-          id: 'item-1', type: 'alu', name: 'ชุดหน้าต่างบานเลื่อนสลับ (2 บาน)',
-          aluColor: 'อบขาว', glassType: 'กระจกเขียวตัดแสง 6 มม.',
-          width: 1.6, height: 1.2, area: 1.92, qty: 2, unit: 'ชุด',
-          pricingType: 'per_sqm', unitPrice: 2200, total: 8448
-        }
+        { id: 'item-1', type: 'alu', name: 'ชุดหน้าต่างบานเลื่อนสลับ (2 บาน)', aluColor: 'อบขาว', glassType: 'เขียวตัดแสง 6 มม.', width: 1.6, height: 1.2, area: 1.92, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 2200, total: 4224 }
       ],
       presets: [
         { id: 'p1', type: 'alu', name: 'บานเลื่อน 2 บาน', icon: 'columns-2', aluColor: 'อบขาว', glassType: 'เขียว 6mm', width: 1.6, height: 1.2, unit: 'ชุด', price: 2100, priceType: 'per_sqm' },
-        { id: 'p2', type: 'alu', name: 'บานกระทุ้ง', icon: 'panel-top-open', aluColor: 'ดำด้าน', glassType: 'ฝ้า 5mm', width: 0.6, height: 0.8, unit: 'บาน', price: 2500, priceType: 'per_unit' },
-        { id: 'p3', type: 'general', name: 'ตู้กระจกสำเร็จรูป', icon: 'package', aluColor: '-', glassType: '-', width: 0, height: 0, unit: 'ตู้', price: 4500, priceType: 'per_unit' },
-        { id: 'p4', type: 'general', name: 'ค่าแรงติดตั้ง/ขนส่ง', icon: 'wrench', aluColor: '-', glassType: '-', width: 0, height: 0, unit: 'งาน', price: 1500, priceType: 'per_unit' }
+        { id: 'p2', type: 'general', name: 'ตู้กระจกสำเร็จรูป', icon: 'package', aluColor: '-', glassType: '-', width: 0, height: 0, unit: 'ตู้', price: 4500, priceType: 'per_unit' }
       ],
-      notes: "1. มัดจำเพื่อยืนยันการสั่งผลิตชิ้นงาน\n2. ชำระส่วนที่เหลือเมื่อติดตั้งเสร็จเรียบร้อย\n3. รับประกันการรั่วซึม 1 ปี",
-      discount: 0, vatEnabled: false, whtEnabled: false, history: []
+      savedCustomers: [], savedSales: [],
+      notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
+      discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
+      isLumpSum: false, lumpSumAmt: 0,
+      depositEnabled: false, depositPercent: 50, depositAmt: 0,
+      paymentEnabled: false, prevPaid: 0, currentPayment: 0, history: []
     };
 
-    // Safe Helpers
-    function safeSetValue(id, val) {
-      const el = document.getElementById(id);
-      if (el) el.value = val !== undefined ? val : '';
-    }
-    function safeSetText(id, text) {
-      const el = document.getElementById(id);
-      if (el) el.innerText = text || '-';
-    }
-    function safeSetChecked(id, isChecked) {
-      const el = document.getElementById(id);
-      if (el) el.checked = !!isChecked;
-    }
-    function escapeHtml(str) {
-      return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-    }
-    function showToast(msg) {
-      safeSetText('toast-msg', msg);
-      const t = document.getElementById('toast');
-      t.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500);
-    }
-    function formatDateThai(dateStr) {
-      if (!dateStr) return '-';
-      const p = dateStr.split('-');
-      return p.length === 3 ? `${p[2]}/${p[1]}/${parseInt(p[0])+543}` : dateStr;
-    }
+    function safeSetValue(id, val) { const el = document.getElementById(id); if(el) el.value = val !== undefined ? val : ''; }
+    function safeSetText(id, text) { const el = document.getElementById(id); if(el) el.innerText = text || '-'; }
+    function safeSetChecked(id, is) { const el = document.getElementById(id); if(el) el.checked = !!is; }
+    function escapeHtml(str) { return String(str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function showToast(msg) { safeSetText('toast-msg', msg); const t = document.getElementById('toast'); t.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500); }
+    function formatDateThai(dStr) { if(!dStr) return '-'; const p=dStr.split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${parseInt(p[0])+543}` : dStr; }
+    
     function thaiBahtConversion(num) {
       if (isNaN(num) || num === 0) return 'ศูนย์บาทถ้วน';
       const tNum = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
       const tUnit = ['','สิบ','ร้อย','พัน','หมื่น','แสน','ล้าน'];
       let [intP, decP] = Math.round(num * 100).toString().padStart(3, '0').match(/(.*)(..)$/).slice(1);
-      
       const cvt = (str) => {
         let res = '';
         for (let i = 0; i < str.length; i++) {
@@ -636,119 +492,58 @@
         }
         return res;
       };
-      
-      let res = '';
-      if (intP.length > 6) {
-        res += cvt(intP.slice(0, -6)) + 'ล้าน' + cvt(intP.slice(-6)) + 'บาท';
-      } else {
-        res += cvt(intP) + 'บาท';
-      }
+      let res = intP.length > 6 ? cvt(intP.slice(0, -6)) + 'ล้าน' + cvt(intP.slice(-6)) + 'บาท' : cvt(intP) + 'บาท';
       return res + (decP === '00' ? 'ถ้วน' : cvt(decP) + 'สตางค์');
     }
 
     async function initFirebase() {
-        if (!auth) return;
-        try {
-            if (initialToken) {
-                await signInWithCustomToken(auth, initialToken);
-            } else {
-                await signInAnonymously(auth);
+      if (!auth) return;
+      try {
+        if (initialToken) await signInWithCustomToken(auth, initialToken);
+        else await signInAnonymously(auth);
+        userId = auth.currentUser?.uid;
+        if (userId) {
+          onSnapshot(doc(db, 'artifacts', appId, 'users', userId, 'settings', 'shopData'), (snap) => {
+            if (snap.exists()) {
+              state.shop = { ...state.shop, ...snap.data() };
+              ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
+              if(state.shop.logo) { document.getElementById('setting-logo-preview').src = state.shop.logo; document.getElementById('setting-logo-preview').classList.remove('hidden'); }
             }
-            userId = auth.currentUser?.uid;
-            if (userId) {
-                // Listen Settings
-                onSnapshot(doc(db, 'artifacts', appId, 'users', userId, 'settings', 'shopData'), (snap) => {
-                    if (snap.exists()) {
-                        state.shop = { ...state.shop, ...snap.data() };
-                        safeSetValue('setting-shop-name', state.shop.name);
-                        safeSetValue('setting-shop-subtitle', state.shop.subtitle);
-                        safeSetValue('setting-shop-address', state.shop.address);
-                        safeSetValue('setting-shop-phone', state.shop.phone);
-                        safeSetValue('setting-shop-line', state.shop.line);
-                        safeSetValue('setting-shop-taxid', state.shop.taxId);
-                        safeSetValue('setting-bank-info', state.shop.bank);
-                        safeSetValue('setting-standard-spec', state.shop.standardSpec);
-                        if (state.shop.logo) {
-                            const pLogo = document.getElementById('setting-logo-preview');
-                            if(pLogo) { pLogo.src = state.shop.logo; pLogo.classList.remove('hidden'); }
-                        }
-                    }
-                }, err => console.error(err));
-
-                // Listen Presets
-                onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'presets'), (snap) => {
-                    const loaded = [];
-                    snap.forEach(d => loaded.push(d.data()));
-                    if (loaded.length > 0) {
-                        state.presets = loaded;
-                        renderPresets();
-                        renderPresetModalList();
-                    }
-                }, err => console.error(err));
-
-                // Listen History
-                onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'history'), (snap) => {
-                    const hist = [];
-                    snap.forEach(d => hist.push(d.data()));
-                    state.history = hist.sort((a,b) => b.id.localeCompare(a.id));
-                    renderHistory();
-                }, err => console.error(err));
-            }
-        } catch (e) {
-            console.error("Firebase Init Error:", e);
+          });
+          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'presets'), (snap) => {
+            state.presets = []; snap.forEach(d => state.presets.push(d.data())); renderPresets();
+          });
+          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'history'), (snap) => {
+            state.history = []; snap.forEach(d => state.history.push(d.data()));
+            state.history.sort((a,b) => b.id.localeCompare(a.id)); renderHistory();
+          });
+          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'customers'), (snap) => {
+            state.savedCustomers = []; snap.forEach(d => state.savedCustomers.push(d.data())); renderDatalists();
+          });
+          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'sales'), (snap) => {
+            state.savedSales = []; snap.forEach(d => state.savedSales.push(d.data())); renderDatalists();
+          });
         }
+      } catch (e) { console.error("Firebase Init Error:", e); }
     }
 
     window.onload = async function() {
       try {
+        generateAutoDocNo('quotation');
         await initFirebase();
-        // Init Editor Fields
-        safeSetValue('docNo', state.docNo);
-        safeSetValue('docDate', state.docDate);
-        safeSetValue('dueDate', state.dueDate);
-        safeSetValue('salesName', state.salesName);
-        safeSetValue('custName', state.customer.name);
-        safeSetValue('custPhone', state.customer.phone);
-        safeSetValue('custTaxId', state.customer.taxId);
-        safeSetValue('custAddress', state.customer.address);
-        safeSetValue('projectName', state.customer.project);
-        safeSetValue('docNotes', state.notes);
-        safeSetValue('calc-discount', state.discount);
-        safeSetChecked('deposit-toggle', state.depositEnabled);
-        safeSetValue('deposit-percent', state.depositPercent);
-
-        // Init Settings Fields
-        safeSetValue('setting-shop-name', state.shop.name);
-        safeSetValue('setting-shop-subtitle', state.shop.subtitle);
-        safeSetValue('setting-shop-address', state.shop.address);
-        safeSetValue('setting-shop-phone', state.shop.phone);
-        safeSetValue('setting-shop-line', state.shop.line);
-        safeSetValue('setting-shop-taxid', state.shop.taxId);
-        safeSetValue('setting-bank-info', state.shop.bank);
-        safeSetValue('setting-standard-spec', state.shop.standardSpec);
-
-        if (state.shop.logo) {
-          document.getElementById('setting-logo-preview').src = state.shop.logo;
-          document.getElementById('setting-logo-preview').classList.remove('hidden');
-        }
-
-        renderPresets();
-        renderItems();
-        calculateTotals();
-        saveCurrentDoc(); // Initial history seed
+        safeSetValue('docNo', state.docNo); safeSetValue('docDate', state.docDate); safeSetValue('dueDate', state.dueDate);
+        safeSetValue('salesName', state.salesName); safeSetValue('docNotes', state.notes);
+        ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
+        renderPresets(); renderItems(); calculateTotals();
         if(window.lucide) window.lucide.createIcons();
-      } catch (e) {
-        console.error("Initialization error:", e);
-      }
+      } catch (e) { console.error("Init error:", e); }
     };
 
     function switchTab(tab) {
       state.currentTab = tab;
       ['editor', 'preview', 'history', 'settings'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
-        const btn = document.getElementById(`tab-btn-${t}`);
-        if(t === tab) btn.className = "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow";
-        else btn.className = "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white";
+        document.getElementById(`tab-btn-${t}`).className = t === tab ? "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow" : "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white";
       });
       if (tab === 'preview') renderPreview();
       else if (tab === 'history') renderHistory();
@@ -756,14 +551,20 @@
       window.scrollTo(0, 0);
     }
 
+    function generateAutoDocNo(type) {
+      const pfx = { quotation: 'QT', delivery: 'DO', invoice: 'IV', receipt: 'RE', cashbill: 'CS' }[type] || 'QT';
+      const d = new Date(); const ym = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0');
+      let last = 0;
+      state.history.filter(h => h.docNo.startsWith(pfx + '-' + ym)).forEach(h => {
+        let n = parseInt(h.docNo.split('-')[2]); if(n > last) last = n;
+      });
+      state.docNo = `${pfx}-${ym}-${String(last + 1).padStart(3, '0')}`;
+      safeSetValue('docNo', state.docNo);
+    }
+
     function updateDocType(val) {
       state.docType = val;
-      const prefixes = { quotation: 'QT-', delivery: 'DO-', invoice: 'INV-', receipt: 'RC-', cashbill: 'CSH-' };
-      const curParts = state.docNo.split('-');
-      if(curParts.length >= 2) {
-        state.docNo = (prefixes[val] || 'QT-') + curParts.slice(1).join('-');
-        safeSetValue('docNo', state.docNo);
-      }
+      generateAutoDocNo(val);
       showToast('เปลี่ยนประเภทบิลเป็น ' + val);
     }
 
@@ -771,195 +572,110 @@
       const container = document.getElementById('presets-container');
       container.innerHTML = '';
       state.presets.forEach(p => {
-        const isGeneral = p.type === 'general';
-        const colorClass = isGeneral ? 'bg-amber-500/20 text-amber-300 hover:border-amber-400/40' : 'bg-sky-500/20 text-sky-300 hover:border-sky-400/40';
-        container.innerHTML += `
-          <button type="button" onclick="applyPreset('${p.id}')" class="group p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition text-left flex flex-col justify-between">
-            <div class="w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center mb-2 group-hover:scale-110 transition">
-              <i data-lucide="${p.icon || 'box'}" class="w-4 h-4"></i>
-            </div>
-            <div>
-              <div class="text-[11px] font-bold text-white leading-tight">${escapeHtml(p.name)}</div>
-              <div class="text-[10px] text-slate-400 mt-1">${isGeneral ? 'ทั่วไป' : 'งานกระจก'}</div>
-            </div>
-          </button>
-        `;
+        const cl = p.type === 'general' ? 'bg-amber-500/20 text-amber-300 hover:border-amber-400/40' : 'bg-sky-500/20 text-sky-300 hover:border-sky-400/40';
+        container.innerHTML += `<button type="button" onclick="applyPreset('${p.id}')" class="group p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition text-left flex flex-col justify-between"><div class="w-8 h-8 rounded-lg ${cl} flex items-center justify-center mb-2 group-hover:scale-110 transition"><i data-lucide="${p.icon || 'box'}" class="w-4 h-4"></i></div><div><div class="text-[11px] font-bold text-white leading-tight">${escapeHtml(p.name)}</div><div class="text-[10px] text-slate-400 mt-1">${p.type === 'general' ? 'ทั่วไป' : 'งานกระจก'}</div></div></button>`;
       });
       if(window.lucide) window.lucide.createIcons();
     }
 
     function applyPreset(pid) {
-      const p = state.presets.find(x => x.id === pid);
-      if(!p) return;
-      
-      const item = {
-        id: 'item-' + Date.now(),
-        type: p.type,
-        name: p.name,
-        aluColor: p.aluColor, glassType: p.glassType,
-        width: p.width, height: p.height,
-        area: +(p.width * p.height).toFixed(2),
-        qty: 1, unit: p.unit || (p.type === 'alu' ? 'ชุด' : 'ชิ้น'),
-        pricingType: p.priceType, unitPrice: p.price, total: 0
-      };
-      
-      item.total = item.pricingType === 'per_sqm' ? (item.area > 0 ? item.area * item.unitPrice : item.unitPrice) : (item.unitPrice);
-      state.items.push(item);
-      renderItems();
-      calculateTotals();
-      showToast(`เพิ่ม "${p.name}" แล้ว`);
+      const p = state.presets.find(x => x.id === pid); if(!p) return;
+      const i = { id: 'item-'+Date.now(), type: p.type, name: p.name, aluColor: p.aluColor, glassType: p.glassType, width: p.width, height: p.height, area: +(p.width*p.height).toFixed(2), qty: 1, unit: p.unit||'ชุด', pricingType: p.priceType, unitPrice: p.price, total: 0 };
+      i.total = i.pricingType === 'per_sqm' ? (i.area>0?i.area*i.unitPrice:i.unitPrice) : i.unitPrice;
+      state.items.push(i); renderItems(); calculateTotals(); showToast(`เพิ่ม "${p.name}" แล้ว`);
     }
 
     function addNewItem(type) {
-      const item = {
-        id: 'item-' + Date.now(),
-        type: type,
-        name: type === 'alu' ? 'ชุดหน้าต่าง/ประตู' : 'สินค้าทั่วไป',
-        aluColor: type === 'alu' ? 'อบขาว' : '-',
-        glassType: type === 'alu' ? 'เขียว 6 มม.' : '-',
-        width: type === 'alu' ? 1 : 0,
-        height: type === 'alu' ? 1 : 0,
-        area: type === 'alu' ? 1 : 0,
-        qty: 1, unit: type === 'alu' ? 'ชุด' : 'ชิ้น',
-        pricingType: type === 'alu' ? 'per_sqm' : 'per_unit',
-        unitPrice: 1000, total: 1000
-      };
-      state.items.push(item);
-      renderItems();
-      calculateTotals();
+      state.items.push({ id: 'item-'+Date.now(), type: type, name: type==='alu'?'ชุดหน้าต่าง/ประตู':'สินค้าทั่วไป', aluColor: type==='alu'?'อบขาว':'-', glassType: type==='alu'?'เขียว 6 มม.':'-', width: type==='alu'?1:0, height: type==='alu'?1:0, area: type==='alu'?1:0, qty: 1, unit: type==='alu'?'ชุด':'ชิ้น', pricingType: type==='alu'?'per_sqm':'per_unit', unitPrice: 1000, total: 1000 });
+      renderItems(); calculateTotals();
     }
 
     function removeItem(id) {
       if(state.items.length <= 1) return showToast('ต้องมี 1 รายการ');
-      state.items = state.items.filter(i => i.id !== id);
-      renderItems(); calculateTotals();
+      state.items = state.items.filter(i => i.id !== id); renderItems(); calculateTotals();
     }
     
-    function cloneItem(id) {
-      const item = state.items.find(i => i.id === id);
-      if(item) {
-        state.items.push({...item, id: 'item-'+Date.now()});
-        renderItems(); calculateTotals(); showToast('คัดลอกแล้ว');
-      }
-    }
-
     function updateItem(id, field, val) {
-      const item = state.items.find(i => i.id === id);
-      if(!item) return;
+      const item = state.items.find(i => i.id === id); if(!item) return;
       if(['width', 'height', 'qty', 'unitPrice'].includes(field)) {
-        item[field] = parseFloat(val) || 0;
-        item.area = +(item.width * item.height).toFixed(2);
-      } else {
-        item[field] = val;
-      }
-
-      let multiplier = item.pricingType === 'per_sqm' && item.area > 0 && item.type === 'alu' ? item.area : 1;
-      item.total = +(multiplier * item.qty * item.unitPrice).toFixed(2);
-
+        item[field] = parseFloat(val) || 0; item.area = +(item.width * item.height).toFixed(2);
+      } else item[field] = val;
+      item.total = +( (item.pricingType === 'per_sqm' && item.area > 0 && item.type === 'alu' ? item.area : 1) * item.qty * item.unitPrice ).toFixed(2);
       if(document.getElementById(`area-${id}`)) document.getElementById(`area-${id}`).innerText = item.area.toFixed(2);
       if(document.getElementById(`total-${id}`)) document.getElementById(`total-${id}`).innerText = '฿' + item.total.toLocaleString('th-TH', {minimumFractionDigits: 2});
       calculateTotals();
     }
 
-    function saveItemAsPreset(id) {
-      const item = state.items.find(i => i.id === id);
-      if(!item) return;
-      const newP = {
-        id: 'p-' + Date.now(),
-        type: item.type, name: item.name + ' (Custom)', icon: item.type === 'alu' ? 'layout' : 'package',
-        aluColor: item.aluColor, glassType: item.glassType,
-        width: item.width, height: item.height,
-        unit: item.unit, price: item.unitPrice, priceType: item.pricingType
-      };
-      
-      if (userId && db) {
-          setDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', newP.id), newP)
-              .then(() => showToast('ซิงค์พรีเซ็ตขึ้นคลาวด์แล้ว'));
-      } else {
-          state.presets.push(newP);
-          renderPresets();
-          showToast('บันทึกเป็นพรีเซ็ตแล้ว (ออฟไลน์)');
-      }
-    }
-
     function renderItems() {
-      const c = document.getElementById('items-list');
-      c.innerHTML = '';
+      const c = document.getElementById('items-list'); c.innerHTML = '';
       state.items.forEach((item, idx) => {
-        const isAlu = item.type === 'alu';
-        const d = document.createElement('div');
-        d.className = "p-4 bg-slate-50/70 border border-slate-200 rounded-xl space-y-3";
+        let isAlu = item.type === 'alu';
+        let bdg = isAlu ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 ml-2">กxส</span>` : `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 ml-2">ทั่วไป</span>`;
+        let dis = state.isLumpSum ? 'disabled class="w-full p-1.5 border rounded text-right bg-slate-100 text-slate-400"' : `class="w-full p-1.5 border rounded text-right text-sky-700 font-bold"`;
         
-        // Badge
-        const badge = isAlu ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700 ml-2">กxส</span>` 
-                            : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 ml-2">ทั่วไป</span>`;
-
-        d.innerHTML = `
-          <div class="flex items-center justify-between gap-2 border-b border-slate-200/70 pb-2">
-            <div class="flex items-center gap-2 flex-1">
-              <span class="w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
-              <input type="text" value="${escapeHtml(item.name)}" oninput="updateItem('${item.id}', 'name', this.value)" class="font-semibold text-slate-800 text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-sky-500 px-1 py-0.5 focus:outline-none w-full md:w-80">
-              ${badge}
+        c.innerHTML += `
+          <div class="p-3 bg-slate-50/70 border border-slate-200 rounded-xl space-y-2">
+            <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <div class="flex items-center gap-2 flex-1"><span class="w-5 h-5 rounded-full bg-slate-700 text-white text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span><input type="text" value="${escapeHtml(item.name)}" oninput="updateItem('${item.id}', 'name', this.value)" class="font-semibold text-slate-800 text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-sky-500 px-1 py-0.5 w-full md:w-80">${bdg}</div>
+              <button onclick="removeItem('${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
             </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <button onclick="saveItemAsPreset('${item.id}')" title="บันทึกเป็นแบบมาตรฐาน" class="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded"><i data-lucide="bookmark-plus" class="w-4 h-4"></i></button>
-              <button onclick="cloneItem('${item.id}')" title="คัดลอก" class="p-1.5 text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded"><i data-lucide="copy" class="w-4 h-4"></i></button>
-              <button onclick="removeItem('${item.id}')" title="ลบ" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[10px] ${!isAlu ? 'hidden' : ''}">
+              <div><label class="text-slate-500 block">สีอลูมิเนียม</label><input type="text" value="${escapeHtml(item.aluColor)}" oninput="updateItem('${item.id}', 'aluColor', this.value)" class="w-full px-2 py-1 border rounded"></div>
+              <div><label class="text-slate-500 block">กระจก</label><input type="text" value="${escapeHtml(item.glassType)}" oninput="updateItem('${item.id}', 'glassType', this.value)" class="w-full px-2 py-1 border rounded"></div>
+              <div><label class="text-slate-500 block">การคิดราคา</label><select onchange="updateItem('${item.id}', 'pricingType', this.value)" class="w-full px-2 py-1 border rounded"><option value="per_sqm" ${item.pricingType==='per_sqm'?'selected':''}>ต่อ ตร.ม.</option><option value="per_unit" ${item.pricingType==='per_unit'?'selected':''}>ต่อชิ้น</option></select></div>
             </div>
-          </div>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs ${!isAlu ? 'hidden' : ''}">
-            <div><label class="text-[10px] text-slate-500 block mb-1">สีอลูมิเนียม</label><input type="text" value="${escapeHtml(item.aluColor)}" oninput="updateItem('${item.id}', 'aluColor', this.value)" class="w-full px-2 py-1.5 border rounded"></div>
-            <div><label class="text-[10px] text-slate-500 block mb-1">กระจก</label><input type="text" value="${escapeHtml(item.glassType)}" oninput="updateItem('${item.id}', 'glassType', this.value)" class="w-full px-2 py-1.5 border rounded"></div>
-            <div><label class="text-[10px] text-slate-500 block mb-1">การคิดราคา</label>
-              <select onchange="updateItem('${item.id}', 'pricingType', this.value)" class="w-full px-2 py-1.5 border rounded bg-white">
-                <option value="per_sqm" ${item.pricingType === 'per_sqm' ? 'selected' : ''}>ต่อ ตร.ม.</option>
-                <option value="per_unit" ${item.pricingType === 'per_unit' ? 'selected' : ''}>ต่อชิ้น/ชุด</option>
-              </select>
+            <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 pt-1 text-[10px] items-end">
+              ${isAlu ? `<div><label class="text-slate-500 block">กว้าง(ม.)</label><input type="number" step="0.01" value="${item.width}" oninput="updateItem('${item.id}', 'width', this.value)" class="w-full p-1.5 border rounded text-center"></div><div><label class="text-slate-500 block">สูง(ม.)</label><input type="number" step="0.01" value="${item.height}" oninput="updateItem('${item.id}', 'height', this.value)" class="w-full p-1.5 border rounded text-center"></div><div><label class="text-slate-500 block">ตร.ม.</label><div class="p-1.5 bg-slate-100 rounded text-center font-bold" id="area-${item.id}">${item.area.toFixed(2)}</div></div>` : `<div class="col-span-3"></div>`}
+              <div><label class="text-slate-500 block">จำนวน</label><input type="number" value="${item.qty}" oninput="updateItem('${item.id}', 'qty', this.value)" class="w-full p-1.5 border rounded text-center font-bold"></div>
+              <div><label class="text-slate-500 block">หน่วย</label><input type="text" value="${escapeHtml(item.unit)}" oninput="updateItem('${item.id}', 'unit', this.value)" class="w-full p-1.5 border rounded text-center"></div>
+              <div><label class="text-slate-500 block">ราคา/หน่วย</label><input type="number" value="${item.unitPrice}" oninput="updateItem('${item.id}', 'unitPrice', this.value)" ${dis}></div>
             </div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-6 gap-3 pt-2 text-xs items-end">
-            ${isAlu ? `
-              <div><label class="text-[10px] text-slate-500 block">กว้าง(ม.)</label><input type="number" step="0.01" value="${item.width}" oninput="updateItem('${item.id}', 'width', this.value)" class="w-full p-1.5 border rounded text-center"></div>
-              <div><label class="text-[10px] text-slate-500 block">สูง(ม.)</label><input type="number" step="0.01" value="${item.height}" oninput="updateItem('${item.id}', 'height', this.value)" class="w-full p-1.5 border rounded text-center"></div>
-              <div><label class="text-[10px] text-slate-500 block">ตร.ม.</label><div class="p-1.5 bg-slate-100 rounded text-center font-bold" id="area-${item.id}">${item.area.toFixed(2)}</div></div>
-            ` : `<div class="col-span-3"></div>`}
-            <div><label class="text-[10px] text-slate-500 block">จำนวน</label><input type="number" value="${item.qty}" oninput="updateItem('${item.id}', 'qty', this.value)" class="w-full p-1.5 border rounded text-center font-bold"></div>
-            <div><label class="text-[10px] text-slate-500 block">หน่วย (เช่น ชุด,บาน)</label><input type="text" value="${escapeHtml(item.unit)}" oninput="updateItem('${item.id}', 'unit', this.value)" class="w-full p-1.5 border rounded text-center"></div>
-            <div><label class="text-[10px] text-slate-500 block">ราคา/หน่วย</label><input type="number" value="${item.unitPrice}" oninput="updateItem('${item.id}', 'unitPrice', this.value)" class="w-full p-1.5 border rounded text-right text-sky-700 font-bold"></div>
-          </div>
-          
-          <div class="mt-3 pt-3 border-t border-slate-200/80 flex justify-between items-center bg-white/50 px-2 py-1.5 rounded-lg">
-             <div class="text-[11px] text-slate-500 font-medium">ราคารวมรายการที่ ${idx + 1}</div>
-             <div id="total-${item.id}" class="text-sm font-bold font-mono text-sky-700">฿${item.total.toLocaleString('th-TH', {minimumFractionDigits:2})}</div>
           </div>
         `;
-        c.appendChild(d);
       });
       if(window.lucide) window.lucide.createIcons();
     }
 
+    function toggleLumpSum() {
+      state.isLumpSum = document.getElementById('lump-sum-toggle').checked;
+      document.getElementById('lump-sum-box').style.display = state.isLumpSum ? 'flex' : 'none';
+      renderItems(); calculateTotals();
+    }
+
+    function togglePaymentBox() {
+      state.paymentEnabled = document.getElementById('payment-toggle').checked;
+      document.getElementById('payment-box').style.display = state.paymentEnabled ? 'block' : 'none';
+      calculateTotals();
+    }
+
     function calculateTotals() {
-      let sub = state.items.reduce((s, i) => s + (i.total || 0), 0);
+      let sub = 0;
+      if (state.isLumpSum) {
+        state.lumpSumAmt = parseFloat(document.getElementById('lump-sum-amt').value) || 0;
+        sub = state.lumpSumAmt;
+      } else {
+        sub = state.items.reduce((s, i) => s + (i.total || 0), 0);
+      }
+      
       let disc = parseFloat(document.getElementById('calc-discount').value) || 0;
       let after = Math.max(0, sub - disc);
       
-      let vatEl = document.getElementById('vat-toggle');
-      let whtEl = document.getElementById('wht-toggle');
-      let vat = vatEl && vatEl.checked ? +(after * 0.07).toFixed(2) : 0;
-      let wht = whtEl && whtEl.checked ? +(after * 0.03).toFixed(2) : 0;
-      
+      let vatEl = document.getElementById('vat-toggle'), whtEl = document.getElementById('wht-toggle');
+      let vat = vatEl?.checked ? +(after * 0.07).toFixed(2) : 0;
+      let wht = whtEl?.checked ? +(after * 0.03).toFixed(2) : 0;
       let grand = +(after + vat - wht).toFixed(2);
       
-      let depToggle = document.getElementById('deposit-toggle');
-      state.depositEnabled = depToggle ? depToggle.checked : false;
+      // Request Deposit
+      let depEl = document.getElementById('deposit-toggle');
+      state.depositEnabled = depEl ? depEl.checked : false;
       state.depositPercent = parseFloat(document.getElementById('deposit-percent')?.value) || 0;
-      
       let depAmt = state.depositEnabled ? +(grand * (state.depositPercent / 100)).toFixed(2) : 0;
-      let remAmt = grand - depAmt;
 
-      // Update UI Editor
+      // Installments / Payments
+      state.prevPaid = parseFloat(document.getElementById('prev-paid').value) || 0;
+      state.currentPayment = parseFloat(document.getElementById('current-payment').value) || 0;
+      let remAmt = Math.max(0, grand - state.prevPaid - state.currentPayment);
+
       safeSetText('calc-subtotal', '฿' + sub.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-after-discount', '฿' + after.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-vat', '฿' + vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
@@ -967,328 +683,311 @@
       safeSetText('calc-grandtotal', '฿' + grand.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-deposit-amt', '฿' + depAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-remaining-amt', '฿' + remAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
+
+      // Calculate Profit
+      state.totalCost = parseFloat(document.getElementById('total-cost').value) || 0;
+      let profit = after - state.totalCost;
+      safeSetText('profit-calc-display', `กำไรสุทธิ: ฿${profit.toLocaleString('th-TH',{minimumFractionDigits:2})}`);
       
-      // Save state logic values
       state.subtotal = sub; state.discount = disc; state.afterDiscount = after;
-      state.vat = vat; state.vatEnabled = !!(vatEl && vatEl.checked);
-      state.wht = wht; state.whtEnabled = !!(whtEl && whtEl.checked);
-      state.grandTotal = grand; state.depositAmt = depAmt; state.remainingAmt = remAmt;
+      state.vat = vat; state.vatEnabled = !!vatEl?.checked; state.wht = wht; state.whtEnabled = !!whtEl?.checked;
+      state.grandTotal = grand; state.depositAmt = depAmt; state.remainingAmt = remAmt; state.profit = profit;
       state.bahtText = thaiBahtConversion(grand);
     }
 
     function renderPreview() {
-      // Sync basic values
-      state.docNo = document.getElementById('docNo').value;
-      state.docDate = document.getElementById('docDate').value;
-      state.dueDate = document.getElementById('dueDate').value;
-      state.salesName = document.getElementById('salesName').value;
-      state.customer.name = document.getElementById('custName').value;
-      state.customer.phone = document.getElementById('custPhone').value;
-      state.customer.taxId = document.getElementById('custTaxId').value;
-      state.customer.address = document.getElementById('custAddress').value;
-      state.customer.project = document.getElementById('projectName').value;
-      state.notes = document.getElementById('docNotes').value;
-
-      // Type mappings
-      const typeMap = {
-        quotation: { th: 'ใบเสนอราคา', en: 'QUOTATION', sig1: 'ผู้เสนอราคา', sig2: 'ผู้อนุมัติสั่งซื้อ / ผู้ว่าจ้าง', sig3: 'ผู้มีอำนาจลงนาม' },
-        delivery: { th: 'ใบส่งของ', en: 'DELIVERY ORDER', sig1: 'ผู้ส่งสินค้า', sig2: 'ผู้ตรวจรับสินค้าสมบูรณ์', sig3: 'ผู้รับมอบงาน' },
-        invoice: { th: 'ใบแจ้งหนี้ / ใบกำกับภาษี', en: 'TAX INVOICE', sig1: 'ผู้ออกเอกสาร', sig2: 'ผู้รับเอกสาร', sig3: 'ผู้มีอำนาจลงนาม' },
-        receipt: { th: 'ใบเสร็จรับเงิน', en: 'RECEIPT', sig1: 'ผู้รับเงิน', sig2: 'ผู้จ่ายเงิน', sig3: 'ผู้มีอำนาจลงนาม' },
-        cashbill: { th: 'บิลเงินสด', en: 'CASH BILL', sig1: 'ผู้รับเงิน', sig2: 'ผู้จ่ายเงิน', sig3: '-' }
-      };
-      const m = typeMap[state.docType] || typeMap['quotation'];
-
-      safeSetText('p-doc-title-badge', m.th);
-      safeSetText('p-doc-title-en', m.en);
-      safeSetText('sig1-title', m.sig1);
-      safeSetText('sig2-title', m.sig2);
-      safeSetText('sig3-title', m.sig3);
-      
-      // Hide due date on delivery/receipt
-      document.getElementById('p-due-date-container').style.display = ['delivery', 'receipt'].includes(state.docType) ? 'none' : 'block';
-
-      // Header Texts
-      safeSetText('p-doc-no', state.docNo);
-      safeSetText('p-doc-date', formatDateThai(state.docDate));
-      safeSetText('p-due-date', formatDateThai(state.dueDate));
-      safeSetText('p-sales-name', state.salesName);
-      
-      safeSetText('p-cust-name', state.customer.name);
-      safeSetText('p-cust-phone', state.customer.phone);
-      safeSetText('p-cust-taxid', state.customer.taxId);
-      safeSetText('p-cust-address', state.customer.address);
-      safeSetText('p-project-name', state.customer.project);
-      
-      safeSetText('p-shop-name', state.shop.name);
-      safeSetText('p-shop-subtitle', state.shop.subtitle);
-      safeSetText('p-shop-address', state.shop.address);
-      safeSetText('p-shop-phone', state.shop.phone);
-      safeSetText('p-shop-line', state.shop.line);
-      safeSetText('p-shop-taxid', state.shop.taxId);
-      safeSetText('p-bank-info', state.shop.bank);
-      safeSetText('p-standard-spec', state.shop.standardSpec);
-      safeSetText('p-notes', state.notes);
-
-      // Render Logo
-      const pLogo = document.getElementById('p-shop-logo');
-      if (state.shop.logo) {
-        pLogo.src = state.shop.logo;
-        pLogo.classList.remove('hidden');
-      } else {
-        pLogo.classList.add('hidden');
-      }
-
-      // Items Render
-      const tbody = document.getElementById('p-items-tbody');
-      tbody.innerHTML = '';
-      state.items.forEach((item, idx) => {
-        let isAlu = item.type === 'alu';
-        let subText = isAlu ? `สี: ${escapeHtml(item.aluColor)} | กระจก: ${escapeHtml(item.glassType)}` : '-';
-        let dim = (isAlu && item.width) ? `${item.width.toFixed(2)}x${item.height.toFixed(2)}` : '-';
-        let area = (isAlu && item.area) ? item.area.toFixed(2) : '-';
-        
-        tbody.innerHTML += `
-          <tr class="border-b border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}">
-            <td class="py-2 px-2 text-center">${idx + 1}</td>
-            <td class="py-2 px-3">
-              <div class="font-bold text-slate-900">${escapeHtml(item.name)}</div>
-              ${isAlu ? `<div class="text-[10px] text-slate-500">${subText}</div>` : ''}
-            </td>
-            <td class="py-2 px-2 text-center font-mono">${dim}</td>
-            <td class="py-2 px-2 text-center font-mono">${area}</td>
-            <td class="py-2 px-2 text-center font-mono">${item.qty} <span class="text-[10px]">${escapeHtml(item.unit)}</span></td>
-            <td class="py-2 px-3 text-right font-mono">฿${item.unitPrice.toLocaleString('th-TH')}</td>
-            <td class="py-2 px-3 text-right font-mono font-bold">฿${item.total.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
-          </tr>
-        `;
+      // Sync Basic fields
+      ['docNo','refNo','docDate','dueDate','salesName','docNotes'].forEach(id => state[id] = document.getElementById(id).value);
+      ['custName','custPhone','custTaxId','custAddress','projectName'].forEach(id => {
+        let k = id==='custName'?'name':id.replace('cust','').toLowerCase();
+        if(id==='projectName') k='project'; if(id==='custTaxId') k='taxId';
+        state.customer[k] = document.getElementById(id).value;
       });
 
-      // Finances
+      const types = {
+        quotation: { th: 'ใบเสนอราคา', en: 'QUOTATION', s1: 'ผู้เสนอราคา', s2: 'ผู้อนุมัติสั่งซื้อ', s3: 'ผู้มีอำนาจลงนาม' },
+        delivery: { th: 'ใบส่งของ', en: 'DELIVERY ORDER', s1: 'ผู้ส่งสินค้า', s2: 'ผู้รับสินค้าสมบูรณ์', s3: 'พยาน' },
+        invoice: { th: 'ใบแจ้งหนี้ / วางบิล', en: 'INVOICE', s1: 'ผู้วางบิล', s2: 'ผู้รับเอกสาร', s3: 'ผู้มีอำนาจลงนาม' },
+        receipt: { th: 'ใบเสร็จรับเงิน', en: 'RECEIPT', s1: 'ผู้รับเงิน', s2: 'ผู้จ่ายเงิน', s3: 'ผู้มีอำนาจลงนาม' },
+        cashbill: { th: 'บิลเงินสด', en: 'CASH BILL', s1: 'ผู้รับเงิน', s2: 'ผู้จ่ายเงิน', s3: '-' }
+      };
+      const m = types[state.docType] || types.quotation;
+
+      safeSetText('p-doc-title-badge', m.th); safeSetText('p-doc-title-en', m.en);
+      safeSetText('sig1-title', m.s1); safeSetText('sig2-title', m.s2); safeSetText('sig3-title', m.s3);
+      
+      document.getElementById('p-due-date-container').style.display = ['delivery','receipt','cashbill'].includes(state.docType) ? 'none' : 'block';
+      if(state.refNo) { document.getElementById('p-ref-no-container').style.display = 'block'; safeSetText('p-ref-no', state.refNo); }
+      else document.getElementById('p-ref-no-container').style.display = 'none';
+
+      safeSetText('p-doc-no', state.docNo); safeSetText('p-doc-date', formatDateThai(state.docDate)); safeSetText('p-due-date', formatDateThai(state.dueDate));
+      safeSetText('p-sales-name', state.salesName);
+      safeSetText('p-cust-name', state.customer.name); safeSetText('p-cust-phone', state.customer.phone); safeSetText('p-cust-taxid', state.customer.taxId);
+      safeSetText('p-cust-address', state.customer.address); safeSetText('p-project-name', state.customer.project);
+      
+      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetText('p-shop-'+k, state.shop[k]));
+      safeSetText('p-notes', state.docNotes);
+
+      const tb = document.getElementById('p-items-tbody'); tb.innerHTML = '';
+      state.items.forEach((item, idx) => {
+        let sub = item.type==='alu' ? `สี: ${item.aluColor} | กระจก: ${item.glassType}` : '-';
+        let dim = item.type==='alu' ? `${item.width.toFixed(2)}x${item.height.toFixed(2)}` : '-';
+        let area = item.type==='alu' ? item.area.toFixed(2) : '-';
+        let up = state.isLumpSum ? '-' : '฿'+item.unitPrice.toLocaleString('th-TH');
+        let tot = state.isLumpSum ? (idx===0 ? '฿'+state.lumpSumAmt.toLocaleString('th-TH',{minimumFractionDigits:2}) : '-') : '฿'+item.total.toLocaleString('th-TH',{minimumFractionDigits:2});
+        
+        tb.innerHTML += `<tr class="border-b border-slate-100 ${idx%2===0?'bg-white':'bg-slate-50/50'}"><td class="py-1.5 px-2 text-center">${idx+1}</td><td class="py-1.5 px-3"><div class="font-bold text-slate-900">${escapeHtml(item.name)}</div><div class="text-[9px] text-slate-500">${sub}</div></td><td class="py-1.5 px-2 text-center font-mono">${dim}</td><td class="py-1.5 px-2 text-center font-mono">${area}</td><td class="py-1.5 px-2 text-center font-mono">${item.qty} <span class="text-[9px]">${escapeHtml(item.unit)}</span></td><td class="py-1.5 px-2 text-right font-mono">${up}</td><td class="py-1.5 px-2 text-right font-mono font-bold">${tot}</td></tr>`;
+      });
+
       safeSetText('p-calc-subtotal', '฿' + state.subtotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      document.getElementById('p-discount-row').style.display = state.discount > 0 ? 'flex' : 'none';
-      safeSetText('p-calc-discount', '-฿' + state.discount.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      
-      document.getElementById('p-vat-row').style.display = state.vatEnabled ? 'flex' : 'none';
-      safeSetText('p-calc-vat', '฿' + state.vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      
-      document.getElementById('p-wht-row').style.display = state.whtEnabled ? 'flex' : 'none';
-      safeSetText('p-calc-wht', '-฿' + state.wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      
+      document.getElementById('p-discount-row').style.display = state.discount > 0 ? 'flex' : 'none'; safeSetText('p-calc-discount', '-฿' + state.discount.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      document.getElementById('p-vat-row').style.display = state.vatEnabled ? 'flex' : 'none'; safeSetText('p-calc-vat', '฿' + state.vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      document.getElementById('p-wht-row').style.display = state.whtEnabled ? 'flex' : 'none'; safeSetText('p-calc-wht', '-฿' + state.wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('p-calc-grandtotal', '฿' + state.grandTotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('p-baht-text', `(${state.bahtText})`);
-      
-      // Deposit Block
-      let depBox = document.getElementById('p-deposit-box');
-      if (state.depositEnabled && ['quotation', 'invoice'].includes(state.docType) && state.depositAmt > 0) {
-        depBox.style.display = 'block';
-        safeSetText('p-deposit-label', `มัดจำ (${state.depositPercent}%):`);
-        safeSetText('p-deposit-amt', '฿' + state.depositAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
+
+      // Deposit Display
+      let depReqBox = document.getElementById('p-deposit-request-box');
+      if (state.depositEnabled) {
+        depReqBox.style.display = 'block';
+        safeSetText('p-deposit-req-label', `ยอดมัดจำที่เรียกเก็บ (${state.depositPercent}%):`);
+        safeSetText('p-deposit-req-amt', '฿' + state.depositAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      } else {
+        if(depReqBox) depReqBox.style.display = 'none';
+      }
+
+      // Payments Display
+      let payBox = document.getElementById('p-payment-box');
+      if (state.paymentEnabled && (state.prevPaid > 0 || state.currentPayment > 0)) {
+        payBox.style.display = 'block';
+        document.getElementById('p-prev-paid-row').style.display = state.prevPaid > 0 ? 'flex' : 'none';
+        safeSetText('p-prev-paid-amt', '-฿' + state.prevPaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
+        safeSetText('p-deposit-label', ['receipt','cashbill'].includes(state.docType) ? 'รับชำระเงินครั้งนี้:' : 'ยอดชำระครั้งนี้:');
+        safeSetText('p-deposit-amt', '฿' + state.currentPayment.toLocaleString('th-TH',{minimumFractionDigits:2}));
         safeSetText('p-remaining-amt', '฿' + state.remainingAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
       } else {
-        depBox.style.display = 'none';
+        if(payBox) payBox.style.display = 'none';
       }
+    }
+
+    function getInitialStatus(type) {
+      return { quotation: 'quoting', invoice: 'pending', delivery: 'pending_delivery' }[type] || 'paid';
     }
 
     function saveCurrentDoc() {
       calculateTotals();
       const rec = {
         id: 'doc-' + Date.now(),
-        docNo: state.docNo, docType: state.docType,
+        docNo: state.docNo, docType: state.docType, refNo: state.refNo,
         customerName: document.getElementById('custName')?.value || 'ไม่ระบุ',
         project: document.getElementById('projectName')?.value || '-',
-        date: state.docDate, grandTotal: state.grandTotal,
-        payload: JSON.parse(JSON.stringify(state)) // deep copy
+        date: state.docDate, grandTotal: state.grandTotal, remainingAmt: state.remainingAmt||0, profit: state.profit||0,
+        status: state.history.find(h => h.docNo === state.docNo)?.status || getInitialStatus(state.docType),
+        payload: JSON.parse(JSON.stringify(state))
       };
       
-      if (userId && db) {
-          setDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', rec.id), rec)
-              .then(() => showToast('บันทึกเอกสารขึ้นคลาวด์แล้ว'))
-              .catch(e => console.error(e));
-      } else {
-          let idx = state.history.findIndex(h => h.docNo === state.docNo);
-          if (idx >= 0) state.history[idx] = rec;
-          else state.history.unshift(rec);
-          showToast('บันทึกเอกสารเรียบร้อย (ออฟไลน์)');
-          renderHistory();
+      if (userId && db) setDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', rec.id), rec).then(() => showToast('บันทึกเอกสารขึ้นคลาวด์แล้ว'));
+      else {
+        let idx = state.history.findIndex(h => h.docNo === state.docNo);
+        if (idx >= 0) state.history[idx] = rec; else state.history.unshift(rec);
+        renderHistory(); showToast('บันทึกเอกสารแล้ว (ออฟไลน์)');
       }
     }
 
     function renderHistory() {
-      const tb = document.getElementById('history-tbody');
-      tb.innerHTML = '';
-      if(state.history.length === 0) return tb.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">ไม่มีประวัติ</td></tr>`;
+      const tb = document.getElementById('history-tbody'); tb.innerHTML = '';
+      let q = document.getElementById('search-history')?.value.toLowerCase() || '';
+      let filtered = state.history.filter(h => h.docNo.toLowerCase().includes(q) || h.customerName.toLowerCase().includes(q) || h.refNo?.toLowerCase().includes(q));
       
+      let totalSales = 0, totalProfit = 0, totalDebt = 0;
       state.history.forEach(h => {
+        if(h.docType === 'quotation' && h.status !== 'accepted') return; 
+        totalSales += h.grandTotal; totalProfit += h.profit || 0; totalDebt += h.remainingAmt || 0;
+      });
+      safeSetText('dash-total-sales', '฿' + totalSales.toLocaleString('th-TH'));
+      safeSetText('dash-total-profit', '฿' + totalProfit.toLocaleString('th-TH'));
+      safeSetText('dash-total-debt', '฿' + totalDebt.toLocaleString('th-TH'));
+
+      if(filtered.length === 0) return tb.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบเอกสาร</td></tr>`;
+      
+      const tCol = { quotation: 'bg-slate-200 text-slate-700', invoice: 'bg-amber-100 text-amber-700', receipt: 'bg-emerald-100 text-emerald-700', delivery: 'bg-indigo-100 text-indigo-700', cashbill: 'bg-slate-700 text-white' };
+
+      filtered.forEach(h => {
+        let opts = '';
+        if(h.docType==='quotation') opts=`<option value="quoting" ${h.status==='quoting'?'selected':''}>รอพิจารณา</option><option value="accepted" ${h.status==='accepted'?'selected':''}>อนุมัติทำ</option><option value="rejected" ${h.status==='rejected'?'selected':''}>ไม่อนุมัติ</option>`;
+        else if(h.docType==='invoice') opts=`<option value="pending" ${h.status==='pending'?'selected':''}>รอชำระเงิน</option><option value="partial" ${h.status==='partial'?'selected':''}>ชำระบางส่วน</option><option value="paid" ${h.status==='paid'?'selected':''}>ครบแล้ว</option>`;
+        else if(['receipt','cashbill'].includes(h.docType)) opts=`<option value="paid" ${h.status==='paid'?'selected':''}>รับเงินแล้ว</option><option value="cancelled" ${h.status==='cancelled'?'selected':''}>ยกเลิก</option>`;
+        else if(h.docType==='delivery') opts=`<option value="pending_delivery" ${h.status==='pending_delivery'?'selected':''}>รอส่งมอบ</option><option value="delivered" ${h.status==='delivered'?'selected':''}>ส่งมอบแล้ว</option>`;
+
         tb.innerHTML += `
-          <tr class="hover:bg-slate-50">
-            <td class="py-2 px-2 font-mono font-bold text-sky-700">${h.docNo}</td>
-            <td class="py-2 px-2 text-[10px]"><span class="bg-slate-200 px-1.5 py-0.5 rounded">${h.docType.toUpperCase()}</span></td>
-            <td class="py-2 px-2"><div>${escapeHtml(h.customerName)}</div><div class="text-[10px] text-slate-500">${escapeHtml(h.project)}</div></td>
-            <td class="py-2 px-2">${formatDateThai(h.date)}</td>
-            <td class="py-2 px-2 text-right font-mono font-bold">฿${h.grandTotal.toLocaleString('th-TH')}</td>
-            <td class="py-2 px-2 text-center">
-              <button onclick="loadHistory('${h.id}')" class="px-2 py-1 bg-sky-100 text-sky-700 rounded text-xs mr-1">เปิด</button>
-              <button onclick="delHistory('${h.id}')" class="px-2 py-1 bg-rose-100 text-rose-700 rounded text-xs">ลบ</button>
+          <tr class="hover:bg-slate-50 border-b border-slate-100">
+            <td class="py-2 px-2"><div class="font-mono font-bold text-sky-700">${h.docNo}</div>${h.refNo ? `<div class="text-[9px] text-slate-500">อ้างอิง: ${h.refNo}</div>`:''}</td>
+            <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[9px] font-semibold ${tCol[h.docType]}">${h.docType.toUpperCase()}</span></td>
+            <td class="py-2 px-2"><div>${escapeHtml(h.customerName)}</div><div class="text-[9px] text-slate-500">${escapeHtml(h.project)}</div></td>
+            <td class="py-2 px-2 text-[10px]">${formatDateThai(h.date)}</td>
+            <td class="py-2 px-2 text-right"><div class="font-mono font-bold text-slate-800">฿${h.grandTotal.toLocaleString('th-TH')}</div>${h.remainingAmt>0&&h.docType!=='delivery'?`<div class="text-[9px] text-rose-500 mt-0.5">ค้าง: ฿${h.remainingAmt.toLocaleString('th-TH')}</div>`:''}</td>
+            <td class="py-2 px-2"><select onchange="updateDocStatus('${h.id}', this.value)" class="text-[10px] p-1 rounded border w-full">${opts}</select></td>
+            <td class="py-2 px-2">
+              <div class="flex items-center gap-1">
+                <select onchange="if(this.value){ generateFlowDoc('${h.id}', this.value); this.value=''; }" class="text-[10px] p-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-bold">
+                  <option value="">+ ต่อยอด...</option><option value="invoice">-> ใบแจ้งหนี้</option><option value="receipt">-> ใบเสร็จ</option><option value="delivery">-> ใบส่งของ</option>
+                </select>
+                <button onclick="loadHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-sky-100 rounded"><i data-lucide="edit" class="w-3.5 h-3.5"></i></button>
+                <button onclick="delHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-rose-100 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
             </td>
           </tr>
         `;
       });
+      if(window.lucide) window.lucide.createIcons();
+    }
+
+    function updateDocStatus(id, stat) {
+      if(userId&&db) updateDoc(doc(db,'artifacts',appId,'users',userId,'history',id), {status:stat}).then(()=>showToast('อัปเดตสถานะแล้ว'));
+      else { const h=state.history.find(x=>x.id===id); if(h){h.status=stat; showToast('อัปเดตสถานะ (ออฟไลน์)');} }
+    }
+
+    function generateFlowDoc(oldId, newType) {
+      const h = state.history.find(x => x.id === oldId); if(!h) return;
+      Object.assign(state, h.payload);
+      state.refNo = h.docNo; safeSetValue('refNo', state.refNo);
+      
+      document.querySelector(`input[name="docType"][value="${newType}"]`).checked = true;
+      updateDocType(newType); 
+      
+      if (['receipt','cashbill'].includes(newType)) {
+        state.prevPaid = (state.prevPaid||0) + (state.currentPayment||0);
+        state.currentPayment = Math.max(0, state.grandTotal - state.prevPaid);
+      } else {
+        state.prevPaid = (state.prevPaid||0) + (state.currentPayment||0);
+        state.currentPayment = 0;
+      }
+      
+      state.paymentEnabled = true; safeSetChecked('payment-toggle', true);
+      document.getElementById('payment-box').style.display = 'block';
+      safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', state.currentPayment);
+      
+      renderItems(); calculateTotals(); switchTab('editor'); showToast(`สร้าง ${newType} อ้างอิง ${h.docNo}`);
     }
 
     function loadHistory(id) {
-      const h = state.history.find(x => x.id === id);
-      if(!h) return;
+      const h = state.history.find(x => x.id === id); if(!h) return;
       Object.assign(state, h.payload);
-      
       document.querySelector(`input[name="docType"][value="${state.docType}"]`).checked = true;
-      safeSetValue('docNo', state.docNo);
-      safeSetValue('docDate', state.docDate);
-      safeSetValue('dueDate', state.dueDate);
-      safeSetValue('salesName', state.salesName);
-      safeSetValue('custName', state.customer.name);
-      safeSetValue('custPhone', state.customer.phone);
-      safeSetValue('custTaxId', state.customer.taxId);
-      safeSetValue('custAddress', state.customer.address);
-      safeSetValue('projectName', state.customer.project);
-      safeSetValue('docNotes', state.notes);
-      safeSetValue('calc-discount', state.discount);
-      safeSetChecked('vat-toggle', state.vatEnabled);
-      safeSetChecked('wht-toggle', state.whtEnabled);
-      safeSetChecked('deposit-toggle', state.depositEnabled);
-      safeSetValue('deposit-percent', state.depositPercent);
+      ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
+      ['name','phone','taxId','address','project'].forEach(k => safeSetValue(k==='name'?'custName':k==='taxId'?'custTaxId':k==='project'?'projectName':'cust'+k.charAt(0).toUpperCase()+k.slice(1), state.customer[k]));
+      safeSetValue('docNotes', state.notes); safeSetValue('calc-discount', state.discount); safeSetValue('total-cost', state.totalCost);
+      safeSetChecked('vat-toggle', state.vatEnabled); safeSetChecked('wht-toggle', state.whtEnabled);
+      safeSetChecked('lump-sum-toggle', state.isLumpSum); safeSetValue('lump-sum-amt', state.lumpSumAmt); toggleLumpSum();
+      
+      safeSetChecked('deposit-toggle', state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent);
+      safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', state.currentPayment); togglePaymentBox();
       
       renderItems(); calculateTotals(); switchTab('editor'); showToast('โหลดเอกสารแล้ว');
     }
 
     function delHistory(id) {
-      if (userId && db) {
-          deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', id))
-              .then(() => showToast('ลบประวัติในคลาวด์แล้ว'))
-              .catch(e => console.error(e));
-      } else {
-          state.history = state.history.filter(x => x.id !== id);
-          renderHistory(); showToast('ลบประวัติแล้ว (ออฟไลน์)');
-      }
+      if(userId&&db) deleteDoc(doc(db,'artifacts',appId,'users',userId,'history',id)).then(()=>showToast('ลบประวัติแล้ว'));
+      else { state.history = state.history.filter(x => x.id !== id); renderHistory(); showToast('ลบประวัติแล้ว'); }
     }
 
     function createNewDocument() {
-      let nextNum = String(state.history.length + 1).padStart(3, '0');
-      state.docNo = 'QT-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + nextNum;
-      safeSetValue('docNo', state.docNo);
-      ['custName','custPhone','custTaxId','custAddress','projectName'].forEach(id => safeSetValue(id, ''));
       state.items = []; addNewItem('alu');
-      switchTab('editor'); showToast('สร้างใบใหม่แล้ว');
+      ['custName','custPhone','custTaxId','custAddress','projectName','refNo','total-cost'].forEach(id => safeSetValue(id, ''));
+      state.prevPaid=0; state.currentPayment=0; safeSetValue('prev-paid',0); safeSetValue('current-payment',0);
+      safeSetChecked('payment-toggle', false); togglePaymentBox();
+      generateAutoDocNo(state.docType); switchTab('editor'); showToast('สร้างเอกสารใหม่');
     }
 
-    // Settings
     function saveStoreSettings() {
-      state.shop.name = document.getElementById('setting-shop-name').value;
-      state.shop.subtitle = document.getElementById('setting-shop-subtitle').value;
-      state.shop.address = document.getElementById('setting-shop-address').value;
-      state.shop.phone = document.getElementById('setting-shop-phone').value;
-      state.shop.line = document.getElementById('setting-shop-line').value;
-      state.shop.taxId = document.getElementById('setting-shop-taxid').value;
-      state.shop.bank = document.getElementById('setting-bank-info').value;
-      state.shop.standardSpec = document.getElementById('setting-standard-spec').value;
-      
-      if (userId && db) {
-          setDoc(doc(db, 'artifacts', appId, 'users', userId, 'settings', 'shopData'), state.shop)
-              .then(() => showToast('บันทึกการตั้งค่าร้านค้าขึ้นคลาวด์แล้ว'))
-              .catch(e => console.error(e));
-      } else {
-          showToast('บันทึกการตั้งค่าร้านค้าแล้ว (ออฟไลน์)');
-      }
+      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => state.shop[k] = document.getElementById('setting-shop-'+k).value);
+      if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'settings','shopData'), state.shop).then(()=>showToast('บันทึกตั้งค่าขึ้นคลาวด์แล้ว'));
+      else showToast('บันทึกตั้งค่าแล้ว');
     }
-
+    
     function handleLogoUpload(input) {
       if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
           state.shop.logo = e.target.result;
-          const preview = document.getElementById('setting-logo-preview');
-          preview.src = state.shop.logo;
-          preview.classList.remove('hidden');
-          showToast('อัปโหลดโลโก้สำเร็จ');
+          document.getElementById('setting-logo-preview').src = state.shop.logo;
+          document.getElementById('setting-logo-preview').classList.remove('hidden'); showToast('เพิ่มโลโก้สำเร็จ');
         };
         reader.readAsDataURL(input.files[0]);
       }
     }
 
-    // Modal logic
-    function openPresetModal() {
-      document.getElementById('preset-modal').classList.remove('hidden');
-      document.getElementById('preset-modal').classList.add('flex');
-      renderPresetModalList();
-    }
-    function closePresetModal() {
-      document.getElementById('preset-modal').classList.add('hidden');
-      document.getElementById('preset-modal').classList.remove('flex');
-    }
-    function renderPresetModalList() {
-      const c = document.getElementById('preset-modal-list');
-      c.innerHTML = '';
-      state.presets.forEach((p, idx) => {
-        c.innerHTML += `
-          <div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs">
-            <div>
-              <span class="font-bold">${escapeHtml(p.name)}</span> 
-              <span class="text-slate-400">(${p.type === 'alu' ? 'อลูมิเนียม' : 'ทั่วไป'})</span>
-            </div>
-            <button onclick="deletePreset(${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-          </div>
-        `;
-      });
+    let currentModalType = '';
+    function openGenericModal(type) {
+      currentModalType = type;
+      document.getElementById('generic-modal').classList.remove('hidden');
+      document.getElementById('generic-modal').classList.add('flex');
+      const title = document.getElementById('gmodal-title');
+      const list = document.getElementById('gmodal-list'); list.innerHTML = '';
+      
+      if(type === 'presetModal') {
+        title.innerText = 'จัดการพรีเซ็ตสินค้า';
+        state.presets.forEach((p, idx) => {
+          list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span><span class="font-bold">${escapeHtml(p.name)}</span> <span class="text-slate-400">(${p.type==='alu'?'กระจก':'ทั่วไป'})</span></span><button onclick="deleteData('preset', '${p.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+        });
+      } else if(type === 'customerModal') {
+        title.innerText = 'จัดการรายชื่อลูกค้า';
+        state.savedCustomers.forEach((c, idx) => {
+          list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><div><div class="font-bold">${escapeHtml(c.name)}</div><div class="text-slate-500">${escapeHtml(c.phone)}</div></div><button onclick="deleteData('customer', '${c.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+        });
+      } else if(type === 'salesModal') {
+        title.innerText = 'จัดการรายชื่อผู้ขาย';
+        list.innerHTML = `<div class="flex gap-2 mb-3"><input type="text" id="new-sales-name" placeholder="ชื่อเซลส์/ผู้ประสานงาน" class="flex-1 p-2 text-xs border rounded"><button onclick="saveSalesInfo()" class="px-3 py-2 bg-sky-600 text-white text-xs rounded font-bold">เพิ่ม</button></div>`;
+        state.savedSales.forEach((s, idx) => {
+          list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span>${escapeHtml(s.name)}</span><button onclick="deleteData('sales', '${s.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+        });
+      }
       if(window.lucide) window.lucide.createIcons();
     }
-    function deletePreset(idx) {
-      const p = state.presets[idx];
-      if (userId && db && p.id) {
-          deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', p.id));
-      } else {
-          state.presets.splice(idx, 1);
-          renderPresetModalList(); renderPresets();
+
+    function closeGenericModal() { document.getElementById('generic-modal').classList.add('hidden'); document.getElementById('generic-modal').classList.remove('flex'); }
+
+    function deleteData(type, id, idx) {
+      const paths = { preset: 'presets', customer: 'customers', sales: 'sales' };
+      if(userId && db && id) deleteDoc(doc(db, 'artifacts', appId, 'users', userId, paths[type], id));
+      else {
+        if(type==='preset') state.presets.splice(idx, 1);
+        if(type==='customer') state.savedCustomers.splice(idx, 1);
+        if(type==='sales') state.savedSales.splice(idx, 1);
+        renderDatalists(); openGenericModal(currentModalType);
       }
     }
-    function createEmptyPreset() {
-      let n = document.getElementById('new-preset-name').value;
-      let t = document.getElementById('new-preset-type').value;
-      if(!n) return alert('กรุณาตั้งชื่อพรีเซ็ต');
-      const newP = {
-        id: 'p-' + Date.now(), type: t, name: n, icon: t === 'alu' ? 'layout' : 'package',
-        aluColor: '-', glassType: '-', width: 0, height: 0, unit: t === 'alu' ? 'ชุด' : 'ชิ้น',
-        price: 0, priceType: t === 'alu' ? 'per_sqm' : 'per_unit'
-      };
 
-      if (userId && db) {
-          setDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', newP.id), newP);
-      } else {
-          state.presets.push(newP);
-      }
-      document.getElementById('new-preset-name').value = '';
-      if (!userId || !db) { renderPresetModalList(); renderPresets(); }
+    function saveCustomerInfo() {
+      const c = { id: 'cust-'+Date.now(), name: document.getElementById('custName').value, phone: document.getElementById('custPhone').value, taxId: document.getElementById('custTaxId').value, address: document.getElementById('custAddress').value };
+      if(!c.name) return showToast('กรุณากรอกชื่อลูกค้า');
+      if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'customers',c.id), c).then(()=>showToast('บันทึกลูกค้าขึ้นคลาวด์'));
+      else { state.savedCustomers.push(c); renderDatalists(); showToast('บันทึกลูกค้า (ออฟไลน์)'); }
     }
 
-    // Expose functions globally for HTML event handlers
-    window.switchTab = switchTab;
-    window.updateDocType = updateDocType;
-    window.applyPreset = applyPreset;
-    window.addNewItem = addNewItem;
-    window.removeItem = removeItem;
-    window.cloneItem = cloneItem;
-    window.updateItem = updateItem;
-    window.saveItemAsPreset = saveItemAsPreset;
-    window.calculateTotals = calculateTotals;
-    window.saveCurrentDoc = saveCurrentDoc;
-    window.loadHistory = loadHistory;
-    window.delHistory = delHistory;
-    window.createNewDocument = createNewDocument;
-    window.saveStoreSettings = saveStoreSettings;
-    window.handleLogoUpload = handleLogoUpload;
-    window.openPresetModal = openPresetModal;
-    window.closePresetModal = closePresetModal;
-    window.deletePreset = deletePreset;
-    window.createEmptyPreset = createEmptyPreset;
+    function saveSalesInfo() {
+      const s = { id: 'sale-'+Date.now(), name: document.getElementById('new-sales-name').value };
+      if(!s.name) return;
+      if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'sales',s.id), s);
+      else { state.savedSales.push(s); renderDatalists(); openGenericModal('salesModal'); }
+    }
+
+    function renderDatalists() {
+      const cList = document.getElementById('customerDatalist'); cList.innerHTML = '';
+      state.savedCustomers.forEach(c => cList.innerHTML += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.phone)}</option>`);
+      const sList = document.getElementById('salesList'); sList.innerHTML = '';
+      state.savedSales.forEach(s => sList.innerHTML += `<option value="${escapeHtml(s.name)}"></option>`);
+      if(currentModalType) openGenericModal(currentModalType);
+    }
+
+    function autoFillCustomer() {
+      const name = document.getElementById('custName').value;
+      const c = state.savedCustomers.find(x => x.name === name);
+      if(c) { safeSetValue('custPhone', c.phone); safeSetValue('custTaxId', c.taxId); safeSetValue('custAddress', c.address); showToast('ดึงข้อมูลลูกค้าประจำ'); }
+    }
+
+    // Expose all globals
+    window.switchTab = switchTab; window.updateDocType = updateDocType; window.applyPreset = applyPreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer;
   </script>
 </body>
 </html>
