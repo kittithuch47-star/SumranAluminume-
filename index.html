@@ -440,19 +440,67 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    // Firebase config ของโปรเจกต์จริง: sumranaluminum
+    // ฝังไว้ในไฟล์เพื่อให้เปิด HTML โดยตรงแล้วเชื่อม Firebase ได้ทันที
+    const firebaseConfig = {
+      apiKey: "AIzaSyCNhOzXxGi3-kKOqkfwjnyMpRnA-OIIiOY",
+      authDomain: "sumranaluminum.firebaseapp.com",
+      databaseURL: "https://sumranaluminum-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "sumranaluminum",
+      storageBucket: "sumranaluminum.firebasestorage.app",
+      messagingSenderId: "854418055955",
+      appId: "1:854418055955:web:de3961d14f6cc0a248b0e6",
+      measurementId: "G-7GYQ2XJYVM"
+    };
+
+    // ใช้ appId คงที่ของระบบ ไม่เปลี่ยนตาม environment เพื่อให้ path ใน Firestore คงเดิม
+    const appId = 'sumran-aluminum-billing';
     const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    let db, auth, userId;
-    if (firebaseConfig) {
+    let db, auth, userId, firebaseReady = false;
+    if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
+        firebaseReady = true;
     }
+
+    const LOCAL_KEY = 'sumran_aluminum_app_state_v2';
+    const LOCAL_USER_KEY = 'sumran_aluminum_local_user';
+    let unsubscribeFns = [];
+
+    function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+    function saveLocalState() {
+      try {
+        const copy = clone(state);
+        // ประวัติเอกสารเก็บใน localStorage ด้วย เพื่อให้เปิดไฟล์/รีเฟรชแล้วข้อมูลไม่หายแม้ Cloud ยังไม่พร้อม
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(copy));
+      } catch(e) { console.warn('Local save failed:', e); }
+    }
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(LOCAL_KEY);
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        Object.assign(state, saved || {});
+        state.shop = { ...state.shop, ...(saved.shop || {}) };
+        state.customer = { ...state.customer, ...(saved.customer || {}) };
+        state.items = Array.isArray(saved.items) ? saved.items : state.items;
+        state.presets = Array.isArray(saved.presets) ? saved.presets : state.presets;
+        state.savedCustomers = Array.isArray(saved.savedCustomers) ? saved.savedCustomers : [];
+        state.savedSales = Array.isArray(saved.savedSales) ? saved.savedSales : [];
+        state.history = Array.isArray(saved.history) ? saved.history : [];
+        return true;
+      } catch(e) { console.warn('Local load failed:', e); return false; }
+    }
+    function persist() { saveLocalState(); }
+    function cloudPath(name, id) { return doc(db, 'artifacts', appId, 'users', userId, name, id); }
+    function cloudCollection(name) { return collection(db, 'artifacts', appId, 'users', userId, name); }
+    function cloudSettings() { return doc(db, 'artifacts', appId, 'users', userId, 'settings', 'shopData'); }
+    function cloudError(action, e) { console.error(action, e); showToast('Cloud บันทึกไม่ได้ — ข้อมูลถูกเก็บในเครื่องแล้ว'); }
 
     const state = {
       currentTab: 'editor', docType: 'quotation',
@@ -511,40 +559,90 @@
     }
 
     async function initFirebase() {
-      if (!auth) return;
+      if (!firebaseReady || !auth || !db) {
+        showToast('โหมดเครื่อง: Firebase config ยังไม่ได้ตั้งค่า');
+        return;
+      }
       try {
+        await setPersistence(auth, browserLocalPersistence);
         if (initialToken) await signInWithCustomToken(auth, initialToken);
-        else await signInAnonymously(auth);
-        userId = auth.currentUser?.uid;
-        if (userId) {
-          onSnapshot(doc(db, 'artifacts', appId, 'users', userId, 'settings', 'shopData'), (snap) => {
-            if (snap.exists()) {
-              state.shop = { ...state.shop, ...snap.data() };
-              ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
-              const logoPrev = document.getElementById('setting-logo-preview');
-              if(state.shop.logo && logoPrev) { logoPrev.src = state.shop.logo; logoPrev.classList.remove('hidden'); }
+        else if (!auth.currentUser) await signInAnonymously(auth);
+        userId = auth.currentUser?.uid || localStorage.getItem(LOCAL_USER_KEY);
+        if (userId) localStorage.setItem(LOCAL_USER_KEY, userId);
+        if (!userId) throw new Error('ไม่พบ Firebase UID');
+
+        // ย้ายข้อมูลในเครื่องขึ้น Cloud ครั้งแรก หาก Cloud ของบัญชีนี้ยังว่าง
+        // ป้องกันกรณีผู้ใช้กรอกข้อมูลไว้ก่อนใส่ Firebase config แล้วข้อมูลหายเมื่อเชื่อม Cloud
+        const migrationSets = [
+          ['history', state.history], ['customers', state.savedCustomers], ['sales', state.savedSales], ['presets', state.presets]
+        ];
+        for (const [name, rows] of migrationSets) {
+          try {
+            const existing = await getDocs(cloudCollection(name));
+            if (existing.empty && Array.isArray(rows) && rows.length) {
+              await Promise.all(rows.filter(x => x?.id).map(x => setDoc(cloudPath(name, x.id), x, {merge:true})));
             }
-          });
-          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'presets'), (snap) => {
-            state.presets = []; snap.forEach(d => state.presets.push(d.data())); renderPresets();
-          });
-          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'history'), (snap) => {
-            state.history = []; snap.forEach(d => state.history.push(d.data()));
-            state.history.sort((a,b) => b.id.localeCompare(a.id)); renderHistory();
-          });
-          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'customers'), (snap) => {
-            state.savedCustomers = []; snap.forEach(d => state.savedCustomers.push(d.data())); renderDatalists();
-          });
-          onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'sales'), (snap) => {
-            state.savedSales = []; snap.forEach(d => state.savedSales.push(d.data())); renderDatalists();
-          });
+          } catch(e) { console.warn('Migration skipped:', name, e); }
         }
-      } catch (e) { console.error("Firebase Init Error:", e); }
+        try {
+          const shopSnap = await getDoc(cloudSettings());
+          if (!shopSnap.exists() && state.shop) await setDoc(cloudSettings(), state.shop, {merge:true});
+        } catch(e) { console.warn('Shop migration skipped:', e); }
+
+        unsubscribeFns.forEach(fn => { try { fn(); } catch(_){} });
+        unsubscribeFns = [];
+
+        unsubscribeFns.push(onSnapshot(cloudSettings(), (snap) => {
+          if (snap.exists()) {
+            state.shop = { ...state.shop, ...snap.data() };
+            ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
+            const logoPrev = document.getElementById('setting-logo-preview');
+            if(state.shop.logo && logoPrev) { logoPrev.src = state.shop.logo; logoPrev.classList.remove('hidden'); }
+            persist();
+          }
+        }, e => cloudError('Load shop settings', e)));
+
+        unsubscribeFns.push(onSnapshot(cloudCollection('presets'), (snap) => {
+          state.presets = []; snap.forEach(d => state.presets.push(d.data())); renderPresets(); persist();
+        }, e => cloudError('Load presets', e)));
+
+        unsubscribeFns.push(onSnapshot(cloudCollection('history'), (snap) => {
+          state.history = []; snap.forEach(d => state.history.push(d.data()));
+          state.history.sort((a,b) => String(b.id).localeCompare(String(a.id))); renderHistory(); persist();
+        }, e => cloudError('Load history', e)));
+
+        unsubscribeFns.push(onSnapshot(cloudCollection('customers'), (snap) => {
+          state.savedCustomers = []; snap.forEach(d => state.savedCustomers.push(d.data())); renderDatalists(); persist();
+        }, e => cloudError('Load customers', e)));
+
+        unsubscribeFns.push(onSnapshot(cloudCollection('sales'), (snap) => {
+          state.savedSales = []; snap.forEach(d => state.savedSales.push(d.data())); renderDatalists(); persist();
+        }, e => cloudError('Load sales', e)));
+
+        showToast('เชื่อมต่อ Firebase สำเร็จ');
+      } catch (e) {
+        console.error('Firebase Init Error:', e);
+        showToast('Firebase เชื่อมต่อไม่ได้ — ใช้ข้อมูลในเครื่องแทน');
+      }
     }
+
+    window.getFirebaseStatus = () => ({ ready: firebaseReady, projectId: firebaseConfig?.projectId || null, userId });
+    window.setFirebaseConfig = (config) => {
+      try {
+        const parsed = typeof config === 'string' ? JSON.parse(config) : config;
+        if(!parsed?.apiKey || !parsed?.projectId) throw new Error('Firebase config ไม่ครบ');
+        localStorage.setItem('sumran_firebase_config', JSON.stringify(parsed));
+        showToast('บันทึก Firebase config แล้ว กรุณารีโหลดหน้า');
+      } catch(e) { showToast('Firebase config ไม่ถูกต้อง'); console.error(e); }
+    };
+
+    window.addEventListener('beforeunload', persist);
+    setInterval(persist, 30000);
 
     window.onload = async function() {
       try {
-        generateAutoDocNo('quotation');
+        const hadLocal = loadLocalState();
+        if (!state.docNo) generateAutoDocNo('quotation');
         await initFirebase();
         
         safeSetValue('docNo', state.docNo); safeSetValue('docDate', state.docDate); safeSetValue('dueDate', state.dueDate);
@@ -885,26 +983,38 @@
       return { quotation: 'quoting', invoice: 'pending', delivery: 'pending_delivery' }[type] || 'paid';
     }
 
-    function saveCurrentDoc() {
+    async function saveCurrentDoc() {
       calculateTotals();
-      const custNameEl = document.getElementById('custName');
-      const projectNameEl = document.getElementById('projectName');
-      const rec = {
-        id: 'doc-' + Date.now(),
-        docNo: state.docNo, docType: state.docType, refNo: state.refNo,
-        customerName: custNameEl ? custNameEl.value : 'ไม่ระบุ',
-        project: projectNameEl ? projectNameEl.value : '-',
-        date: state.docDate, grandTotal: state.grandTotal, remainingAmt: state.remainingAmt||0, profit: state.profit||0,
-        status: state.history.find(h => h.docNo === state.docNo)?.status || getInitialStatus(state.docType),
-        payload: JSON.parse(JSON.stringify(state))
+      // ดึงค่าจากฟอร์มเข้า state ก่อนสร้าง payload ป้องกันข้อมูลลูกค้า/เอกสารเก่าค้าง
+      state.customer = {
+        name: document.getElementById('custName')?.value || '',
+        phone: document.getElementById('custPhone')?.value || '',
+        taxId: document.getElementById('custTaxId')?.value || '',
+        address: document.getElementById('custAddress')?.value || '',
+        project: document.getElementById('projectName')?.value || ''
       };
-      
-      if (userId && db) setDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', rec.id), rec).then(() => showToast('บันทึกเอกสารขึ้นคลาวด์แล้ว'));
-      else {
-        let idx = state.history.findIndex(h => h.docNo === state.docNo);
-        if (idx >= 0) state.history[idx] = rec; else state.history.unshift(rec);
-        renderHistory(); showToast('บันทึกเอกสารแล้ว (ออฟไลน์)');
-      }
+      state.docNo = document.getElementById('docNo')?.value || state.docNo;
+      state.refNo = document.getElementById('refNo')?.value || '';
+      state.docDate = document.getElementById('docDate')?.value || state.docDate;
+      state.dueDate = document.getElementById('dueDate')?.value || state.dueDate;
+      state.salesName = document.getElementById('salesName')?.value || state.salesName;
+      state.notes = document.getElementById('docNotes')?.value || '';
+      const existing = state.history.find(h => h.docNo === state.docNo);
+      const rec = {
+        id: existing?.id || ('doc-' + Date.now()),
+        docNo: state.docNo, docType: state.docType, refNo: state.refNo,
+        customerName: state.customer.name || 'ไม่ระบุ', project: state.customer.project || '-',
+        date: state.docDate, grandTotal: Number(state.grandTotal || 0), remainingAmt: Number(state.remainingAmt || 0), profit: Number(state.profit || 0),
+        status: existing?.status || getInitialStatus(state.docType),
+        payload: clone(state), savedAt: new Date().toISOString()
+      };
+      const idx = state.history.findIndex(h => h.id === rec.id);
+      if (idx >= 0) state.history[idx] = rec; else state.history.unshift(rec);
+      persist(); renderHistory();
+      if (userId && db) {
+        try { await setDoc(cloudPath('history', rec.id), rec, { merge: true }); showToast('บันทึกเอกสารขึ้น Cloud แล้ว'); }
+        catch(e) { cloudError('Save document', e); }
+      } else showToast('บันทึกเอกสารแล้ว (ในเครื่อง)');
     }
 
     function renderHistory() {
@@ -957,12 +1067,8 @@
     }
 
     function updateDocStatus(id, stat) {
-      if(userId && db) {
-        updateDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว'));
-      } else {
-        const h = state.history.find(x => x.id === id); 
-        if(h) { h.status = stat; showToast('อัปเดตสถานะ (ออฟไลน์)'); }
-      }
+      const h = state.history.find(x => x.id === id); if(h) h.status = stat; persist(); renderHistory();
+      if(userId && db) updateDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
     }
 
     function generateFlowDoc(oldId, newType) {
@@ -1008,8 +1114,8 @@
     }
 
     function delHistory(id) {
-      if(userId&&db) deleteDoc(doc(db,'artifacts',appId,'users',userId,'history',id)).then(()=>showToast('ลบประวัติแล้ว'));
-      else { state.history = state.history.filter(x => x.id !== id); renderHistory(); showToast('ลบประวัติแล้ว'); }
+      state.history = state.history.filter(x => x.id !== id); persist(); renderHistory();
+      if(userId&&db) deleteDoc(doc(db,'artifacts',appId,'users',userId,'history',id)).then(()=>showToast('ลบประวัติแล้ว')).catch(e=>cloudError('Delete history',e)); else showToast('ลบประวัติแล้ว (ในเครื่อง)');
     }
 
     function createNewDocument() {
@@ -1025,8 +1131,9 @@
         const el = document.getElementById('setting-shop-'+k);
         if(el) state.shop[k] = el.value;
       });
-      if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'settings','shopData'), state.shop).then(()=>showToast('บันทึกตั้งค่าขึ้นคลาวด์แล้ว'));
-      else showToast('บันทึกตั้งค่าแล้ว');
+      persist();
+      if(userId&&db) setDoc(cloudSettings(), state.shop, {merge:true}).then(()=>showToast('บันทึกตั้งค่าขึ้น Cloud แล้ว')).catch(e=>cloudError('Save shop settings',e));
+      else showToast('บันทึกตั้งค่าแล้ว (ในเครื่อง)');
     }
     
     function handleLogoUpload(input) {
@@ -1039,6 +1146,8 @@
             logoPreview.src = state.shop.logo;
             logoPreview.classList.remove('hidden');
           }
+          persist();
+          if(userId && db) setDoc(cloudSettings(), state.shop, {merge:true}).catch(e=>cloudError('Save logo',e));
           showToast('เพิ่มโลโก้สำเร็จ');
         };
         reader.readAsDataURL(input.files[0]);
@@ -1089,13 +1198,11 @@
 
     function deleteData(type, id, idx) {
       const paths = { preset: 'presets', customer: 'customers', sales: 'sales' };
-      if(userId && db && id) deleteDoc(doc(db, 'artifacts', appId, 'users', userId, paths[type], id));
-      else {
-        if(type==='preset') state.presets.splice(idx, 1);
-        if(type==='customer') state.savedCustomers.splice(idx, 1);
-        if(type==='sales') state.savedSales.splice(idx, 1);
-        renderDatalists(); openGenericModal(currentModalType);
-      }
+      if(type==='preset') state.presets.splice(idx, 1);
+      if(type==='customer') state.savedCustomers.splice(idx, 1);
+      if(type==='sales') state.savedSales.splice(idx, 1);
+      persist(); renderDatalists(); openGenericModal(currentModalType);
+      if(userId && db && id) deleteDoc(doc(db, 'artifacts', appId, 'users', userId, paths[type], id)).catch(e=>cloudError('Delete data',e));
     }
 
     function saveCustomerInfo() {
@@ -1111,24 +1218,17 @@
         address: addrEl ? addrEl.value : '' 
       };
       if(!c.name) return showToast('กรุณากรอกชื่อลูกค้า');
-      if(userId&&db) setDoc(doc(db,'artifacts',appId,'users',userId,'customers',c.id), c).then(()=>showToast('บันทึกลูกค้าขึ้นคลาวด์'));
-      else { state.savedCustomers.push(c); renderDatalists(); showToast('บันทึกลูกค้า (ออฟไลน์)'); }
+      state.savedCustomers = state.savedCustomers.filter(x => x.name !== c.name || x.phone !== c.phone); state.savedCustomers.push(c); persist(); renderDatalists();
+      if(userId&&db) setDoc(cloudPath('customers',c.id), c, {merge:true}).then(()=>showToast('บันทึกลูกค้าขึ้น Cloud แล้ว')).catch(e=>cloudError('Save customer',e));
+      else showToast('บันทึกลูกค้าแล้ว (ในเครื่อง)');
     }
 
     function saveSalesInfo() {
       const newSalesEl = document.getElementById('new-sales-name');
       const s = { id: 'sale-'+Date.now(), name: newSalesEl ? newSalesEl.value : '' };
       if(!s.name) return;
-      if(userId&&db) {
-        setDoc(doc(db,'artifacts',appId,'users',userId,'sales',s.id), s).then(() => {
-          renderDatalists();
-          openGenericModal('salesModal');
-        });
-      } else {
-        state.savedSales.push(s);
-        renderDatalists();
-        openGenericModal('salesModal');
-      }
+      state.savedSales = state.savedSales.filter(x => x.name !== s.name); state.savedSales.push(s); persist(); renderDatalists(); openGenericModal('salesModal');
+      if(userId&&db) setDoc(cloudPath('sales',s.id), s, {merge:true}).then(()=>showToast('บันทึกพนักงานขายขึ้น Cloud แล้ว')).catch(e=>cloudError('Save sales',e)); else showToast('บันทึกพนักงานขายแล้ว (ในเครื่อง)');
     }
 
     function renderDatalists() {
@@ -1150,4 +1250,16 @@
       const nameEl = document.getElementById('custName');
       const name = nameEl ? nameEl.value : '';
       const c = state.savedCustomers.find(x => x.name === name);
-      i
+      if(c) { 
+        safeSetValue('custPhone', c.phone); 
+        safeSetValue('custTaxId', c.taxId); 
+        safeSetValue('custAddress', c.address); 
+        showToast('ดึงข้อมูลลูกค้าประจำ'); 
+      }
+    }
+
+    // Expose all globals
+    window.switchTab = switchTab; window.updateDocType = updateDocType; window.applyPreset = applyPreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer;
+  </script>
+</body>
+</html>
