@@ -97,3 +97,13 @@ img, svg { max-width: 100%; }
     return res.status(200).send(Buffer.from(pdf));
   } catch (err) {
     console.error('PDF_ERROR', err);
+    // During testing return the real server error so the UI can show what failed.
+    return res.status(500).json({
+      error: `PDF server: ${err && err.message ? err.message : String(err)}`
+    });
+  } finally {
+    if (browser) {
+      try { await browser.close(); } catch (_) {}
+    }
+  }
+};
