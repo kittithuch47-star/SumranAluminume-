@@ -762,15 +762,41 @@
       state.items = state.items.filter(i => i.id !== id); renderItems(); calculateTotals();
     }
     
+    // คำนวณยอดของรายการเดียวจากค่าปัจจุบันเสมอ
+    // ไม่พึ่งค่า item.total เดิม เพราะค่าเดิมอาจเป็นยอดจากก่อนแก้ไขรายการ
+    function recalculateItem(item) {
+      if(!item) return 0;
+      const width = Number(item.width) || 0;
+      const height = Number(item.height) || 0;
+      const qty = Math.max(0, Number(item.qty) || 0);
+      const unitPrice = Math.max(0, Number(item.unitPrice) || 0);
+      item.area = +(width * height).toFixed(2);
+
+      let baseQty = 1;
+      if(item.pricingType === 'per_sqm' && item.type === 'alu') {
+        baseQty = item.area;
+      }
+      item.total = +(baseQty * qty * unitPrice).toFixed(2);
+      return item.total;
+    }
+
     function updateItem(id, field, val) {
       const item = state.items.find(i => i.id === id); if(!item) return;
       if(['width', 'height', 'qty', 'unitPrice'].includes(field)) {
-        item[field] = parseFloat(val) || 0; item.area = +(item.width * item.height).toFixed(2);
-      } else item[field] = val;
-      item.total = +( (item.pricingType === 'per_sqm' && item.area > 0 && item.type === 'alu' ? item.area : 1) * item.qty * item.unitPrice ).toFixed(2);
-      if(document.getElementById(`area-${id}`)) document.getElementById(`area-${id}`).innerText = item.area.toFixed(2);
-      if(document.getElementById(`total-${id}`)) document.getElementById(`total-${id}`).innerText = '฿' + item.total.toLocaleString('th-TH', {minimumFractionDigits: 2});
+        item[field] = parseFloat(val) || 0;
+      } else {
+        item[field] = val;
+      }
+
+      // เปลี่ยนการคิดราคา/ขนาด/จำนวน/ราคาต่อหน่วย ต้องคำนวณยอดรายการใหม่ทันที
+      recalculateItem(item);
+      if(document.getElementById(`area-${id}`)) document.getElementById(`area-${id}`).innerText = Number(item.area || 0).toFixed(2);
+      if(document.getElementById(`total-${id}`)) document.getElementById(`total-${id}`).innerText = '฿' + Number(item.total || 0).toLocaleString('th-TH', {minimumFractionDigits: 2});
+
       calculateTotals();
+      // ถ้ากำลังอยู่หน้า Preview ให้ยอดในใบเสนอราคาเปลี่ยนทันทีด้วย
+      if(state.currentTab === 'preview') renderPreview();
+      persist();
     }
 
     function renderItems() {
@@ -813,13 +839,23 @@
 
     function getPaymentRecords() {
       if(!Array.isArray(state.payments)) state.payments = [];
+      // ล้างรายการรับเงินที่ไม่ใช่ตัวเลข/ติดลบ เพื่อไม่ให้ยอดรวมค้างหรือเพี้ยน
+      state.payments = state.payments.filter(p => p && Number.isFinite(Number(p.amount)) && Number(p.amount) > 0);
       return state.payments;
     }
 
     function getTotalPaid() {
       const payments = getPaymentRecords();
-      if(payments.length) return +payments.reduce((sum,p) => sum + (Number(p.amount)||0), 0).toFixed(2);
-      return +(Number(state.prevPaid)||0).toFixed(2);
+      if(payments.length) {
+        return +payments.reduce((sum,p) => sum + Math.max(0, Number(p.amount)||0), 0).toFixed(2);
+      }
+      // รองรับเอกสารรุ่นเก่าที่มีเพียง prevPaid แต่ยังไม่มี payment records
+      return +Math.max(0, Number(state.prevPaid)||0).toFixed(2);
+    }
+
+    function normalizeMoney(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? +Math.max(0, n).toFixed(2) : 0;
     }
 
     function renderPaymentHistory() {
@@ -864,13 +900,14 @@
 
     function updateDepositPercent() {
       const input = document.getElementById('deposit-percent');
-      let percent = input ? (parseFloat(input.value) || 0) : 0;
+      let percent = input ? Number(input.value) : Number(state.depositPercent || 0);
+      if(!Number.isFinite(percent)) percent = 0;
       percent = Math.min(100, Math.max(0, percent));
-      state.depositPercent = percent;
-      if(input && parseFloat(input.value) !== percent) input.value = percent;
-      state.depositAmount = +(state.grandTotal * percent / 100).toFixed(2);
-      safeSetText('calc-deposit-amt', '฿' + state.depositAmount.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      // สำคัญ: การกำหนดมัดจำเป็นเพียง "ยอดที่ต้องชำระ" ไม่ถือว่าได้รับเงินจริง
+      state.depositEnabled = !!document.getElementById('deposit-toggle')?.checked;
+      state.depositPercent = state.depositEnabled ? +percent.toFixed(2) : 0;
+      if(input) input.value = state.depositPercent;
+
+      // คำนวณยอดเอกสารใหม่ก่อนคำนวณมัดจำเสมอ ป้องกันใช้ยอดเก่าที่ค้างอยู่
       calculateTotals(true);
     }
 
@@ -904,7 +941,10 @@
         state.lumpSumAmt = lumpSumInput ? (parseFloat(lumpSumInput.value) || 0) : 0;
         sub = state.lumpSumAmt;
       } else {
-        sub = state.items.reduce((s, i) => s + (i.total || 0), 0);
+        // สำคัญ: คำนวณทุก item ใหม่ทุกครั้งก่อนรวมยอด
+        // ป้องกันยอดเก่าค้างใน state.items จากเอกสาร/พรีเซ็ตที่โหลดมา
+        sub = state.items.reduce((sum, item) => sum + recalculateItem(item), 0);
+        sub = +sub.toFixed(2);
       }
 
       const discInput = document.getElementById('calc-discount');
@@ -927,9 +967,13 @@
       }
 
       const currentPaymentInput = document.getElementById('current-payment');
-      state.currentPayment = currentPaymentInput ? Math.max(0, parseFloat(currentPaymentInput.value) || 0) : 0;
-      const totalPaidBeforeCurrent = getTotalPaid();
-      const remAmt = Math.max(0, +(grand - totalPaidBeforeCurrent - state.currentPayment).toFixed(2));
+      let currentPayment = currentPaymentInput ? normalizeMoney(currentPaymentInput.value) : normalizeMoney(state.currentPayment);
+      const totalPaidBeforeCurrent = Math.min(grand, getTotalPaid());
+      // ห้ามรับชำระเกินยอดคงเหลือของเอกสาร
+      currentPayment = Math.min(currentPayment, Math.max(0, +(grand - totalPaidBeforeCurrent).toFixed(2)));
+      state.currentPayment = currentPayment;
+      if(currentPaymentInput && Number(currentPaymentInput.value) !== currentPayment) currentPaymentInput.value = currentPayment;
+      const remAmt = Math.max(0, +(grand - totalPaidBeforeCurrent - currentPayment).toFixed(2));
 
       safeSetText('calc-subtotal', '฿' + sub.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-after-discount', '฿' + after.toLocaleString('th-TH',{minimumFractionDigits:2}));
@@ -946,10 +990,18 @@
 
       state.subtotal = sub; state.discount = disc; state.afterDiscount = after;
       state.vat = vat; state.vatEnabled = !!vatEl?.checked; state.wht = wht; state.whtEnabled = !!whtEl?.checked;
-      state.grandTotal = grand; state.remainingAmt = remAmt; state.profit = profit;
+      state.grandTotal = grand;
+      state.remainingAmt = remAmt;
+      state.profit = profit;
       state.prevPaid = totalPaidBeforeCurrent;
       state.bahtText = thaiBahtConversion(grand);
+      // เก็บค่าที่คำนวณแล้วให้ตรงกับหน้าจอทุกครั้ง
+      state.depositAmount = state.depositEnabled ? +(grand * state.depositPercent / 100).toFixed(2) : 0;
+      safeSetText('calc-deposit-amt', '฿' + state.depositAmount.toLocaleString('th-TH',{minimumFractionDigits:2}));
       renderPaymentHistory();
+
+      // ถ้าผู้ใช้อยู่หน้าใบเสนอราคา/Preview ให้เอกสารด้านหน้าอัปเดตตามยอดล่าสุดทันที
+      if(state.currentTab === 'preview') renderPreview();
     }
 
     function renderPreview() {
@@ -1016,10 +1068,10 @@
         tb.innerHTML = '';
         state.items.forEach((item, idx) => {
           let sub = item.type==='alu' ? `สี: ${item.aluColor} | กระจก: ${item.glassType}` : '-';
-          let dim = item.type==='alu' ? `${item.width.toFixed(2)}x${item.height.toFixed(2)}` : '-';
-          let area = item.type==='alu' ? item.area.toFixed(2) : '-';
-          let up = state.isLumpSum ? '-' : '฿'+item.unitPrice.toLocaleString('th-TH');
-          let tot = state.isLumpSum ? (idx===0 ? '฿'+state.lumpSumAmt.toLocaleString('th-TH',{minimumFractionDigits:2}) : '-') : '฿'+item.total.toLocaleString('th-TH',{minimumFractionDigits:2});
+          let dim = item.type==='alu' ? `${Number(item.width||0).toFixed(2)}x${Number(item.height||0).toFixed(2)}` : '-';
+          let area = item.type==='alu' ? Number(item.area||0).toFixed(2) : '-';
+          let up = state.isLumpSum ? '-' : '฿'+Number(item.unitPrice||0).toLocaleString('th-TH');
+          let tot = state.isLumpSum ? (idx===0 ? '฿'+Number(state.lumpSumAmt||0).toLocaleString('th-TH',{minimumFractionDigits:2}) : '-') : '฿'+Number(item.total||0).toLocaleString('th-TH',{minimumFractionDigits:2});
           
           tb.innerHTML += `<tr class="border-b border-slate-100 ${idx%2===0?'bg-white':'bg-slate-50/50'}"><td class="py-1.5 px-2 text-center">${idx+1}</td><td class="py-1.5 px-3"><div class="font-bold text-slate-900">${escapeHtml(item.name)}</div><div class="text-[9px] text-slate-500">${sub}</div></td><td class="py-1.5 px-2 text-center font-mono">${dim}</td><td class="py-1.5 px-2 text-center font-mono">${area}</td><td class="py-1.5 px-2 text-center font-mono">${item.qty} <span class="text-[9px]">${escapeHtml(item.unit)}</span></td><td class="py-1.5 px-2 text-right font-mono">${up}</td><td class="py-1.5 px-2 text-right font-mono font-bold">${tot}</td></tr>`;
         });
@@ -1082,6 +1134,10 @@
       state.salesName = document.getElementById('salesName')?.value || state.salesName;
       state.notes = document.getElementById('docNotes')?.value || '';
       if(!Array.isArray(state.payments)) state.payments = [];
+
+      // คำนวณยอดจากข้อมูลล่าสุดอีกครั้งก่อนบันทึกเสมอ
+      // เพื่อป้องกัน payload เก็บ grandTotal / remaining / deposit เป็นค่าเก่า
+      calculateTotals();
 
       // currentPayment = เงินที่ได้รับจริงในครั้งนี้เท่านั้น
       const receiveNow = Math.max(0, Number(state.currentPayment)||0);
