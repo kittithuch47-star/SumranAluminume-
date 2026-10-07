@@ -82,6 +82,19 @@
       #print-area .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)) !important; }
       #print-area .col-span-7 { grid-column: span 7 / span 7 !important; }
       #print-area .col-span-5 { grid-column: span 5 / span 5 !important; }
+      #print-area #p-items-table { width: 100% !important; table-layout: fixed !important; }
+      #print-area #p-items-table th, #print-area #p-items-table td { box-sizing: border-box !important; vertical-align: top !important; }
+      #print-area #p-items-table th:nth-child(3), #print-area #p-items-table td:nth-child(3),
+      #print-area #p-items-table th:nth-child(4), #print-area #p-items-table td:nth-child(4),
+      #print-area #p-items-table th:nth-child(5), #print-area #p-items-table td:nth-child(5) {
+        white-space: nowrap !important; overflow: hidden !important; padding-left: 3px !important; padding-right: 3px !important;
+      }
+      #print-area #p-items-table th:nth-child(3), #print-area #p-items-table td:nth-child(3),
+      #print-area #p-items-table th:nth-child(4), #print-area #p-items-table td:nth-child(4) {
+        border-left: 1px solid #e2e8f0 !important; border-right: 1px solid #e2e8f0 !important;
+      }
+      #print-area #p-items-table td:nth-child(6), #print-area #p-items-table td:nth-child(7) { white-space: nowrap !important; }
+      #print-area .print-document-footer { display: flex !important; }
 
       #print-area table {
         width: 100% !important;
@@ -406,6 +419,7 @@
               <div>เลขที่: <strong id="p-doc-no" class="font-mono text-slate-900"></strong></div>
               <div id="p-ref-no-container" class="hidden text-[10px] text-slate-500">อ้างอิง: <span id="p-ref-no"></span></div>
               <div>วันที่: <span id="p-doc-date"></span></div>
+              <div class="pt-1 text-[9px] text-slate-400">พิมพ์เมื่อ: <span id="p-printed-at"></span></div>
               <div id="p-due-date-container">กำหนด: <span id="p-due-date"></span></div>
             </div>
           </div>
@@ -427,16 +441,20 @@
         </div>
 
         <div class="mb-4 min-h-[150px]">
-          <table class="w-full text-[11px] text-left border-collapse">
+          <table id="p-items-table" class="w-full text-[11px] text-left border-collapse table-fixed">
+            <colgroup>
+              <col style="width:5%"><col style="width:42%"><col style="width:11%">
+              <col style="width:9%"><col style="width:8%"><col style="width:12%"><col style="width:13%">
+            </colgroup>
             <thead>
               <tr class="bg-slate-800 text-white font-semibold">
-                <th class="py-1.5 px-2 text-center w-8 border border-slate-700">#</th>
+                <th class="py-1.5 px-2 text-center border border-slate-700">#</th>
                 <th class="py-1.5 px-3 border border-slate-700">รายการสินค้า / รายละเอียด</th>
-                <th class="py-1.5 px-2 text-center w-14 border border-slate-700">กxส(ม.)</th>
-                <th class="py-1.5 px-2 text-center w-12 border border-slate-700">ตร.ม.</th>
-                <th class="py-1.5 px-2 text-center w-14 border border-slate-700">จำนวน</th>
-                <th class="py-1.5 px-2 text-right w-20 border border-slate-700">ราคา/หน่วย</th>
-                <th class="py-1.5 px-2 text-right w-24 border border-slate-700">จำนวนเงิน</th>
+                <th class="py-1.5 px-2 text-center border border-slate-700 whitespace-nowrap">กxส(ม.)</th>
+                <th class="py-1.5 px-2 text-center border border-slate-700 whitespace-nowrap">ตร.ม.</th>
+                <th class="py-1.5 px-2 text-center border border-slate-700 whitespace-nowrap">จำนวน</th>
+                <th class="py-1.5 px-2 text-right border border-slate-700 whitespace-nowrap">ราคา/หน่วย</th>
+                <th class="py-1.5 px-2 text-right border border-slate-700 whitespace-nowrap">จำนวนเงิน</th>
               </tr>
             </thead>
             <tbody id="p-items-tbody" class="align-top"></tbody>
@@ -489,6 +507,10 @@
             <p class="text-slate-600 font-bold mt-0.5" id="sig3-title">ผู้มีอำนาจลงนาม</p>
             <p class="text-slate-400 text-[9px] mt-0.5">วันที่ ......./......./...........</p>
           </div>
+        </div>
+        <div class="print-document-footer mt-5 pt-2 border-t border-slate-200 text-[9px] text-slate-400 flex justify-between items-center">
+          <span>เอกสารจัดทำจากระบบ Sumran Aluminum</span>
+          <span>sumranaluminume.vercel.app</span>
         </div>
       </div>
     </div>
@@ -1573,6 +1595,7 @@
       }
 
       safeSetText('p-doc-no', state.docNo); safeSetText('p-doc-date', formatDateThai(state.docDate)); safeSetText('p-due-date', formatDateThai(state.dueDate));
+      safeSetText('p-printed-at', new Date().toLocaleString('th-TH', { dateStyle:'short', timeStyle:'short' }));
       safeSetText('p-sales-name', state.salesName);
       safeSetText('p-cust-name', state.customer.name); safeSetText('p-cust-phone', state.customer.phone); safeSetText('p-cust-taxid', state.customer.taxId);
       safeSetText('p-cust-address', state.customer.address); safeSetText('p-project-name', state.customer.project);
