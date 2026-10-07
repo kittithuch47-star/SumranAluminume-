@@ -101,6 +101,10 @@
       #print-area #p-items-table tbody {
         display: table-row-group !important;
       }
+      #print-area #p-items-table + * {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
       #print-area #p-items-table tr {
         break-inside: avoid !important;
         page-break-inside: avoid !important;
@@ -113,11 +117,6 @@
         background: #fff !important;
         border: 1px solid #e2e8f0 !important;
         white-space: nowrap !important;
-      }
-      #print-area .grid.grid-cols-12,
-      #print-area .grid.grid-cols-3 {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
       }
       #print-area .grid.grid-cols-3 {
         margin-top: 8mm !important;
@@ -134,12 +133,40 @@
 
       #print-area img { max-width: 100%; }
 
-      #print-area table,
-      #print-area tr,
-      #print-area .signature-section,
-      #print-area > div {
-        break-inside: avoid;
-        page-break-inside: avoid;
+      /* Multi-page flow:
+         - document header + customer block stay together
+         - the item table is allowed to flow naturally across pages
+         - each item row stays intact
+         - totals/payment/signatures stay together when possible
+         IMPORTANT: do NOT apply break-inside:avoid to every direct child,
+         otherwise the whole item table is pushed to the next page. */
+      #print-area > div:nth-child(1),
+      #print-area > div:nth-child(2) {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      #print-area > div:nth-child(3) {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+
+      #print-area #p-items-table,
+      #print-area #p-items-table tbody {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+
+      #print-area #p-items-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      #print-area > div:nth-child(4),
+      #print-area > div:nth-child(5),
+      #print-area > div:nth-child(6) {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
 
       /* ใช้ขนาดและโครงสร้างเดียวกับ Preview ไม่ให้มือถือ reflow ตอนพิมพ์ */
