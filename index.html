@@ -22,15 +22,83 @@
   </script>
 
   <style>
+    /* A4 screen preview */
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 15mm;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      box-sizing: border-box;
+    }
+
+    /* Responsive sizing is SCREEN ONLY. Never let the phone viewport change the
+       physical A4 size while printing. */
+    @media screen and (max-width: 820px) {
+      .a4-page {
+        width: 100%;
+        min-height: auto;
+        padding: 12px;
+      }
+    }
+
     @media print {
+      @page { size: A4 portrait; margin: 0; }
+
+      html, body {
+        width: 210mm !important;
+        min-width: 210mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
-      #print-area { position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; padding: 0 !important; background: white !important; box-shadow: none !important; }
+
+      #print-area {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important;
+        min-width: 210mm !important;
+        max-width: 210mm !important;
+        min-height: 297mm !important;
+        margin: 0 !important;
+        padding: 12mm !important;
+        box-sizing: border-box !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+      }
+
+      /* Keep the document's columns/rows from reflowing because of the phone
+         viewport. */
+      #print-area .grid { display: grid !important; }
+      #print-area .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      #print-area .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)) !important; }
+      #print-area .col-span-7 { grid-column: span 7 / span 7 !important; }
+      #print-area .col-span-5 { grid-column: span 5 / span 5 !important; }
+
+      #print-area table {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+
+      #print-area img { max-width: 100%; }
+
+      #print-area table,
+      #print-area tr,
+      #print-area .signature-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
       .no-print { display: none !important; }
-      @page { size: A4 portrait; margin: 10mm; }
     }
-    .a4-page { width: 210mm; min-height: 297mm; padding: 15mm; margin: 0 auto; background: white; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); box-sizing: border-box; }
-    @media (max-width: 820px) { .a4-page { width: 100%; min-height: auto; padding: 12px; } }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .modal-overlay { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
@@ -298,7 +366,7 @@
         <button onclick="printDocument()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ / Save PDF</button>
       </div>
 
-      <div id="print-area" class="a4-page font-doc text-slate-900 border border-slate-200 sm:rounded-lg text-sm">
+      <div id="print-area" class="a4-page font-doc text-slate-900 border border-slate-200 sm:rounded-lg text-sm print-a4-document">
         <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-4">
           <div class="flex gap-4 max-w-[62%] items-start">
             <img id="p-shop-logo" src="" alt="Logo" class="max-h-[70px] max-w-[100px] object-contain hidden border-none rounded p-1">
@@ -429,7 +497,7 @@
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="archive" class="w-5 h-5 text-sky-600"></i> ประวัติงานและบิลทั้งหมด</h2>
           <div class="flex gap-2 w-full sm:w-auto">
             <div class="relative flex-1 sm:w-64">
-              <input type="text" id="search-history" placeholder="ค้นหาเลขที่, ลูกค้า..." onkeyup="renderHistory()" class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500 bg-slate-50">
+              <input type="text" id="search-history" placeholder="ค้นหาเลขที่, ลูกค้า..." oninput="renderHistory()" class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500 bg-slate-50">
               <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2"></i>
             </div>
             <button onclick="createNewDocument()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-semibold whitespace-nowrap">+ สร้างบิลใหม่</button>
@@ -1155,8 +1223,9 @@
       const pfx = { quotation: 'QT', delivery: 'DO', invoice: 'IV', receipt: 'RE', cashbill: 'CS' }[type] || 'QT';
       const d = new Date(); const ym = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0');
       let last = 0;
-      state.history.filter(h => h.docNo.startsWith(pfx + '-' + ym)).forEach(h => {
-        let n = parseInt(h.docNo.split('-')[2]); if(n > last) last = n;
+      state.history.filter(h => String(h?.docNo || '').startsWith(pfx + '-' + ym)).forEach(h => {
+        const n = parseInt(String(h?.docNo || '').split('-')[2], 10);
+        if(Number.isFinite(n) && n > last) last = n;
       });
       state.docNo = `${pfx}-${ym}-${String(last + 1).padStart(3, '0')}`;
       safeSetValue('docNo', state.docNo);
@@ -1661,29 +1730,60 @@
       if(window.lucide) window.lucide.createIcons();
     }
 
-    async function printDocument() {
+    function printDocument() {
       if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+
       calculateTotals();
       renderPreview();
-      const existing = state.history.find(h => h.docNo === state.docNo);
+
+      const existing = state.history.find(h => String(h?.docNo || '') === String(state.docNo || ''));
       if(!existing) {
         showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์ เพื่อให้เอกสารถูกเก็บในระบบ');
         return;
       }
+
       const archive = {
-        id: 'print-'+Date.now(), historyId: existing.id, docNo: existing.docNo, docType: existing.docType,
-        customerName: existing.customerName, printedAt: new Date().toISOString(),
-        createdByUid: userId, createdByEmail: auth.currentUser?.email || '', createdByName: auth.currentUser?.displayName || '',
-        grandTotal: existing.grandTotal, paidTotal: existing.paidTotal||0, remainingAmt: existing.remainingAmt||0,
+        id: 'print-'+Date.now(),
+        historyId: existing.id,
+        docNo: existing.docNo,
+        docType: existing.docType,
+        customerName: existing.customerName,
+        printedAt: new Date().toISOString(),
+        createdByUid: userId,
+        createdByEmail: auth.currentUser?.email || '',
+        createdByName: auth.currentUser?.displayName || '',
+        grandTotal: existing.grandTotal,
+        paidTotal: existing.paidTotal || 0,
+        remainingAmt: existing.remainingAmt || 0,
         payloadVersion: 1
       };
-      state.printArchive = [archive, ...(state.printArchive||[])].filter((x,i,a) => i === a.findIndex(y => y.id === x.id));
-      persist(); renderPrintArchive();
-      if(userId && db) {
-        try { await setDoc(cloudPath('printArchive', archive.id), archive, {merge:true}); } catch(e) { cloudError('Save print archive', e); }
+
+      // Save locally first so the print action does not depend on network speed.
+      state.printArchive = [archive, ...(state.printArchive || [])]
+        .filter((x, i, a) => i === a.findIndex(y => y.id === x.id));
+      persist();
+      renderPrintArchive();
+
+      /*
+       * IMPORTANT:
+       * window.print() must run directly inside the button's user action.
+       * Do NOT await Firebase or use setTimeout before calling it, because
+       * mobile browsers can then block the print dialog / Save PDF sheet.
+       */
+      showToast('กำลังเปิดหน้าพิมพ์ / Save PDF...');
+      try {
+        if(typeof window.print !== 'function') throw new Error('window.print unavailable');
+        window.print();
+      } catch(e) {
+        console.error('Print failed:', e);
+        showToast('เบราว์เซอร์นี้ไม่รองรับการพิมพ์ กรุณาเปิดด้วย Safari/Chrome');
       }
-      showToast('บันทึกประวัติการพิมพ์แล้ว — เปิดหน้าพิมพ์/PDF ได้เลย');
-      setTimeout(() => window.print(), 250);
+
+      // Cloud archive is non-blocking and happens after the print request.
+      if(userId && db) {
+        setDoc(cloudPath('printArchive', archive.id), archive, {merge:true})
+          .catch(e => cloudError('Save print archive', e));
+      }
     }
 
     async function deletePrintArchive(id) {
@@ -1816,8 +1916,22 @@
     function renderHistory() {
       const tb = document.getElementById('history-tbody'); if(!tb) return; tb.innerHTML = '';
       const searchInput = document.getElementById('search-history');
-      let q = searchInput ? searchInput.value.toLowerCase() : '';
-      let filtered = state.history.filter(h => h.docNo.toLowerCase().includes(q) || h.customerName.toLowerCase().includes(q) || (h.refNo && h.refNo.toLowerCase().includes(q)));
+      const q = String(searchInput?.value || '').trim().toLowerCase();
+      const filtered = state.history.filter(h => {
+        const docNo = String(h?.docNo || '').toLowerCase();
+        const customerName = String(h?.customerName || '').toLowerCase();
+        const refNo = String(h?.refNo || '').toLowerCase();
+        const project = String(h?.project || '').toLowerCase();
+        const createdByName = String(h?.createdByName || '').toLowerCase();
+        const createdByEmail = String(h?.createdByEmail || '').toLowerCase();
+        return !q ||
+          docNo.includes(q) ||
+          customerName.includes(q) ||
+          refNo.includes(q) ||
+          project.includes(q) ||
+          createdByName.includes(q) ||
+          createdByEmail.includes(q);
+      });
       
       const txMap = getTransactionMap(state.history);
       let totalSales = 0, totalProfit = 0, totalDebt = 0;
