@@ -1099,6 +1099,8 @@
     let unsubscribeFns = [];
     let authInitialized = false;
     let authActionBusy = false;
+    let authReadyPromise = null;
+    let authReadyUid = null;
     let authGateVisible = false;
     let anonymousMigrationUid = null;
     let currentMember = null;
@@ -1630,6 +1632,40 @@
       if(isOwner()) renderMembers();
     }
 
+    function setAuthUiBusy(busy, message='') {
+      authActionBusy=!!busy;
+      const btn=document.getElementById('google-login-btn');
+      if(btn) btn.disabled=authActionBusy || !firebaseReady;
+      if(message){
+        const status=document.getElementById('auth-gate-status');
+        if(status) status.textContent=message;
+      }
+    }
+
+    async function loadCompanyInitialData() {
+      if(!userId || !db || !companyAccessReady) return;
+      const [shopSnap,presetsSnap,historySnap,customersSnap,salesSnap,archiveSnap] = await Promise.all([
+        getDoc(cloudSettings()),
+        getDocs(cloudCollection('presets')),
+        getDocs(cloudCollection('history')),
+        getDocs(cloudCollection('customers')),
+        getDocs(cloudCollection('sales')),
+        getDocs(cloudCollection('printArchive'))
+      ]);
+      if(shopSnap.exists()) state.shop={...state.shop,...shopSnap.data()};
+      state.presets=[]; presetsSnap.forEach(d=>state.presets.push(d.data()));
+      state.history=[]; historySnap.forEach(d=>state.history.push(d.data()));
+      state.history.sort((a,b)=>String(b.savedAt||b.id||'').localeCompare(String(a.savedAt||a.id||'')));
+      state.savedCustomers=[]; customersSnap.forEach(d=>state.savedCustomers.push(d.data()));
+      state.savedSales=[]; salesSnap.forEach(d=>state.savedSales.push(d.data()));
+      state.printArchive=[]; archiveSnap.forEach(d=>state.printArchive.push(d.data()));
+      state.printArchive.sort((a,b)=>String(b.printedAt||'').localeCompare(String(a.printedAt||'')));
+      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k=>safeSetValue('setting-shop-'+k,state.shop[k]));
+      const logoPrev=document.getElementById('setting-logo-preview');
+      if(state.shop.logo&&logoPrev){logoPrev.src=state.shop.logo;logoPrev.classList.remove('hidden');}
+      renderPresets(); renderHistory(); renderDatalists(); renderPrintArchive(); persist();
+    }
+
     async function loginWithGoogle() {
       if(!auth) return showToast('Firebase ยังไม่พร้อมใช้งาน');
       const provider = new GoogleAuthProvider();
@@ -1672,7 +1708,7 @@
       if(!auth) return;
       try {
         clearTimeout(state.liveSyncTimer); unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
-        companyAccessReady=false; currentMember=null; currentRole=null; pendingLegacyData=null; clearCurrentCloudView();
+        companyAccessReady=false; currentMember=null; currentRole=null; pendingLegacyData=null; authReadyPromise=null; authReadyUid=null; clearCurrentCloudView();
         await signOut(auth); userId=null; updateAuthUserUi(null); setAuthGate(true,'ออกจากระบบแล้ว กรุณาเข้าสู่ระบบด้วย Google'); showToast('ออกจากระบบแล้ว');
       } catch(e){console.error('Logout error',e);showToast('ออกจากระบบไม่สำเร็จ');}
     }
@@ -1680,20 +1716,39 @@
     async function handleGoogleUserReady(user) {
       if(!user||user.isAnonymous){setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว กรุณากดเข้าสู่ระบบด้วย Google');return;}
       userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
-      if(authActionBusy) return;
-      try {
-        currentMember=await loadMembershipForUser(user);
-        if(!currentMember){
-          companyAccessReady=false; currentRole=null;
-          setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์
-หากเป็นเจ้าของครั้งแรก ให้สร้างสมาชิกใน Firestore: companies/sumran-aluminum-shop/members/<UID>`);
-          return;
+
+      // ป้องกัน onAuthStateChanged / redirect / init เรียกโหลดบัญชีเดียวกันซ้ำพร้อมกัน
+      if(authReadyPromise && authReadyUid===user.uid) return authReadyPromise;
+      authReadyUid=user.uid;
+      authReadyPromise=(async()=>{
+        try {
+          setAuthUiBusy(true,'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลร้าน...');
+          setAuthGate(true,'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลร้าน...');
+          currentMember=await loadMembershipForUser(user);
+          if(!currentMember){
+            companyAccessReady=false; currentRole=null;
+            setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์\nหากเป็นเจ้าของครั้งแรก ให้สร้างสมาชิกใน Firestore: companies/sumran-aluminum-shop/members/<UID>`);
+            return;
+          }
+          currentRole=currentMember.role; companyAccessReady=true;
+          state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
+          if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
+          resetEditorForSession(); updateRoleUi();
+
+          // โหลดข้อมูลส่วนกลางให้ครบก่อนเปิดหน้า ลดอาการเข้าแล้วข้อมูลว่าง โดยโหลดพร้อมกันทุก collection
+          await loadCompanyInitialData();
+          await attachCloudListenersForCurrentUser();
+          setAuthGate(false);
+        } catch(e){
+          console.error('Prepare signed-in user failed:',e);
+          companyAccessReady=false;
+          setAuthGate(true,`โหลดข้อมูลร้านไม่สำเร็จ (${e?.code||'unknown'})\nกรุณาลองใหม่อีกครั้ง`);
+        } finally {
+          setAuthUiBusy(false);
+          authReadyPromise=null; authReadyUid=null;
         }
-        currentRole=currentMember.role; companyAccessReady=true; state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
-        if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
-        resetEditorForSession();
-        updateRoleUi(); setAuthGate(false); await attachCloudListenersForCurrentUser();
-      } catch(e){console.error(e);setAuthGate(true,'ตรวจสอบสิทธิ์ร้านไม่สำเร็จ — ตรวจสอบ Firestore Rules');}
+      })();
+      return authReadyPromise;
     }
 
     function handleAuthStateChange(user) {
@@ -1715,7 +1770,6 @@
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
         if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
         const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
-        if(current&&!current.isAnonymous&&!authActionBusy) await handleGoogleUserReady(current);
         if(window.lucide) window.lucide.createIcons();
       } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
     }
