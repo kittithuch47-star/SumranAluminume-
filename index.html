@@ -33,6 +33,8 @@
       box-sizing: border-box;
     }
 
+    /* Responsive sizing is SCREEN ONLY. Never let the phone viewport change the
+       physical A4 size while printing. */
     @media screen and (max-width: 820px) {
       .a4-page {
         width: 100%;
@@ -41,6 +43,11 @@
       }
     }
 
+    /* ============================================================
+       V8 MOBILE / TABLET UI
+       ใช้ HTML + Firebase + Login + ฟังก์ชันเดิมทั้งหมด
+       เปลี่ยนเฉพาะหน้าตาเมื่อเป็นหน้าจอสัมผัส/หน้าจอแคบ
+       ============================================================ */
     .mobile-only-nav { display: none; }
 
     @media screen and (max-width: 1024px) {
@@ -51,6 +58,7 @@
         padding-bottom: 76px;
       }
 
+      /* Top bar */
       body > header {
         position: sticky;
         top: 0;
@@ -79,6 +87,7 @@
         font-size: 9px !important;
       }
 
+      /* Hide the desktop-style tab buttons; bottom nav becomes the main mobile nav. */
       #tab-btn-editor,
       #tab-btn-preview,
       #tab-btn-history,
@@ -98,12 +107,14 @@
         padding: 5px 8px !important;
       }
 
+      /* Main canvas */
       main.max-w-7xl {
         max-width: none !important;
         width: 100% !important;
         padding: 10px !important;
       }
 
+      /* Turn the existing large panels into friendly cards. */
       main .bg-white.rounded-2xl {
         border-radius: 18px !important;
         box-shadow: 0 5px 18px rgba(15,23,42,.06) !important;
@@ -113,6 +124,7 @@
         padding: 13px !important;
       }
 
+      /* Document type selector */
       #tab-editor .grid.grid-cols-2.md\:grid-cols-5 {
         grid-template-columns: repeat(2, minmax(0,1fr)) !important;
       }
@@ -124,6 +136,7 @@
         border-radius: 12px !important;
       }
 
+      /* Inputs/buttons: touch friendly */
       main input,
       main select,
       main textarea {
@@ -139,6 +152,8 @@
         border-radius: 11px !important;
       }
 
+      /* Most editor grids become one-column on a phone/tablet.
+         Explicit two-column blocks remain useful where they are short. */
       #tab-editor .md\:grid-cols-2 {
         grid-template-columns: 1fr !important;
       }
@@ -146,6 +161,7 @@
         grid-template-columns: 1fr !important;
       }
 
+      /* Keep item tables usable: horizontal scroll rather than crushing columns. */
       #tab-editor .overflow-x-auto,
       #tab-history .overflow-x-auto,
       #tab-settings .overflow-x-auto {
@@ -159,6 +175,7 @@
         min-width: 720px;
       }
 
+      /* History cards feel lighter on touch screens. */
       #tab-history .grid {
         gap: 10px !important;
       }
@@ -167,6 +184,8 @@
         font-size: 15px !important;
       }
 
+      /* Preview screen gets edge-to-edge space on small devices,
+         while the A4 document itself remains the print document. */
       #tab-preview {
         padding-bottom: 8px;
       }
@@ -179,6 +198,7 @@
         box-shadow: 0 8px 26px rgba(15,23,42,.10) !important;
       }
 
+      /* Mobile bottom navigation */
       .mobile-only-nav {
         display: grid !important;
         grid-template-columns: 1fr 1fr 1.15fr 1fr 1fr;
@@ -238,6 +258,7 @@
         height: 27px;
       }
 
+      /* Toasts/modals stay above the mobile nav */
       .fixed.z-50, .fixed.z-\[60\], .fixed.z-\[70\], .fixed.z-\[80\] {
         z-index: 120 !important;
       }
@@ -247,6 +268,8 @@
       main {
         padding-bottom: 4px !important;
       }
+
+      /* Phone-sized header: keep the brand, reduce clutter. */
       body > header > div {
         padding: 8px 10px !important;
       }
@@ -256,12 +279,16 @@
       body > header h1 {
         font-size: 15px !important;
       }
+
+      /* Full-width cards and controls */
       main .space-y-6 > * + * {
         margin-top: 10px !important;
       }
       main .rounded-2xl {
         border-radius: 16px !important;
       }
+
+      /* Make summary/value blocks easy to scan. */
       #tab-editor .grid {
         gap: 9px !important;
       }
@@ -269,18 +296,34 @@
       #tab-editor .text-3xl {
         font-size: 22px !important;
       }
+
+      /* Search is prominent on phone. */
       #search-history {
         min-height: 48px !important;
         font-size: 15px !important;
         box-shadow: 0 0 0 3px rgba(14,165,233,.06);
       }
+
+      /* Avoid accidental sideways page scrolling. */
       html, body {
         max-width: 100%;
         overflow-x: hidden;
       }
     }
 
+    @media screen and (min-width: 641px) and (max-width: 1024px) {
+      /* iPad portrait/tablet: use two columns where it helps,
+         while retaining the mobile navigation and touch targets. */
+      #tab-editor .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+      #tab-editor .md\:grid-cols-3 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+    }
+
     @media print {
+      /* ขอบกระดาษ A4 สำหรับงานพิมพ์จริง */
       @page { size: A4 portrait; margin: 10mm; }
 
       html, body {
@@ -312,6 +355,8 @@
         overflow: visible !important;
       }
 
+      /* Keep the document's columns/rows from reflowing because of the phone
+         viewport. */
       #print-area .grid { display: grid !important; }
       #print-area .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
       #print-area .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)) !important; }
@@ -330,51 +375,139 @@
       }
       #print-area #p-items-table td:nth-child(6), #print-area #p-items-table td:nth-child(7) { white-space: nowrap !important; }
       #print-area .print-document-footer { display: flex !important; }
-      #print-area #p-items-table thead { display: table-header-group !important; }
-      #print-area #p-items-table tbody { display: table-row-group !important; }
-      #print-area #p-items-table tr { break-inside: avoid !important; page-break-inside: avoid !important; }
-      #print-area #p-items-table .print-repeat-doc-head th {
-        font-size: 8px !important; line-height: 1.25 !important; font-weight: 600 !important; color: #64748b !important; background: #fff !important; border: 1px solid #e2e8f0 !important; white-space: nowrap !important;
+      #print-area #p-items-table thead {
+        display: table-header-group !important;
       }
-      #print-area .grid.grid-cols-3 { margin-top: 8mm !important; }
-      #print-area .print-document-footer { break-inside: avoid !important; page-break-inside: avoid !important; }
+      #print-area #p-items-table tbody {
+        display: table-row-group !important;
+      }
+      #print-area #p-items-table + * {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+      #print-area #p-items-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      #print-area #p-items-table .print-repeat-doc-head th {
+        font-size: 8px !important;
+        line-height: 1.25 !important;
+        font-weight: 600 !important;
+        color: #64748b !important;
+        background: #fff !important;
+        border: 1px solid #e2e8f0 !important;
+        white-space: nowrap !important;
+      }
+      #print-area .grid.grid-cols-3 {
+        margin-top: 8mm !important;
+      }
+      #print-area .print-document-footer {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
 
-      #print-area table { width: 100% !important; table-layout: fixed; }
+      #print-area table {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+
       #print-area img { max-width: 100%; }
 
+      /* Multi-page flow:
+         - document header + customer block stay together
+         - the item table is allowed to flow naturally across pages
+         - each item row stays intact
+         - totals/payment/signatures stay together when possible
+         IMPORTANT: do NOT apply break-inside:avoid to every direct child,
+         otherwise the whole item table is pushed to the next page. */
       #print-area > div:nth-child(1),
       #print-area > div:nth-child(2) {
-        break-inside: avoid !important; page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
-      #print-area > div:nth-child(3),
+
+      #print-area > div:nth-child(3) {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+
       #print-area #p-items-table,
       #print-area #p-items-table tbody {
-        break-inside: auto !important; page-break-inside: auto !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
       }
+
+      #print-area #p-items-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
       #print-area > div:nth-child(4),
       #print-area > div:nth-child(5),
       #print-area > div:nth-child(6) {
-        break-inside: avoid !important; page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
 
+      /* ใช้ขนาดและโครงสร้างเดียวกับ Preview ไม่ให้มือถือ reflow ตอนพิมพ์ */
       #print-area .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
       #print-area .gap-4 { gap: 1rem !important; }
       #print-area .font-doc { font-family: Sarabun, sans-serif !important; }
+
+      /* ตัวเลขใช้เลข 0 แบบปกติ ไม่ใช้ฟอนต์ monospace ที่อาจทำเลข 0 เป็นขีด */
       #print-area .font-mono,
       #print-area [class*="font-mono"] {
         font-family: Sarabun, "Noto Sans Thai", Arial, sans-serif !important;
         font-variant-numeric: normal !important;
         font-feature-settings: normal !important;
       }
+
+      /* ช่องตัวเลขในเอกสารให้ใช้เลข 0 ปกติและอ่านง่าย */
       #print-area input,
       #print-area textarea,
-      #print-area button { font-family: Sarabun, "Noto Sans Thai", Arial, sans-serif !important; }
+      #print-area button {
+        font-family: Sarabun, "Noto Sans Thai", Arial, sans-serif !important;
+      }
+      #print-area .text-xl { font-size: 1.25rem !important; }
+      #print-area .text-lg { font-size: 1.125rem !important; }
+      #print-area .text-sm { font-size: .875rem !important; }
+      #print-area .text-xs { font-size: .75rem !important; }
+      #print-area .text-\[10px\] { font-size: 10px !important; }
+      #print-area .text-\[11px\] { font-size: 11px !important; }
+      #print-area .text-\[13px\] { font-size: 13px !important; }
+      #print-area .py-1\.5 { padding-top: .375rem !important; padding-bottom: .375rem !important; }
+      #print-area .mb-6 { margin-bottom: 1.5rem !important; }
+      #print-area .mb-4 { margin-bottom: 1rem !important; }
+      #print-area .p-3 { padding: .75rem !important; }
+      #print-area .p-2\.5 { padding: .625rem !important; }
+      #print-area .overflow-hidden { overflow: visible !important; }
       #print-area * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      /* ทำตัวหนังสือที่เดิมเป็นสีเทาอ่อนให้เข้มขึ้นสำหรับกระดาษขาว */
       #print-area { color: #1f2937 !important; }
-      #print-area .text-slate-300, #print-area .text-slate-400 { color: #475569 !important; }
+      #print-area .text-slate-300 { color: #475569 !important; }
+      #print-area .text-slate-400 { color: #475569 !important; }
       #print-area .text-slate-500 { color: #334155 !important; }
       #print-area .text-slate-600 { color: #1e293b !important; }
-      #print-area #p-items-table th, #print-area #p-items-table td { border-color: #94a3b8 !important; }
+      #print-area .text-gray-400 { color: #475569 !important; }
+      #print-area .text-gray-500 { color: #334155 !important; }
+
+      /* เส้นขอบในตารางให้ชัดขึ้นเมื่อพิมพ์ */
+      #print-area #p-items-table th,
+      #print-area #p-items-table td {
+        border-color: #94a3b8 !important;
+      }
+      #print-area #p-items-table tbody tr {
+        border-bottom: 1px solid #cbd5e1 !important;
+      }
+      #print-area .print-repeat-doc-head th {
+        color: #334155 !important;
+        border-color: #94a3b8 !important;
+      }
+      #print-area .print-document-footer {
+        color: #475569 !important;
+        border-top-color: #94a3b8 !important;
+      }
 
       .no-print { display: none !important; }
     }
@@ -429,7 +562,7 @@
   </header>
 
 
-  <!-- MOBILE NAVIGATION: screen-only -->
+  <!-- MOBILE NAVIGATION: screen-only, uses the existing tabs/functions -->
   <nav id="mobile-bottom-nav" class="mobile-only-nav no-print" aria-label="เมนูมือถือ">
     <button type="button" onclick="switchTab('editor')" class="mobile-nav-item">
       <i data-lucide="home"></i><span>หน้าหลัก</span>
@@ -467,6 +600,9 @@
           <span class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black">G</span>
           <span>เข้าสู่ระบบด้วย Google</span>
         </button>
+        <div class="text-[10px] text-slate-400 leading-relaxed text-center">
+          ระบบจะพยายามผูก Google เข้ากับบัญชี Anonymous เดิมก่อน หาก Google บัญชีนี้มีอยู่แล้ว ระบบจะย้ายเอกสารเดิมไปยังบัญชี Google
+        </div>
       </div>
     </div>
   </div>
@@ -483,7 +619,7 @@
           <div class="grid grid-cols-2 md:grid-cols-5 gap-2 w-full md:w-auto">
             <label class="cursor-pointer"><input type="radio" name="docType" value="quotation" checked onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600 transition-all">ใบเสนอราคา</div></label>
             <label class="cursor-pointer"><input type="radio" name="docType" value="delivery" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">ใบส่งของ</div></label>
-            <label class="cursor-pointer"><input type="radio" name="docType" value="invoice" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-600 transition-all">ใบแจ้งหนี้</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="invoice" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-600 transition-all">ใบแจ้งหนี้/วางบิล</div></label>
             <label class="cursor-pointer"><input type="radio" name="docType" value="receipt" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition-all">ใบเสร็จรับเงิน</div></label>
             <label class="cursor-pointer"><input type="radio" name="docType" value="cashbill" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-slate-700 peer-checked:text-white peer-checked:border-slate-700 transition-all">บิลเงินสด</div></label>
           </div>
@@ -494,7 +630,7 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">เลขที่เอกสาร</label>
             <div class="flex gap-1.5">
               <input type="text" id="docNo" class="flex-1 min-w-0 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
-              <button type="button" onclick="duplicateCurrentAsNew()" title="คัดลอกเอกสารนี้เป็นเลขที่ใหม่"
+              <button type="button" onclick="duplicateCurrentAsNew()" title="คัดลอกเอกสารนี้เป็นเลขที่ใหม่ และรีเซ็ตประวัติการรับชำระ"
                 class="px-2.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-[11px] font-bold whitespace-nowrap shadow-sm">
                 + เลขที่ใหม่
               </button>
@@ -929,6 +1065,8 @@
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // Firebase config ของโปรเจกต์จริง: sumranaluminum
+    // ฝังไว้ในไฟล์เพื่อให้เปิด HTML โดยตรงแล้วเชื่อม Firebase ได้ทันที
     const firebaseConfig = {
       apiKey: "AIzaSyCNhOzXxGi3-kKOqkfwjnyMpRnA-OIIiOY",
       authDomain: "sumranaluminum.firebaseapp.com",
@@ -940,9 +1078,9 @@
       measurementId: "G-7GYQ2XJYVM"
     };
 
+    // ใช้ appId คงที่ของระบบ ไม่เปลี่ยนตาม environment เพื่อให้ path ใน Firestore คงเดิม
     const appId = 'sumran-aluminum-billing';
     const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    const LOCAL_USER_KEY = 'sumran_aluminum_local_user';
 
     let db, auth, userId, firebaseReady = false;
     if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
@@ -953,6 +1091,7 @@
     }
 
     const LEGACY_LOCAL_KEY = 'sumran_aluminum_app_state_v2';
+    const LOCAL_USER_KEY = 'sumran_aluminum_local_user';
     const COMPANY_ID = 'sumran-aluminum-shop';
     const PENDING_MIGRATION_KEY = `${LEGACY_LOCAL_KEY}:pending-company-migration:${COMPANY_ID}`;
     let unsubscribeFns = [];
@@ -1082,6 +1221,8 @@
     }
 
     function scheduleLiveDocumentSync() {
+      // ซิงก์เฉพาะเอกสารที่มีอยู่แล้วในประวัติ เพื่อไม่สร้างเอกสารใหม่ทุกครั้งที่พิมพ์
+      // และไม่แตะ "รับชำระครั้งนี้" ระหว่างผู้ใช้กำลังกรอกยอดเงินจริง
       if(!state.currentHistoryId || !userId || !db || Number(state.currentPayment || 0) > 0) return;
       clearTimeout(state.liveSyncTimer);
       state.liveSyncTimer = setTimeout(async () => {
@@ -1309,6 +1450,8 @@
       return result;
     }
 
+    async function writeCloudUserData(uid, data) { await migrateLegacyDataToCompany(data, uid); }
+
     async function attachCloudListenersForCurrentUser() {
       if(!userId || !db || !companyAccessReady) return;
       unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
@@ -1428,14 +1571,15 @@
         currentMember=await loadMembershipForUser(user);
         if(!currentMember){
           companyAccessReady=false; currentRole=null;
-          setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์`);
+          setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์
+หากเป็นเจ้าของครั้งแรก ให้สร้างสมาชิกใน Firestore: companies/sumran-aluminum-shop/members/<UID>`);
           return;
         }
         currentRole=currentMember.role; companyAccessReady=true; state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
         if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
         resetEditorForSession();
         updateRoleUi(); setAuthGate(false); await attachCloudListenersForCurrentUser();
-      } catch(e){console.error(e);setAuthGate(true,'ตรวจสอบสิทธิ์ร้านไม่สำเร็จ');}
+      } catch(e){console.error(e);setAuthGate(true,'ตรวจสอบสิทธิ์ร้านไม่สำเร็จ — ตรวจสอบ Firestore Rules');}
     }
 
     function handleAuthStateChange(user) {
@@ -1450,23 +1594,23 @@
       try {
         await setPersistence(auth,browserLocalPersistence);
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
-        if(!auth.currentUser){
-          if(initialToken) {
-            try {
-              await signInWithCustomToken(auth,initialToken);
-            } catch(tokenErr) {
-              console.warn('Initial token failed, falling back to anonymous auth:', tokenErr);
-              await signInAnonymously(auth);
-            }
-          } else {
-            await signInAnonymously(auth);
-          }
-        }
+        if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
         const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
         if(current&&!current.isAnonymous&&!authActionBusy) await handleGoogleUserReady(current);
         if(window.lucide) window.lucide.createIcons();
-      } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้');showToast('Firebase เชื่อมต่อไม่ได้');}
+      } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
     }
+
+    window.getFirebaseStatus = () => ({ ready: firebaseReady, projectId: firebaseConfig?.projectId || null, userId });
+    window.setFirebaseConfig = (config) => {
+      try {
+        const parsed = typeof config === 'string' ? JSON.parse(config) : config;
+        if(!parsed?.apiKey || !parsed?.projectId) throw new Error('Firebase config ไม่ครบ');
+        localStorage.setItem('sumran_firebase_config', JSON.stringify(parsed));
+        showToast('บันทึก Firebase config แล้ว กรุณารีโหลดหน้า');
+      } catch(e) { showToast('Firebase config ไม่ถูกต้อง'); console.error(e); }
+    };
+
 
     function bindLiveSyncEvents() {
       const editor = document.getElementById('tab-editor');
@@ -1583,6 +1727,8 @@
       state.items = state.items.filter(i => i.id !== id); renderItems(); calculateTotals();
     }
     
+    // คำนวณยอดของรายการเดียวจากค่าปัจจุบันเสมอ
+    // ไม่พึ่งค่า item.total เดิม เพราะค่าเดิมอาจเป็นยอดจากก่อนแก้ไขรายการ
     function recalculateItem(item) {
       if(!item) return 0;
       const width = Number(item.width) || 0;
@@ -1607,11 +1753,13 @@
         item[field] = val;
       }
 
+      // เปลี่ยนการคิดราคา/ขนาด/จำนวน/ราคาต่อหน่วย ต้องคำนวณยอดรายการใหม่ทันที
       recalculateItem(item);
       if(document.getElementById(`area-${id}`)) document.getElementById(`area-${id}`).innerText = Number(item.area || 0).toFixed(2);
       if(document.getElementById(`total-${id}`)) document.getElementById(`total-${id}`).innerText = '฿' + Number(item.total || 0).toLocaleString('th-TH', {minimumFractionDigits: 2});
 
       calculateTotals();
+      // ถ้ากำลังอยู่หน้า Preview ให้ยอดในใบเสนอราคาเปลี่ยนทันทีด้วย
       if(state.currentTab === 'preview') renderPreview();
       persist();
       scheduleLiveDocumentSync();
@@ -1657,6 +1805,7 @@
 
     function getPaymentRecords() {
       if(!Array.isArray(state.payments)) state.payments = [];
+      // ล้างรายการรับเงินที่ไม่ใช่ตัวเลข/ติดลบ เพื่อไม่ให้ยอดรวมค้างหรือเพี้ยน
       state.payments = state.payments.filter(p => p && Number.isFinite(Number(p.amount)) && Number(p.amount) > 0);
       return state.payments;
     }
@@ -1666,6 +1815,7 @@
       if(payments.length) {
         return +payments.reduce((sum,p) => sum + Math.max(0, Number(p.amount)||0), 0).toFixed(2);
       }
+      // รองรับเอกสารรุ่นเก่าที่มีเพียง prevPaid แต่ยังไม่มี payment records
       return +Math.max(0, Number(state.prevPaid)||0).toFixed(2);
     }
 
@@ -1693,6 +1843,7 @@
       const amountRow = document.getElementById('deposit-amount-row');
       state.depositEnabled = !!toggle?.checked;
 
+      // ใช้ทั้ง classList และ inline style เพื่อไม่ให้ Tailwind .hidden ค้างบังช่องกรอก
       if(percentBox) {
         percentBox.classList.toggle('hidden', !state.depositEnabled);
         percentBox.classList.toggle('flex', state.depositEnabled);
@@ -1722,6 +1873,7 @@
       state.depositPercent = state.depositEnabled ? +percent.toFixed(2) : 0;
       if(input) input.value = state.depositPercent;
 
+      // คำนวณยอดเอกสารใหม่ก่อนคำนวณมัดจำเสมอ ป้องกันใช้ยอดเก่าที่ค้างอยู่
       calculateTotals(true);
     }
 
@@ -1744,6 +1896,7 @@
         paymentBox.style.display = state.paymentEnabled ? 'block' : 'none';
       }
       calculateTotals();
+      // ให้สถานะของช่องมัดจำสัมพันธ์กับระบบแบ่งจ่ายทุกครั้ง
       if(state.paymentEnabled) toggleDepositBox();
     }
 
@@ -1754,6 +1907,8 @@
         state.lumpSumAmt = lumpSumInput ? (parseFloat(lumpSumInput.value) || 0) : 0;
         sub = state.lumpSumAmt;
       } else {
+        // สำคัญ: คำนวณทุก item ใหม่ทุกครั้งก่อนรวมยอด
+        // ป้องกันยอดเก่าค้างใน state.items จากเอกสาร/พรีเซ็ตที่โหลดมา
         sub = state.items.reduce((sum, item) => sum + recalculateItem(item), 0);
         sub = +sub.toFixed(2);
       }
@@ -1780,6 +1935,7 @@
       const currentPaymentInput = document.getElementById('current-payment');
       let currentPayment = currentPaymentInput ? normalizeMoney(currentPaymentInput.value) : normalizeMoney(state.currentPayment);
       const totalPaidBeforeCurrent = Math.min(grand, getTotalPaid());
+      // ห้ามรับชำระเกินยอดคงเหลือของเอกสาร
       currentPayment = Math.min(currentPayment, Math.max(0, +(grand - totalPaidBeforeCurrent).toFixed(2)));
       state.currentPayment = currentPayment;
       if(currentPaymentInput && Number(currentPaymentInput.value) !== currentPayment) currentPaymentInput.value = currentPayment;
@@ -1805,15 +1961,21 @@
       state.profit = profit;
       state.prevPaid = totalPaidBeforeCurrent;
       state.bahtText = thaiBahtConversion(grand);
+      // เก็บค่าที่คำนวณแล้วให้ตรงกับหน้าจอทุกครั้ง
       state.depositAmount = state.depositEnabled ? +(grand * state.depositPercent / 100).toFixed(2) : 0;
       safeSetText('calc-deposit-amt', '฿' + state.depositAmount.toLocaleString('th-TH',{minimumFractionDigits:2}));
       renderPaymentHistory();
 
+      // ถ้าผู้ใช้อยู่หน้าใบเสนอราคา/Preview ให้เอกสารด้านหน้าอัปเดตตามยอดล่าสุดทันที
       if(state.currentTab === 'preview') renderPreview();
+
+      // เอกสารที่เคยบันทึกแล้วจะซิงก์การเปลี่ยนแปลงของราคา/ยอดไป Firestore แบบหน่วงเล็กน้อย
+      // โดยจะไม่ auto-save ระหว่างกำลังกรอก "รับชำระครั้งนี้"
       if(!skipPaymentSync) scheduleLiveDocumentSync();
     }
 
     function renderPreview() {
+      // Sync Basic fields
       ['docNo','refNo','docDate','dueDate','salesName','docNotes'].forEach(id => {
         const el = document.getElementById(id);
         if(el) state[id] = el.value;
@@ -1861,6 +2023,7 @@
       
       ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetText('p-shop-'+k, state.shop[k]));
 
+      // แสดงโลโก้ร้านในเอกสารพิมพ์
       const printLogo = document.getElementById('p-shop-logo');
       if(printLogo) {
         if(state.shop.logo) {
@@ -1873,6 +2036,7 @@
       }
 
       safeSetText('p-notes', state.docNotes);
+      // Preview ใช้ค่าที่บันทึกไว้ ไม่คำนวณยอดใหม่เอง
       state.discount = Number(state.discount || 0);
       state.subtotal = Number(state.subtotal || 0);
       state.afterDiscount = Number(state.afterDiscount ?? Math.max(0, state.subtotal - state.discount));
@@ -1935,7 +2099,7 @@
     }
 
     function getInitialStatus(type) {
-      return { quotation: 'quotation', invoice: 'pending', delivery: 'pending_delivery' }[type] || 'paid';
+      return { quotation: 'quoting', invoice: 'pending', delivery: 'pending_delivery' }[type] || 'paid';
     }
 
     async function saveCurrentDoc(options = {}) {
@@ -1960,8 +2124,12 @@
       state.notes = document.getElementById('docNotes')?.value || '';
       if(!Array.isArray(state.payments)) state.payments = [];
 
+      // คำนวณยอดจากข้อมูลล่าสุดอีกครั้งก่อนบันทึกเสมอ
+      // เพื่อป้องกัน payload เก็บ grandTotal / remaining / deposit เป็นค่าเก่า
+      // true = ไม่ตั้ง timer live-sync ซ้ำจากภายใน saveCurrentDoc
       calculateTotals(true);
 
+      // currentPayment = เงินที่ได้รับจริงในครั้งนี้เท่านั้น
       const receiveNow = Math.max(0, Number(state.currentPayment)||0);
       if(recordPayment && receiveNow > 0) {
         const totalBefore = getTotalPaid();
@@ -1982,6 +2150,7 @@
       if(state.docType === 'invoice') status = state.remainingAmt <= 0 ? 'paid' : state.prevPaid > 0 ? 'partial' : 'pending';
       if(['receipt','cashbill'].includes(state.docType) && state.remainingAmt > 0) status = 'partial';
       const payload = clone(state);
+      // ไม่ฝังประวัติทั้งหมด/ประวัติการพิมพ์ไว้ในเอกสารแต่ละใบ เพื่อไม่ให้ Firestore โตซ้ำซ้อน
       delete payload.history; delete payload.printArchive; delete payload.presets; delete payload.savedCustomers; delete payload.savedSales;
       payload.createdByUid = existing?.createdByUid || userId;
       payload.createdByEmail = existing?.createdByEmail || (auth.currentUser?.email || '');
@@ -2060,6 +2229,7 @@
     function printDocument() {
       if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
 
+      // พิมพ์จากข้อมูลที่บันทึกแล้วเท่านั้น ห้ามคำนวณใหม่ตอนกดพิมพ์
       const existing = state.history.find(h => String(h?.docNo || '') === String(state.docNo || ''));
       if(!existing) {
         showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์ เพื่อให้ใช้ยอดที่บันทึกไว้ตรงกับเอกสาร');
@@ -2090,18 +2260,15 @@
       persist();
       renderPrintArchive();
 
-      switchTab('preview');
+      // ต้องเรียกทันทีจากการกดปุ่ม เพื่อให้มือถือเปิด Print / Save PDF ได้
       showToast('กำลังเปิดหน้าพิมพ์ / Save PDF...');
-
-      setTimeout(() => {
-        try {
-          window.focus();
-          window.print();
-        } catch(e) {
-          console.error('Print failed:', e);
-          showToast('เบราว์เซอร์นี้ไม่รองรับการพิมพ์โดยตรง กรุณาใช้ปุ่มแชร์ใน Safari แล้วเลือกพิมพ์ (Print)');
-        }
-      }, 350);
+      try {
+        if(typeof window.print !== 'function') throw new Error('window.print unavailable');
+        window.print();
+      } catch(e) {
+        console.error('Print failed:', e);
+        showToast('เบราว์เซอร์นี้ไม่รองรับการพิมพ์ กรุณาเปิดด้วย Safari/Chrome');
+      }
 
       if(userId && db) {
         setDoc(cloudPath('printArchive', archive.id), archive, {merge:true})
@@ -2113,7 +2280,7 @@
       if(!requireOwner('การลบประวัติการพิมพ์')) return;
       const row = (state.printArchive || []).find(x => x.id === id);
       if(!row) return showToast('ไม่พบประวัติการพิมพ์');
-      if(!confirm(`ต้องการลบประวัติการพิมพ์ ${row.docNo || ''} ใช่หรือไม่?`)) return;
+      if(!confirm(`ต้องการลบประวัติการพิมพ์ ${row.docNo || ''} ใช่หรือไม่?\n(ลบเฉพาะประวัติการพิมพ์ ไม่ลบเอกสารต้นฉบับ)`)) return;
 
       state.printArchive = (state.printArchive || []).filter(x => x.id !== id);
       persist();
@@ -2135,7 +2302,7 @@
       if(!requireOwner('การลบประวัติการพิมพ์ทั้งหมด')) return;
       const rows = Array.isArray(state.printArchive) ? [...state.printArchive] : [];
       if(!rows.length) return showToast('ยังไม่มีประวัติการพิมพ์');
-      if(!confirm(`ต้องการลบประวัติการพิมพ์ทั้งหมด ${rows.length} รายการใช่หรือไม่?`)) return;
+      if(!confirm(`ต้องการลบประวัติการพิมพ์ทั้งหมด ${rows.length} รายการใช่หรือไม่?\n(ลบเฉพาะประวัติการพิมพ์ ไม่ลบเอกสารต้นฉบับ)`)) return;
 
       state.printArchive = [];
       persist();
@@ -2186,6 +2353,8 @@
       switchTab('preview');
     }
 
+    // ---- Transaction / document linking helpers ----
+    // ใบเสนอราคา -> ใบแจ้งหนี้ -> ใบเสร็จ ต้องนับเป็น "งานเดียว" ใน Dashboard
     function getRootDocNo(historyItem, allHistory = state.history) {
       if(!historyItem) return '';
       const byDocNo = new Map(allHistory.map(x => [String(x.docNo || ''), x]));
@@ -2217,6 +2386,7 @@
         if(c > cost) cost = c;
       });
 
+      // รวมเงินที่รับจริงจากทุกเอกสารในงานเดียวกัน แต่ไม่ซ้ำ payment id
       const seenPayments = new Set();
       let paid = 0;
       let hasPaymentRecords = false;
@@ -2328,13 +2498,14 @@
 
     function generateFlowDoc(oldId, newType) {
       const h = state.history.find(x => x.id === oldId); if(!h) return;
-      if(!canEditHistoryItem(h)) return showToast('พนักงานต่อยอดเอกสารของผู้อื่นไม่ได้');
+      if(!canEditHistoryItem(h)) return showToast('พนักงานต่อยอดเอกสารของผู้อื่นไม่ได้ — สร้างเอกสารใหม่แทนได้');
       Object.assign(state, clone(h.payload || {}));
       state.currentHistoryId = null;
       state.refNo = h.docNo;
       safeSetValue('refNo', state.refNo);
       const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
       if(radioEl) radioEl.checked = true;
+      // เปลี่ยนชนิดเอกสารอย่างเดียว ไม่คำนวณยอดใหม่ เพื่อรักษาส่วนลด/VAT/WHT/ยอดสุทธิของเอกสารต้นฉบับ
       state.docType = newType;
       generateAutoDocNo(newType);
       state.payments = Array.isArray(state.payments) ? clone(state.payments) : [];
@@ -2356,13 +2527,14 @@
       restoreCalculatedValuesToUI();
       setCurrentDocUiState(false);
       switchTab('editor');
-      showToast(`สร้าง ${newType} อ้างอิง ${h.docNo} — รอกดบันทึก`);
+      showToast(`สร้าง ${newType} อ้างอิง ${h.docNo} — ยอดและส่วนลดเดิมถูกคงไว้ รอกดบันทึก`);
     }
 
     function loadHistory(id) {
       const h = state.history.find(x => x.id === id); if(!h) return;
       state.isReadOnlyDocument = !canEditHistoryItem(h);
       Object.assign(state, clone(h.payload || {}));
+      // รองรับเอกสารเก่าที่เก็บค่าคำนวณไว้ที่ record ด้านนอก payload
       ['subtotal','discount','afterDiscount','vat','wht','grandTotal','remainingAmt','paidTotal','profit','bahtText','depositAmount','depositPercent'].forEach(k => {
         if(state[k] === undefined && h[k] !== undefined) state[k] = h[k];
       });
@@ -2393,7 +2565,7 @@
       restoreCalculatedValuesToUI();
       setCurrentDocUiState(true);
       switchTab('editor');
-      showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล' : 'โหลดเอกสารแล้ว');
+      showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล — พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองจัดทำ' : 'โหลดเอกสารแล้ว โดยคงยอดที่บันทึกไว้เดิม');
     }
 
     function delHistory(id) {
@@ -2426,7 +2598,7 @@
       generateAutoDocNo(state.docType);
       renderItems(); calculateTotals();
       setCurrentDocUiState(false);
-      switchTab('editor'); showToast('สร้างเอกสารใหม่แล้ว');
+      switchTab('editor'); showToast('สร้างเอกสารใหม่และรีเซ็ตประวัติการรับชำระแล้ว');
     }
 
     function saveStoreSettings() {
@@ -2480,7 +2652,7 @@
         if(title) title.innerText = 'จัดการแบบมาตรฐาน / พรีเซ็ตสินค้า';
         if(list) {
           if(!state.presets.length) {
-            list.innerHTML = `<div class="p-4 text-center text-xs text-slate-400 border border-dashed rounded-xl mb-2">ยังไม่มีแบบมาตรฐาน</div>`;
+            list.innerHTML = `<div class="p-4 text-center text-xs text-slate-400 border border-dashed rounded-xl mb-2">ยังไม่มีแบบมาตรฐาน — กด “เพิ่มแบบมาตรฐาน” เพื่อสร้างรายการแรก</div>`;
           }
           state.presets.forEach((p, idx) => {
             list.innerHTML += `<div class="flex justify-between items-center p-2.5 bg-slate-50 border rounded-lg text-xs gap-2"><div class="min-w-0"><div class="font-bold text-slate-800 truncate">${escapeHtml(p.name)}</div><div class="text-slate-500 mt-0.5">${p.type==='alu'?'อลูมิเนียม / งานกระจก':'สินค้าทั่วไป'} · ${p.priceType==='per_sqm'?'คิดต่อตร.ม.':'คิดต่อหน่วย'} · ฿${Number(p.price||0).toLocaleString('th-TH')}</div></div><button onclick="deleteData('preset', '${p.id}', ${idx})" class="shrink-0 text-rose-500 hover:bg-rose-100 p-1.5 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
@@ -2621,6 +2793,8 @@
         sList.innerHTML = '';
         state.savedSales.forEach(s => sList.innerHTML += `<option value="${escapeHtml(s.name)}"></option>`);
       }
+      // ไม่เปิด Modal อัตโนมัติที่นี่ เพราะ renderDatalists() ถูกเรียกจากหลายจุด
+      // หากเปิด Modal เดิมซ้ำ จะทำให้การบันทึกลูกค้าจากหน้า Editor เด้งกลับไปยัง Modal พนักงานขายได้
     }
 
     function autoFillCustomer() {
@@ -2635,6 +2809,7 @@
       }
     }
 
+    // Expose all globals
     window.loginWithGoogle = loginWithGoogle; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
 </body>
