@@ -92,10 +92,30 @@
 
       #print-area table,
       #print-area tr,
-      #print-area .signature-section {
+      #print-area .signature-section,
+      #print-area > div {
         break-inside: avoid;
         page-break-inside: avoid;
       }
+
+      /* ใช้ขนาดและโครงสร้างเดียวกับ Preview ไม่ให้มือถือ reflow ตอนพิมพ์ */
+      #print-area .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+      #print-area .gap-4 { gap: 1rem !important; }
+      #print-area .font-doc { font-family: Sarabun, sans-serif !important; }
+      #print-area .text-xl { font-size: 1.25rem !important; }
+      #print-area .text-lg { font-size: 1.125rem !important; }
+      #print-area .text-sm { font-size: .875rem !important; }
+      #print-area .text-xs { font-size: .75rem !important; }
+      #print-area .text-\[10px\] { font-size: 10px !important; }
+      #print-area .text-\[11px\] { font-size: 11px !important; }
+      #print-area .text-\[13px\] { font-size: 13px !important; }
+      #print-area .py-1\.5 { padding-top: .375rem !important; padding-bottom: .375rem !important; }
+      #print-area .mb-6 { margin-bottom: 1.5rem !important; }
+      #print-area .mb-4 { margin-bottom: 1rem !important; }
+      #print-area .p-3 { padding: .75rem !important; }
+      #print-area .p-2\.5 { padding: .625rem !important; }
+      #print-area .overflow-hidden { overflow: visible !important; }
+      #print-area * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
       .no-print { display: none !important; }
     }
@@ -497,7 +517,7 @@
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="archive" class="w-5 h-5 text-sky-600"></i> ประวัติงานและบิลทั้งหมด</h2>
           <div class="flex gap-2 w-full sm:w-auto">
             <div class="relative flex-1 sm:w-64">
-              <input type="text" id="search-history" placeholder="ค้นหาเลขที่, ลูกค้า..." oninput="renderHistory()" class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500 bg-slate-50">
+              <input type="text" id="search-history" placeholder="ค้นหาเลขที่เอกสาร / อ้างอิง / ลูกค้า / โครงการ..." oninput="renderHistory()" class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500 bg-slate-50">
               <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2"></i>
             </div>
             <button onclick="createNewDocument()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-semibold whitespace-nowrap">+ สร้างบิลใหม่</button>
@@ -1184,6 +1204,8 @@
         const hadLocal = loadLocalState();
         if (!state.docNo) generateAutoDocNo('quotation');
         bindLiveSyncEvents();
+        const historySearch = document.getElementById('search-history');
+        if(historySearch) historySearch.addEventListener('input', renderHistory);
         await initFirebase();
         
         safeSetValue('docNo', state.docNo); safeSetValue('docDate', state.docDate); safeSetValue('dueDate', state.dueDate);
@@ -1570,6 +1592,16 @@
       }
 
       safeSetText('p-notes', state.docNotes);
+      // Preview ใช้ค่าที่บันทึกไว้ ไม่คำนวณยอดใหม่เอง
+      state.discount = Number(state.discount || 0);
+      state.subtotal = Number(state.subtotal || 0);
+      state.afterDiscount = Number(state.afterDiscount ?? Math.max(0, state.subtotal - state.discount));
+      state.vat = Number(state.vat || 0);
+      state.wht = Number(state.wht || 0);
+      state.grandTotal = Number(state.grandTotal || 0);
+      state.remainingAmt = Number(state.remainingAmt || 0);
+      state.prevPaid = Number(state.prevPaid || 0);
+      state.profit = Number(state.profit || 0);
 
       const tb = document.getElementById('p-items-tbody'); 
       if(tb) {
@@ -1730,17 +1762,38 @@
       if(window.lucide) window.lucide.createIcons();
     }
 
+    function buildDocumentSnapshot(sourceState = state) {
+      const snap = clone(sourceState || {});
+      delete snap.history; delete snap.printArchive; delete snap.presets; delete snap.savedCustomers; delete snap.savedSales;
+      return snap;
+    }
+
+    function restoreCalculatedValuesToUI() {
+      const money = n => '฿' + Number(n || 0).toLocaleString('th-TH',{minimumFractionDigits:2});
+      safeSetText('calc-subtotal', money(state.subtotal));
+      safeSetText('calc-after-discount', money(state.afterDiscount));
+      safeSetText('calc-vat', money(state.vat));
+      safeSetText('calc-wht', '-'+money(state.wht));
+      safeSetText('calc-grandtotal', money(state.grandTotal));
+      safeSetText('calc-total-paid', money(state.prevPaid));
+      safeSetText('calc-remaining-amt', money(state.remainingAmt));
+      safeSetText('profit-calc-display', `กำไรสุทธิ: ${money(state.profit)}`);
+      safeSetText('calc-deposit-amt', money(state.depositAmount));
+      renderPaymentHistory();
+    }
+
     function printDocument() {
       if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
 
-      calculateTotals();
-      renderPreview();
-
+      // พิมพ์จากข้อมูลที่บันทึกแล้วเท่านั้น ห้ามคำนวณใหม่ตอนกดพิมพ์
       const existing = state.history.find(h => String(h?.docNo || '') === String(state.docNo || ''));
       if(!existing) {
-        showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์ เพื่อให้เอกสารถูกเก็บในระบบ');
+        showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์ เพื่อให้ใช้ยอดที่บันทึกไว้ตรงกับเอกสาร');
         return;
       }
+
+      syncEditorFieldsToState();
+      renderPreview();
 
       const archive = {
         id: 'print-'+Date.now(),
@@ -1752,24 +1805,18 @@
         createdByUid: userId,
         createdByEmail: auth.currentUser?.email || '',
         createdByName: auth.currentUser?.displayName || '',
-        grandTotal: existing.grandTotal,
-        paidTotal: existing.paidTotal || 0,
-        remainingAmt: existing.remainingAmt || 0,
-        payloadVersion: 1
+        grandTotal: Number(existing.grandTotal || state.grandTotal || 0),
+        paidTotal: Number(existing.paidTotal || state.prevPaid || 0),
+        remainingAmt: Number(existing.remainingAmt || state.remainingAmt || 0),
+        payloadVersion: 2,
+        snapshot: buildDocumentSnapshot(state)
       };
 
-      // Save locally first so the print action does not depend on network speed.
-      state.printArchive = [archive, ...(state.printArchive || [])]
-        .filter((x, i, a) => i === a.findIndex(y => y.id === x.id));
+      state.printArchive = [archive, ...(state.printArchive || [])];
       persist();
       renderPrintArchive();
 
-      /*
-       * IMPORTANT:
-       * window.print() must run directly inside the button's user action.
-       * Do NOT await Firebase or use setTimeout before calling it, because
-       * mobile browsers can then block the print dialog / Save PDF sheet.
-       */
+      // ต้องเรียกทันทีจากการกดปุ่ม เพื่อให้มือถือเปิด Print / Save PDF ได้
       showToast('กำลังเปิดหน้าพิมพ์ / Save PDF...');
       try {
         if(typeof window.print !== 'function') throw new Error('window.print unavailable');
@@ -1779,7 +1826,6 @@
         showToast('เบราว์เซอร์นี้ไม่รองรับการพิมพ์ กรุณาเปิดด้วย Safari/Chrome');
       }
 
-      // Cloud archive is non-blocking and happens after the print request.
       if(userId && db) {
         setDoc(cloudPath('printArchive', archive.id), archive, {merge:true})
           .catch(e => cloudError('Save print archive', e));
@@ -1831,20 +1877,36 @@
     }
 
     function reprintArchivedDoc(historyId) {
+      const archive = (state.printArchive || []).find(x => x.historyId === historyId && x.snapshot);
       const h = state.history.find(x => x.id === historyId);
-      if(!h) return showToast('ไม่พบเอกสารต้นฉบับ');
-      Object.assign(state, clone(h.payload||{}));
+      if(!h && !archive) return showToast('ไม่พบเอกสารต้นฉบับ');
+      const source = archive?.snapshot || h?.payload || {};
+      Object.assign(state, clone(source));
+      state.currentHistoryId = historyId;
       state.payments = Array.isArray(state.payments) ? state.payments : [];
-      state.currentPayment = 0; state.prevPaid = getTotalPaid();
+      state.currentPayment = 0;
+      state.prevPaid = Number(source.prevPaid ?? h?.paidTotal ?? getTotalPaid() ?? 0);
       const radioEl = document.querySelector(`input[name="docType"][value="${state.docType}"]`);
       if(radioEl) radioEl.checked = true;
       ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
-      ['name','phone','taxId','address','project'].forEach(k => safeSetValue(k==='name'?'custName':k==='taxId'?'custTaxId':k==='project'?'projectName':'cust'+k.charAt(0).toUpperCase()+k.slice(1), state.customer[k]));
-      safeSetValue('docNotes', state.notes); safeSetValue('calc-discount', state.discount); safeSetValue('total-cost', state.totalCost);
-      safeSetChecked('vat-toggle', state.vatEnabled); safeSetChecked('wht-toggle', state.whtEnabled);
-      safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', 0); togglePaymentBox();
-      safeSetChecked('deposit-toggle', !!state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent || 0); toggleDepositBox();
-      renderItems(); calculateTotals(); switchTab('preview');
+      const c = state.customer || {};
+      [['custName','name'],['custPhone','phone'],['custTaxId','taxId'],['custAddress','address'],['projectName','project']].forEach(([id,k]) => safeSetValue(id,c[k]));
+      safeSetValue('docNotes', state.notes || '');
+      safeSetValue('calc-discount', state.discount ?? 0);
+      safeSetValue('total-cost', state.totalCost ?? 0);
+      safeSetChecked('vat-toggle', !!state.vatEnabled);
+      safeSetChecked('wht-toggle', !!state.whtEnabled);
+      safeSetChecked('payment-toggle', !!state.paymentEnabled);
+      safeSetValue('prev-paid', state.prevPaid ?? 0);
+      safeSetValue('current-payment', 0);
+      safeSetChecked('deposit-toggle', !!state.depositEnabled);
+      safeSetValue('deposit-percent', state.depositPercent || 0);
+      renderItems();
+      togglePaymentBox();
+      toggleDepositBox();
+      restoreCalculatedValuesToUI();
+      setCurrentDocUiState(true);
+      switchTab('preview');
     }
 
     // ---- Transaction / document linking helpers ----
@@ -1993,44 +2055,73 @@
     function generateFlowDoc(oldId, newType) {
       const h = state.history.find(x => x.id === oldId); if(!h) return;
       if(!canEditHistoryItem(h)) return showToast('พนักงานต่อยอดเอกสารของผู้อื่นไม่ได้ — สร้างเอกสารใหม่แทนได้');
-      Object.assign(state, h.payload);
+      Object.assign(state, clone(h.payload || {}));
       state.currentHistoryId = null;
-      state.refNo = h.docNo; safeSetValue('refNo', state.refNo);
-      
+      state.refNo = h.docNo;
+      safeSetValue('refNo', state.refNo);
       const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
       if(radioEl) radioEl.checked = true;
-      updateDocType(newType); 
-      
+      // เปลี่ยนชนิดเอกสารอย่างเดียว ไม่คำนวณยอดใหม่ เพื่อรักษาส่วนลด/VAT/WHT/ยอดสุทธิของเอกสารต้นฉบับ
+      state.docType = newType;
+      generateAutoDocNo(newType);
       state.payments = Array.isArray(state.payments) ? clone(state.payments) : [];
       state.prevPaid = getTotalPaid();
       state.currentPayment = 0;
-      
-      state.paymentEnabled = true; safeSetChecked('payment-toggle', true);
-      safeSetChecked('deposit-toggle', !!state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent || 0);
-      const paymentBox = document.getElementById('payment-box');
-      if(paymentBox) paymentBox.style.display = 'block';
+      state.paymentEnabled = true;
+      safeSetChecked('payment-toggle', true);
+      safeSetChecked('deposit-toggle', !!state.depositEnabled);
+      safeSetValue('deposit-percent', state.depositPercent || 0);
+      safeSetValue('calc-discount', state.discount || 0);
+      safeSetValue('total-cost', state.totalCost || 0);
+      safeSetChecked('vat-toggle', !!state.vatEnabled);
+      safeSetChecked('wht-toggle', !!state.whtEnabled);
+      safeSetValue('prev-paid', state.prevPaid || 0);
+      safeSetValue('current-payment', 0);
+      renderItems();
+      togglePaymentBox();
       toggleDepositBox();
-      safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', state.currentPayment);
-      
-      renderItems(); calculateTotals(); setCurrentDocUiState(false); switchTab('editor'); showToast(`สร้าง ${newType} อ้างอิง ${h.docNo} — เป็นเอกสารใหม่ รอกดบันทึก`);
+      restoreCalculatedValuesToUI();
+      setCurrentDocUiState(false);
+      switchTab('editor');
+      showToast(`สร้าง ${newType} อ้างอิง ${h.docNo} — ยอดและส่วนลดเดิมถูกคงไว้ รอกดบันทึก`);
     }
 
     function loadHistory(id) {
       const h = state.history.find(x => x.id === id); if(!h) return;
       state.isReadOnlyDocument = !canEditHistoryItem(h);
-      Object.assign(state, h.payload);
+      Object.assign(state, clone(h.payload || {}));
+      // รองรับเอกสารเก่าที่เก็บค่าคำนวณไว้ที่ record ด้านนอก payload
+      ['subtotal','discount','afterDiscount','vat','wht','grandTotal','remainingAmt','paidTotal','profit','bahtText','depositAmount','depositPercent'].forEach(k => {
+        if(state[k] === undefined && h[k] !== undefined) state[k] = h[k];
+      });
       state.currentHistoryId = id;
-      state.isReadOnlyDocument = !canEditHistoryItem(h);
       const radioEl = document.querySelector(`input[name="docType"][value="${state.docType}"]`);
       if(radioEl) radioEl.checked = true;
       ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
-      ['name','phone','taxId','address','project'].forEach(k => safeSetValue(k==='name'?'custName':k==='taxId'?'custTaxId':k==='project'?'projectName':'cust'+k.charAt(0).toUpperCase()+k.slice(1), state.customer[k]));
-      safeSetValue('docNotes', state.notes); safeSetValue('calc-discount', state.discount); safeSetValue('total-cost', state.totalCost);
-      safeSetChecked('vat-toggle', state.vatEnabled); safeSetChecked('wht-toggle', state.whtEnabled);
-      safeSetChecked('lump-sum-toggle', state.isLumpSum); safeSetValue('lump-sum-amt', state.lumpSumAmt); toggleLumpSum();
-      state.payments = Array.isArray(state.payments) ? state.payments : []; state.currentPayment = 0; state.prevPaid = getTotalPaid(); safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', 0); togglePaymentBox();
-      safeSetChecked('deposit-toggle', !!state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent || 0); toggleDepositBox();
-      renderItems(); calculateTotals(); setCurrentDocUiState(true); switchTab('editor'); showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล — พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองจัดทำ' : 'โหลดเอกสารแล้ว');
+      const c = state.customer || {};
+      [['custName','name'],['custPhone','phone'],['custTaxId','taxId'],['custAddress','address'],['projectName','project']].forEach(([id,k]) => safeSetValue(id,c[k]));
+      safeSetValue('docNotes', state.notes || '');
+      safeSetValue('calc-discount', state.discount ?? 0);
+      safeSetValue('total-cost', state.totalCost ?? 0);
+      safeSetChecked('vat-toggle', !!state.vatEnabled);
+      safeSetChecked('wht-toggle', !!state.whtEnabled);
+      safeSetChecked('lump-sum-toggle', !!state.isLumpSum);
+      safeSetValue('lump-sum-amt', state.lumpSumAmt ?? 0);
+      state.payments = Array.isArray(state.payments) ? state.payments : [];
+      state.currentPayment = 0;
+      state.prevPaid = Number(state.paidTotal ?? getTotalPaid() ?? 0);
+      safeSetChecked('payment-toggle', !!state.paymentEnabled);
+      safeSetValue('prev-paid', state.prevPaid);
+      safeSetValue('current-payment', 0);
+      safeSetChecked('deposit-toggle', !!state.depositEnabled);
+      safeSetValue('deposit-percent', state.depositPercent || 0);
+      renderItems();
+      togglePaymentBox();
+      toggleDepositBox();
+      restoreCalculatedValuesToUI();
+      setCurrentDocUiState(true);
+      switchTab('editor');
+      showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล — พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองจัดทำ' : 'โหลดเอกสารแล้ว โดยคงยอดที่บันทึกไว้เดิม');
     }
 
     function delHistory(id) {
