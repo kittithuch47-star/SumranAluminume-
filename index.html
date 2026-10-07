@@ -1671,19 +1671,10 @@
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      const isMobileOrTablet =
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-        window.matchMedia('(max-width: 1024px)').matches;
-
       try {
-        setAuthUiBusy(true);
-        if(isMobileOrTablet) {
-          // Mobile/iPad: redirect avoids popup blockers and in-app browser popup restrictions.
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-
-        // Desktop: keep popup for faster login.
+        // ใช้ Popup จากการกดปุ่มโดยตรงทั้งมือถือและคอมพิวเตอร์
+        // เพื่อไม่ให้ iPhone/Safari กลับจาก Redirect แล้วค้างอยู่ที่ Anonymous session เดิม
+        setAuthUiBusy(true,'กำลังเปิด Google Login...');
         await signInWithPopup(auth, provider);
       } catch(e) {
         console.error('Google login failed:', e);
@@ -1762,13 +1753,23 @@
       if(!firebaseReady||!auth||!db){setAuthGate(true,'Firebase config ไม่พร้อมใช้งาน');return;}
       try {
         await setPersistence(auth,browserLocalPersistence);
-      getRedirectResult(auth).catch(e => {
-        console.error('Google redirect result failed:', e);
-        showAuthError(e);
-      });
+
+        // ต้องรอผล Redirect ให้จบก่อน ห้ามสร้าง Anonymous session แข่งกับ Google redirect
+        let redirectResult=null;
+        try {
+          redirectResult=await getRedirectResult(auth);
+        } catch(e) {
+          console.error('Google redirect result failed:', e);
+          showAuthError(e);
+        }
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
-        if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
+        if(redirectResult?.user && !redirectResult.user.isAnonymous){
+          await handleGoogleUserReady(redirectResult.user);
+        } else if(!auth.currentUser){
+          if(initialToken) await signInWithCustomToken(auth,initialToken);
+          else await signInAnonymously(auth);
+        }
         const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
         if(window.lucide) window.lucide.createIcons();
       } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
