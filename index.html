@@ -2532,39 +2532,74 @@
     }
 
     function renderHistory() {
-      const tb=document.getElementById('history-tbody'); if(!tb)return;
-      tb.innerHTML='';
-      const q=String(document.getElementById('search-history')?.value||'').trim().toLowerCase();
-      const filtered=(state.history||[]).filter(h=>{
-        const hay=[h?.docNo,h?.customerName,h?.refNo,h?.project,h?.status,h?.docType]
-          .map(v=>String(v||'').toLowerCase()).join(' ');
-        return !q || hay.includes(q);
+      const tb = document.getElementById('history-tbody'); if(!tb) return; tb.innerHTML = '';
+      const searchInput = document.getElementById('search-history');
+      const q = String(searchInput?.value || '').trim().toLowerCase();
+      const filtered = state.history.filter(h => {
+        const docNo = String(h?.docNo || '').toLowerCase();
+        const customerName = String(h?.customerName || '').toLowerCase();
+        const refNo = String(h?.refNo || '').toLowerCase();
+        const project = String(h?.project || '').toLowerCase();
+        const createdByName = String(h?.createdByName || '').toLowerCase();
+        const createdByEmail = String(h?.createdByEmail || '').toLowerCase();
+        return !q ||
+          docNo.includes(q) ||
+          customerName.includes(q) ||
+          refNo.includes(q) ||
+          project.includes(q) ||
+          createdByName.includes(q) ||
+          createdByEmail.includes(q);
       });
-
-      filtered.forEach(h=>{
-        const editable=canEditHistoryDocument(h);
-        const statusEditable=canChangeHistoryStatus(h);
-        const statuses=['รอการยืนยันการทำงาน','ยืนยันการทำงาน','กำลังดำเนินงาน','รอชำระเงิน','ชำระบางส่วน','ชำระครบแล้ว','เสร็จสิ้น','ยกเลิก'];
-        const statusHtml=statusEditable
-          ? `<select onchange="updateDocumentStatus('${h.id}',this.value)" class="px-2 py-1 border rounded-lg text-[10px] bg-white max-w-[150px]">
-              ${statuses.map(v=>`<option value="${v}" ${String(h.status||'')===v?'selected':''}>${v}</option>`).join('')}
-            </select>`
-          : `<span class="text-[10px]">${escapeHtml(h.status||'-')}</span>`;
-
-        const action=editable
-          ? `<button onclick="loadHistory('${h.id}')" title="แก้ไขเอกสาร" class="p-1.5 text-sky-600 hover:bg-sky-50 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button>`
-          : `<button onclick="loadHistory('${h.id}')" title="ดูเอกสาร" class="p-1.5 text-slate-500 hover:bg-slate-100 rounded"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
-
-        tb.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-slate-50">
-          <td class="px-3 py-2 font-semibold text-sky-700">${escapeHtml(h.docNo||'-')}</td>
-          <td class="px-3 py-2">${escapeHtml(h.docType||'-')}</td>
-          <td class="px-3 py-2">${escapeHtml(h.customerName||'-')}</td>
-          <td class="px-3 py-2">${statusHtml}</td>
-          <td class="px-3 py-2 text-right whitespace-nowrap">${action}</td>
-        </tr>`;
+      
+      const txMap = getTransactionMap(state.history);
+      let totalSales = 0, totalProfit = 0, totalDebt = 0;
+      txMap.forEach(tx => {
+        if(!tx?.active) return;
+        totalSales += tx.total;
+        totalProfit += tx.profit;
+        totalDebt += tx.remaining;
       });
-      if(!filtered.length) tb.innerHTML='<tr><td colspan="5" class="px-3 py-8 text-center text-slate-400">ไม่พบเอกสาร</td></tr>';
-      if(window.lucide)window.lucide.createIcons();
+      safeSetText('dash-total-sales', '฿' + totalSales.toLocaleString('th-TH'));
+      safeSetText('dash-total-profit', '฿' + totalProfit.toLocaleString('th-TH'));
+      safeSetText('dash-total-debt', '฿' + totalDebt.toLocaleString('th-TH'));
+
+      if(filtered.length === 0) return tb.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบเอกสาร</td></tr>`;
+      
+      const tCol = { quotation: 'bg-slate-200 text-slate-700', invoice: 'bg-amber-100 text-amber-700', receipt: 'bg-emerald-100 text-emerald-700', delivery: 'bg-indigo-100 text-indigo-700', cashbill: 'bg-slate-700 text-white' };
+
+      filtered.forEach(h => {
+        let opts = '';
+        if(h.docType==='quotation') opts=`<option value="quoting" ${h.status==='quoting'?'selected':''}>รอพิจารณา</option><option value="accepted" ${h.status==='accepted'?'selected':''}>อนุมัติทำ</option><option value="rejected" ${h.status==='rejected'?'selected':''}>ไม่อนุมัติ</option>`;
+        else if(h.docType==='invoice') opts=`<option value="pending" ${h.status==='pending'?'selected':''}>รอชำระเงิน</option><option value="partial" ${h.status==='partial'?'selected':''}>ชำระบางส่วน</option><option value="paid" ${h.status==='paid'?'selected':''}>ครบแล้ว</option>`;
+        else if(['receipt','cashbill'].includes(h.docType)) opts=`<option value="paid" ${h.status==='paid'?'selected':''}>รับเงินแล้ว</option><option value="cancelled" ${h.status==='cancelled'?'selected':''}>ยกเลิก</option>`;
+        else if(h.docType==='delivery') opts=`<option value="pending_delivery" ${h.status==='pending_delivery'?'selected':''}>รอส่งมอบ</option><option value="delivered" ${h.status==='delivered'?'selected':''}>ส่งมอบแล้ว</option>`;
+
+        const tx = txMap.get(getRootDocNo(h, state.history));
+        const txPaid = tx ? tx.paid : Number(h.paidTotal || 0);
+        const txRemaining = tx ? tx.remaining : Number(h.remainingAmt || 0);
+        const linkedLabel = tx && tx.docs.length > 1 ? `<div class="text-[9px] text-indigo-600 mt-0.5">งานเดียวกัน: ${escapeHtml(tx.rootDocNo)} · ${tx.docs.length} เอกสาร</div>` : '';
+        tb.innerHTML += `
+          <tr class="hover:bg-slate-50 border-b border-slate-100">
+            <td class="py-2 px-2"><div class="font-mono font-bold text-sky-700">${escapeHtml(h.docNo)}</div>${h.refNo ? `<div class="text-[9px] text-slate-500">อ้างอิง: ${escapeHtml(h.refNo)}</div>`:''}${linkedLabel}</td>
+            <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[9px] font-semibold ${tCol[h.docType]}">${h.docType.toUpperCase()}</span></td>
+            <td class="py-2 px-2"><div>${escapeHtml(h.customerName)}</div><div class="text-[9px] text-slate-500">${escapeHtml(h.project)}</div></td>
+            <td class="py-2 px-2"><div class="font-semibold text-slate-700">${escapeHtml(h.createdByName || h.createdByEmail || 'เดิม/ไม่ทราบ')}</div><div class="text-[9px] text-slate-400">${escapeHtml(h.createdByEmail || '')}</div></td>
+            <td class="py-2 px-2 text-[10px]">${formatDateThai(h.date)}</td>
+            <td class="py-2 px-2 text-right"><div class="font-mono font-bold text-slate-800">฿${Number(h.grandTotal||0).toLocaleString('th-TH')}</div>${h.requiredDeposit>0?`<div class="text-[9px] text-sky-600 mt-0.5">มัดจำที่กำหนด: ${Number(h.requiredDeposit).toLocaleString('th-TH')}</div>`:''}${txPaid>0?`<div class="text-[9px] text-emerald-600">รับเงินจริงรวมงาน: ฿${txPaid.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:''}${txRemaining>0&&h.docType!=='delivery'?`<div class="text-[9px] text-rose-500 mt-0.5">คงเหลืองานนี้: ฿${txRemaining.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:`<div class="text-[9px] text-emerald-600 mt-0.5">ชำระครบแล้ว</div>`}</td>
+            <td class="py-2 px-2"><select ${canChangeHistoryStatus(h)?'':'disabled'} onchange="updateDocumentStatus('${h.id}', this.value)" class="text-[10px] p-1 rounded border w-full ${canChangeHistoryStatus(h)?'':'opacity-50 cursor-not-allowed'}">${opts}</select></td>
+            <td class="py-2 px-2">
+              <div class="flex items-center gap-1">
+                <select ${canEditHistoryItem(h)?'':'disabled'} onchange="if(this.value){ generateFlowDoc('${h.id}', this.value); this.value=''; }" class="text-[10px] p-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-bold ${canEditHistoryItem(h)?'':'opacity-50 cursor-not-allowed'}">
+                  <option value="">+ ต่อยอด...</option><option value="invoice">-> ใบแจ้งหนี้</option><option value="receipt">-> ใบเสร็จ</option><option value="delivery">-> ใบส่งของ</option>
+                </select>
+                <button onclick="loadHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-sky-100 rounded" title="${canEditHistoryItem(h)?'แก้ไข':'ดูอย่างเดียว'}"><i data-lucide="${canEditHistoryItem(h)?'edit':'eye'}" class="w-3.5 h-3.5"></i></button>
+                ${isOwner() ? `<button onclick="delHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-rose-100 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+      if(window.lucide) window.lucide.createIcons();
     }
 
     function updateDocStatus(id, stat) {
