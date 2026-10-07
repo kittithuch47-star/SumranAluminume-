@@ -450,9 +450,14 @@
     <!-- Generic List Modal (For Customers, Sales, Presets) -->
     <div id="generic-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
       <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-5 overflow-hidden flex flex-col max-h-[90vh]">
-        <div class="flex justify-between items-center border-b pb-3 mb-3">
+        <div class="flex justify-between items-center border-b pb-3 mb-3 gap-2">
           <h3 id="gmodal-title" class="text-base font-bold text-slate-800">จัดการข้อมูล</h3>
-          <button onclick="closeGenericModal()" class="text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+          <div class="flex items-center gap-2">
+            <button id="gmodal-add-btn" type="button" onclick="openPresetEditor()" class="hidden px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold items-center gap-1">
+              <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มแบบมาตรฐาน
+            </button>
+            <button onclick="closeGenericModal()" class="text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
         </div>
         <div class="flex-1 overflow-y-auto pr-2 space-y-2" id="gmodal-list"></div>
       </div>
@@ -1440,11 +1445,21 @@
       const list = document.getElementById('gmodal-list'); 
       if(list) list.innerHTML = '';
       
+      const addBtn = document.getElementById('gmodal-add-btn');
+      if(addBtn) {
+        addBtn.classList.toggle('hidden', type !== 'presetModal');
+        addBtn.classList.toggle('flex', type === 'presetModal');
+      }
       if(type === 'presetModal') {
-        if(title) title.innerText = 'จัดการพรีเซ็ตสินค้า';
-        state.presets.forEach((p, idx) => {
-          if(list) list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span><span class="font-bold">${escapeHtml(p.name)}</span> <span class="text-slate-400">(${p.type==='alu'?'กระจก':'ทั่วไป'})</span></span><button onclick="deleteData('preset', '${p.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
-        });
+        if(title) title.innerText = 'จัดการแบบมาตรฐาน / พรีเซ็ตสินค้า';
+        if(list) {
+          if(!state.presets.length) {
+            list.innerHTML = `<div class="p-4 text-center text-xs text-slate-400 border border-dashed rounded-xl mb-2">ยังไม่มีแบบมาตรฐาน — กด “เพิ่มแบบมาตรฐาน” เพื่อสร้างรายการแรก</div>`;
+          }
+          state.presets.forEach((p, idx) => {
+            list.innerHTML += `<div class="flex justify-between items-center p-2.5 bg-slate-50 border rounded-lg text-xs gap-2"><div class="min-w-0"><div class="font-bold text-slate-800 truncate">${escapeHtml(p.name)}</div><div class="text-slate-500 mt-0.5">${p.type==='alu'?'อลูมิเนียม / งานกระจก':'สินค้าทั่วไป'} · ${p.priceType==='per_sqm'?'คิดต่อตร.ม.':'คิดต่อหน่วย'} · ฿${Number(p.price||0).toLocaleString('th-TH')}</div></div><button onclick="deleteData('preset', '${p.id}', ${idx})" class="shrink-0 text-rose-500 hover:bg-rose-100 p-1.5 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+          });
+        }
       } else if(type === 'customerModal') {
         if(title) title.innerText = 'จัดการรายชื่อลูกค้า';
         state.savedCustomers.forEach((c, idx) => {
@@ -1460,6 +1475,66 @@
         }
       }
       if(window.lucide) window.lucide.createIcons();
+    }
+
+    function openPresetEditor() {
+      const list = document.getElementById('gmodal-list');
+      if(!list) return;
+      list.innerHTML = `
+        <div class="border border-sky-200 bg-sky-50 rounded-xl p-3 space-y-3">
+          <div class="text-xs font-bold text-sky-900">เพิ่มแบบมาตรฐานใหม่</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="sm:col-span-2"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชื่อแบบมาตรฐาน *</label><input id="preset-name" type="text" placeholder="เช่น ประตูบานเลื่อน 2 บาน" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ประเภท</label><select id="preset-type" onchange="togglePresetFields()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="alu">อลูมิเนียม / งานกระจก</option><option value="general">สินค้าทั่วไป / ค่าแรง</option></select></div>
+            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">วิธีคิดราคา</label><select id="preset-price-type" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="per_sqm">ต่อตารางเมตร</option><option value="per_unit">ต่อหน่วย</option></select></div>
+            <div id="preset-width-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">กว้าง (ม.)</label><input id="preset-width" type="number" min="0" step="0.01" value="1.6" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+            <div id="preset-height-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สูง (ม.)</label><input id="preset-height" type="number" min="0" step="0.01" value="1.2" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">หน่วย</label><input id="preset-unit" type="text" value="ชุด" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ราคา</label><input id="preset-price" type="number" min="0" step="0.01" value="0" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+            <div id="preset-color-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สีอลูมิเนียม</label><input id="preset-alu-color" type="text" value="อบขาว" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+            <div id="preset-glass-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชนิดกระจก</label><input id="preset-glass" type="text" value="เขียวตัดแสง 6 มม." class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+          </div>
+          <div class="flex justify-end gap-2 pt-1">
+            <button type="button" onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white border rounded-lg text-xs">ยกเลิก</button>
+            <button type="button" onclick="savePreset()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold">บันทึกแบบมาตรฐาน</button>
+          </div>
+        </div>`;
+      togglePresetFields();
+    }
+
+    function togglePresetFields() {
+      const type = document.getElementById('preset-type')?.value || 'alu';
+      const isAlu = type === 'alu';
+      ['preset-width-wrap','preset-height-wrap','preset-color-wrap','preset-glass-wrap'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.style.display = isAlu ? '' : 'none';
+      });
+      const priceType = document.getElementById('preset-price-type');
+      if(priceType && !isAlu) { priceType.value = 'per_unit'; priceType.disabled = true; }
+      else if(priceType) priceType.disabled = false;
+    }
+
+    async function savePreset() {
+      const name = document.getElementById('preset-name')?.value.trim() || '';
+      if(!name) return showToast('กรุณากรอกชื่อแบบมาตรฐาน');
+      const type = document.getElementById('preset-type')?.value || 'alu';
+      const p = {
+        id: 'preset-' + Date.now(), type, name, icon: type === 'alu' ? 'columns-2' : 'package',
+        aluColor: document.getElementById('preset-alu-color')?.value.trim() || '-',
+        glassType: document.getElementById('preset-glass')?.value.trim() || '-',
+        width: parseFloat(document.getElementById('preset-width')?.value) || 0,
+        height: parseFloat(document.getElementById('preset-height')?.value) || 0,
+        unit: document.getElementById('preset-unit')?.value.trim() || 'ชุด',
+        price: parseFloat(document.getElementById('preset-price')?.value) || 0,
+        priceType: type === 'alu' ? (document.getElementById('preset-price-type')?.value || 'per_sqm') : 'per_unit'
+      };
+      state.presets = [...(state.presets || []), p];
+      persist(); renderPresets();
+      if(userId && db) {
+        try { await setDoc(cloudPath('presets', p.id), p, {merge:true}); showToast('บันทึกแบบมาตรฐานขึ้น Cloud แล้ว'); }
+        catch(e) { cloudError('Save preset', e); }
+      } else showToast('บันทึกแบบมาตรฐานแล้ว (ในเครื่อง)');
+      openGenericModal('presetModal');
     }
 
     function closeGenericModal() { 
@@ -1533,7 +1608,7 @@
     }
 
     // Expose all globals
-    window.switchTab = switchTab; window.updateDocType = updateDocType; window.applyPreset = applyPreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.switchTab = switchTab; window.updateDocType = updateDocType; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
 </body>
 </html>
