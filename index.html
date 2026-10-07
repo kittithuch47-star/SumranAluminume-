@@ -1845,6 +1845,21 @@
       if(state.items.length <= 1) return showToast('ต้องมี 1 รายการ');
       state.items = state.items.filter(i => i.id !== id); renderItems(); calculateTotals();
     }
+
+    function duplicateItem(id) {
+      const source = state.items.find(i => i.id === id);
+      if(!source) return showToast('ไม่พบรายการที่ต้องการคัดลอก');
+      const copy = clone(source);
+      copy.id = 'item-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+      recalculateItem(copy);
+      const index = state.items.findIndex(i => i.id === id);
+      state.items.splice(index + 1, 0, copy);
+      renderItems();
+      calculateTotals();
+      persist();
+      scheduleLiveDocumentSync();
+      showToast('คัดลอกรายการแล้ว');
+    }
     
     // คำนวณยอดของรายการเดียวจากค่าปัจจุบันเสมอ
     // ไม่พึ่งค่า item.total เดิม เพราะค่าเดิมอาจเป็นยอดจากก่อนแก้ไขรายการ
@@ -1895,7 +1910,10 @@
           <div class="p-3 bg-slate-50/70 border border-slate-200 rounded-xl space-y-2">
             <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
               <div class="flex items-center gap-2 flex-1"><span class="w-5 h-5 rounded-full bg-slate-700 text-white text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span><input type="text" value="${escapeHtml(item.name)}" oninput="updateItem('${item.id}', 'name', this.value)" class="font-semibold text-slate-800 text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-sky-500 px-1 py-0.5 w-full md:w-80">${bdg}</div>
-              <button onclick="removeItem('${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="duplicateItem('${item.id}')" title="คัดลอกรายการ" class="px-2 py-1 text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-lg flex items-center gap-1"><i data-lucide="copy" class="w-3.5 h-3.5"></i><span>คัดลอก</span></button>
+                <button type="button" onclick="removeItem('${item.id}')" title="ลบรายการ" class="p-1 text-slate-400 hover:text-rose-600 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[10px] ${!isAlu ? 'hidden' : ''}">
               <div><label class="text-slate-500 block">สีอลูมิเนียม</label><input type="text" value="${escapeHtml(item.aluColor)}" oninput="updateItem('${item.id}', 'aluColor', this.value)" class="w-full px-2 py-1 border rounded"><div class="flex flex-wrap gap-1 mt-1">${(state.presetColors||[]).map(v=>`<button type="button" onclick="setItemAluColor('${item.id}',decodeURIComponent('${encodeURIComponent(v)}'))" class="px-2 py-1 rounded-full border text-[9px] ${item.aluColor===v?'bg-sky-600 text-white border-sky-600':'bg-white text-slate-600 border-slate-200'}">${escapeHtml(v)}</button>`).join('')}</div></div>
@@ -2398,15 +2416,85 @@
       requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
     }
 
-    function downloadPdf() {
+    async function downloadPdf() {
       if(!prepareDocumentForOutput()) return;
-      archiveOutputAction('save_pdf');
-      /* On iPhone/iPad/Safari a web page cannot silently write a real vector PDF
-         into Files. The reliable, non-distorted route is the native print sheet:
-         Print Preview -> Share -> Save to Files. This keeps exactly the same
-         print CSS and typography as physical printing. */
-      showToast('กำลังเปิดหน้าบันทึก PDF — เลือกแชร์ แล้ว “บันทึกไปยังไฟล์”');
-      requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
+
+      const btn = document.querySelector('button[onclick="downloadPdf()"]');
+      const oldHtml = btn?.innerHTML;
+      try {
+        if(btn){
+          btn.disabled = true;
+          btn.innerHTML = '<span class="animate-pulse">กำลังสร้าง PDF...</span>';
+        }
+        showToast('กำลังสร้างไฟล์ PDF...');
+
+        // Wait until browser fonts are fully loaded before capturing the document HTML.
+        if(document.fonts?.ready) await document.fonts.ready;
+
+        const printArea = document.getElementById('print-area');
+        if(!printArea) throw new Error('ไม่พบพื้นที่เอกสารสำหรับสร้าง PDF');
+
+        // Send the real rendered document markup to the Vercel PDF endpoint.
+        // The server uses Chromium print-to-PDF, not html2canvas, so Thai text,
+        // tables and multi-page print CSS remain browser-rendered/vector text.
+        const styles = Array.from(document.querySelectorAll('style'))
+          .map(el => el.textContent || '')
+          .join('\n');
+
+        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+          .map(el => `<link rel="stylesheet" href="${el.href}">`)
+          .join('\n');
+
+        const payload = {
+          title: String(state.docNo || 'Sumran-Aluminum'),
+          html: printArea.outerHTML,
+          styles,
+          links
+        };
+
+        const res = await fetch('/api/pdf', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+
+        if(!res.ok){
+          let msg='สร้าง PDF ไม่สำเร็จ';
+          try {
+            const data=await res.json();
+            if(data?.error) msg=data.error;
+          } catch(_){}
+          throw new Error(msg);
+        }
+
+        const blob = await res.blob();
+        if(!blob.size) throw new Error('ไฟล์ PDF ว่างเปล่า');
+
+        const safe = String(state.docNo || 'Sumran-Aluminum')
+          .replace(/[\\/:*?"<>|]+/g,'-')
+          .trim() || 'Sumran-Aluminum';
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = safe + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 30000);
+
+        archiveOutputAction('save_pdf');
+        showToast('ดาวน์โหลด PDF แล้ว');
+      } catch(e) {
+        console.error('Direct PDF failed:', e);
+        showToast('สร้าง PDF ไม่สำเร็จ: ' + (e?.message || 'กรุณาลองใหม่'));
+      } finally {
+        if(btn){
+          btn.disabled = false;
+          if(oldHtml) btn.innerHTML = oldHtml;
+          if(window.lucide) window.lucide.createIcons();
+        }
+      }
     }
 
     function reprintArchivedDoc(historyId) {
@@ -2883,7 +2971,7 @@
     }
 
     // Expose all globals
-    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
 </body>
 </html>
