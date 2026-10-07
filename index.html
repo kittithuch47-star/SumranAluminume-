@@ -53,6 +53,18 @@
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
+        <div id="auth-user-box" class="hidden items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15">
+          <div class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center overflow-hidden shrink-0">
+            <img id="auth-user-photo" src="" alt="" class="w-full h-full object-cover hidden">
+            <i data-lucide="user" id="auth-user-icon" class="w-4 h-4 text-sky-200"></i>
+          </div>
+          <div class="min-w-0 hidden sm:block">
+            <div id="auth-user-name" class="text-[10px] font-bold text-white truncate max-w-[150px]">-</div>
+            <div id="auth-user-email" class="text-[9px] text-sky-200 truncate max-w-[180px]">-</div>
+          </div>
+          <span id="auth-user-role" class="text-[9px] px-1.5 py-0.5 rounded bg-white/10 border border-white/10 text-sky-100 whitespace-nowrap">-</span>
+          <button type="button" onclick="logoutGoogle()" class="text-[10px] px-2 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/10 font-semibold">ออกจากระบบ</button>
+        </div>
         <button onclick="switchTab('editor')" id="tab-btn-editor" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow">
           <i data-lucide="file-pen" class="w-4 h-4"></i> แก้ไขเอกสาร
         </button>
@@ -68,6 +80,32 @@
       </div>
     </div>
   </header>
+
+  <div id="auth-gate" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-br from-sky-800 via-slate-900 to-slate-950 text-white p-6">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
+            <i data-lucide="shield-check" class="w-6 h-6 text-sky-300"></i>
+          </div>
+          <div>
+            <div class="text-lg font-black">เข้าสู่ระบบ Sumran Aluminum</div>
+            <div class="text-[11px] text-sky-200">ข้อมูลเอกสารและการเงินจะผูกกับบัญชี Google ของคุณ</div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <div id="auth-gate-status" class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3 leading-relaxed">กำลังตรวจสอบบัญชี...</div>
+        <button id="google-login-btn" type="button" onclick="loginWithGoogle()" class="w-full py-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-300 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
+          <span class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black">G</span>
+          <span>เข้าสู่ระบบด้วย Google</span>
+        </button>
+        <div class="text-[10px] text-slate-400 leading-relaxed text-center">
+          ระบบจะพยายามผูก Google เข้ากับบัญชี Anonymous เดิมก่อน หาก Google บัญชีนี้มีอยู่แล้ว ระบบจะย้ายเอกสารเดิมไปยังบัญชี Google
+        </div>
+      </div>
+    </div>
+  </div>
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 relative">
 
@@ -90,7 +128,23 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">เลขที่เอกสาร</label>
-            <input type="text" id="docNo" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
+            <div class="flex gap-1.5">
+              <input type="text" id="docNo" class="flex-1 min-w-0 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
+              <button type="button" onclick="duplicateCurrentAsNew()" title="คัดลอกเอกสารนี้เป็นเลขที่ใหม่ และรีเซ็ตประวัติการรับชำระ"
+                class="px-2.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-[11px] font-bold whitespace-nowrap shadow-sm">
+                + เลขที่ใหม่
+              </button>
+            </div>
+            <div class="flex gap-1.5 mt-1.5">
+              <button type="button" onclick="createNewDocument()"
+                class="flex-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[10px] font-bold">
+                ล้าง / เอกสารใหม่
+              </button>
+              <button type="button" id="delete-current-doc-btn" onclick="deleteCurrentDocument()"
+                class="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-[10px] font-bold">
+                ลบใบนี้
+              </button>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">อ้างอิงเอกสารเดิม</label>
@@ -133,7 +187,7 @@
       <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-sky-950 text-white rounded-2xl p-4 md:p-6 shadow-md border border-slate-700">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
           <div><h3 class="text-base font-bold flex items-center gap-2"><i data-lucide="layout-grid" class="w-5 h-5 text-sky-300"></i> เลือกจากแบบมาตรฐาน</h3></div>
-          <button type="button" onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">จัดการพรีเซ็ต</button>
+          <button type="button" id="manage-presets-btn" onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">จัดการพรีเซ็ต</button>
         </div>
         <div id="presets-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 pt-2"></div>
       </div>
@@ -388,6 +442,7 @@
                 <th class="py-2 px-2">เลขที่ / อ้างอิง</th>
                 <th class="py-2 px-2">ประเภท</th>
                 <th class="py-2 px-2">ลูกค้า/โครงการ</th>
+                <th class="py-2 px-2">ผู้จัดทำ</th>
                 <th class="py-2 px-2">วันที่</th>
                 <th class="py-2 px-2 text-right">ยอดสุทธิ (ค้างชำระ)</th>
                 <th class="py-2 px-2 text-center w-32">สถานะงาน</th>
@@ -420,7 +475,7 @@
 
     <!-- TAB 4: SETTINGS -->
     <div id="tab-settings" class="hidden space-y-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 max-w-3xl mx-auto">
+      <div id="store-settings-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 max-w-3xl mx-auto hidden">
         <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3"><i data-lucide="store" class="w-5 h-5 text-sky-600"></i> ข้อมูลร้านค้าและสเปกมาตรฐาน</h2>
         <div class="space-y-4 text-xs">
           <div class="flex flex-col sm:flex-row gap-4 mb-4 items-start border-b border-slate-100 pb-4">
@@ -444,6 +499,21 @@
           <div><label class="block font-medium mb-1">ข้อความสเปกมาตรฐาน (แสดงใต้ชื่อลูกค้าเวลาพิมพ์)</label><textarea id="setting-standard-spec" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500 bg-slate-50"></textarea></div>
           <div class="pt-4 flex justify-end"><button onclick="saveStoreSettings()" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold">บันทึกตั้งค่าร้าน</button></div>
         </div>
+      </div>
+      <div id="staff-management-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 max-w-3xl mx-auto hidden">
+        <div class="flex items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-sky-600"></i> จัดการสมาชิกและพนักงาน</h2>
+            <p class="text-[10px] text-slate-500 mt-1">เจ้าของร้านเพิ่มพนักงานด้วยอีเมลได้ พนักงานจะเห็นเอกสารทั้งหมดของร้าน แต่แก้ไข/ลบได้เฉพาะเอกสารที่ตัวเองเป็นผู้จัดทำ</p>
+          </div>
+          <span class="text-[9px] px-2 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-bold">OWNER</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+          <input id="staff-invite-email" type="email" placeholder="อีเมล Google ของพนักงาน" class="sm:col-span-2 w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500">
+          <button type="button" onclick="inviteStaffByEmail()" class="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold">+ เชิญพนักงาน</button>
+        </div>
+        <div class="text-[10px] text-slate-400 mb-3">พนักงานต้องล็อกอิน Google ด้วยอีเมลที่เชิญไว้ แล้วระบบจะเพิ่มสิทธิ์เป็น STAFF ให้อัตโนมัติ</div>
+        <div id="staff-members-list" class="space-y-2"></div>
       </div>
     </div>
 
@@ -472,7 +542,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // Firebase config ของโปรเจกต์จริง: sumranaluminum
@@ -500,21 +570,29 @@
         firebaseReady = true;
     }
 
-    const LOCAL_KEY = 'sumran_aluminum_app_state_v2';
+    const LEGACY_LOCAL_KEY = 'sumran_aluminum_app_state_v2';
     const LOCAL_USER_KEY = 'sumran_aluminum_local_user';
+    const COMPANY_ID = 'sumran-aluminum-shop';
+    const PENDING_MIGRATION_KEY = `${LEGACY_LOCAL_KEY}:pending-company-migration:${COMPANY_ID}`;
     let unsubscribeFns = [];
+    let authInitialized = false;
+    let authActionBusy = false;
+    let authGateVisible = false;
+    let anonymousMigrationUid = null;
+    let currentMember = null;
+    let currentRole = null;
+    let pendingLegacyData = null;
+    let companyAccessReady = false;
 
     function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+    function activeLocalKey() { return userId ? `${LEGACY_LOCAL_KEY}:company:${COMPANY_ID}:uid:${userId}` : LEGACY_LOCAL_KEY; }
     function saveLocalState() {
-      try {
-        const copy = clone(state);
-        // ประวัติเอกสารเก็บใน localStorage ด้วย เพื่อให้เปิดไฟล์/รีเฟรชแล้วข้อมูลไม่หายแม้ Cloud ยังไม่พร้อม
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(copy));
-      } catch(e) { console.warn('Local save failed:', e); }
+      try { localStorage.setItem(activeLocalKey(), JSON.stringify(clone(state))); }
+      catch(e) { console.warn('Local save failed:', e); }
     }
-    function loadLocalState() {
+    function loadLocalState(key = LEGACY_LOCAL_KEY) {
       try {
-        const raw = localStorage.getItem(LOCAL_KEY);
+        const raw = localStorage.getItem(key);
         if (!raw) return false;
         const saved = JSON.parse(raw);
         Object.assign(state, saved || {});
@@ -530,11 +608,21 @@
         return true;
       } catch(e) { console.warn('Local load failed:', e); return false; }
     }
+    function clearCurrentCloudView() {
+      clearTimeout(state.liveSyncTimer); state.history=[]; state.printArchive=[]; state.savedCustomers=[]; state.savedSales=[]; state.presets=[];
+      state.currentHistoryId=null; state.liveSyncBusy=false; renderHistory(); renderPrintArchive(); renderDatalists(); renderPresets();
+    }
     function persist() { saveLocalState(); }
-    function cloudPath(name, id) { return doc(db, 'artifacts', appId, 'users', userId, name, id); }
-    function cloudCollection(name) { return collection(db, 'artifacts', appId, 'users', userId, name); }
-    function cloudSettings() { return doc(db, 'artifacts', appId, 'users', userId, 'settings', 'shopData'); }
-    function cloudError(action, e) { console.error(action, e); showToast('Cloud บันทึกไม่ได้ — ข้อมูลถูกเก็บในเครื่องแล้ว'); }
+    function cloudPath(name, id) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, name, id); }
+    function cloudCollection(name) { return collection(db, 'artifacts', appId, 'companies', COMPANY_ID, name); }
+    function cloudSettings() { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, 'settings', 'shopData'); }
+    function memberPath(uid=userId) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, 'members', uid); }
+    function memberCollection() { return collection(db, 'artifacts', appId, 'companies', COMPANY_ID, 'members'); }
+    function invitationPath(email) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, 'invitations', String(email||'').trim().toLowerCase()); }
+    function requireOwner(action='การทำรายการนี้') { if(currentRole !== 'owner') { showToast(`${action}เฉพาะเจ้าของร้าน`); return false; } return true; }
+    function isOwner() { return currentRole === 'owner'; }
+    function canEditHistoryItem(h) { return isOwner() || (h && h.createdByUid && h.createdByUid === userId); }
+    function cloudError(action, e) { console.error(action, e); showToast('Cloud บันทึกไม่ได้ — ตรวจสอบสิทธิ์/อินเทอร์เน็ตแล้วลองใหม่'); }
 
     const state = {
       currentTab: 'editor', docType: 'quotation',
@@ -560,7 +648,8 @@
       notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
       discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
       isLumpSum: false, lumpSumAmt: 0,
-      paymentEnabled: false, depositEnabled: false, depositPercent: 0, depositAmount: 0, prevPaid: 0, currentPayment: 0, remainingAmt: 0, payments: [], printArchive: [], history: []
+      paymentEnabled: false, depositEnabled: false, depositPercent: 0, depositAmount: 0, prevPaid: 0, currentPayment: 0, remainingAmt: 0, payments: [], printArchive: [], history: [],
+      currentHistoryId: null, liveSyncTimer: null, liveSyncBusy: false, isReadOnlyDocument: false, currentActor: null
     };
 
     function safeSetValue(id, val) { const el = document.getElementById(id); if(el) el.value = val !== undefined ? val : ''; }
@@ -569,6 +658,135 @@
     function escapeHtml(str) { return String(str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
     function showToast(msg) { safeSetText('toast-msg', msg); const t = document.getElementById('toast'); if(t) { t.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500); } }
     function formatDateThai(dStr) { if(!dStr) return '-'; const p=dStr.split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${parseInt(p[0])+543}` : dStr; }
+
+    function resetEditorForSession() {
+      clearTimeout(state.liveSyncTimer);
+      state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo='';
+      state.docDate=new Date().toISOString().split('T')[0]; state.dueDate=new Date(Date.now()+14*86400000).toISOString().split('T')[0];
+      state.customer={name:'',phone:'',taxId:'',address:'',project:''}; state.salesName=state.salesName||'พนักงานขาย 1';
+      state.items=[{id:'item-'+Date.now(),type:'alu',name:'ชุดหน้าต่าง/ประตู',aluColor:'อบขาว',glassType:'เขียว 6 มม.',width:1,height:1,area:1,qty:1,unit:'ชุด',pricingType:'per_sqm',unitPrice:1000,total:1000}];
+      state.notes='1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี'; state.discount=0; state.vatEnabled=false; state.whtEnabled=false; state.totalCost=0;
+      state.isLumpSum=false; state.lumpSumAmt=0; state.paymentEnabled=false; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0; state.payments=[];
+      ['docNo','refNo','docDate','dueDate','docNotes','custName','custPhone','custTaxId','custAddress','projectName','calc-discount','total-cost','current-payment','deposit-percent'].forEach(id=>safeSetValue(id,''));
+      safeSetChecked('payment-toggle',false); safeSetChecked('deposit-toggle',false); safeSetChecked('vat-toggle',false); safeSetChecked('wht-toggle',false); safeSetChecked('lump-sum-toggle',false);
+      togglePaymentBox(); toggleDepositBox(); renderItems(); calculateTotals(); setCurrentDocUiState(false);
+    }
+
+    function setCurrentDocUiState(isSaved) {
+      const btn = document.getElementById('delete-current-doc-btn');
+      if(btn) {
+        btn.disabled = !isSaved;
+        btn.style.opacity = isSaved ? '1' : '0.45';
+        btn.style.cursor = isSaved ? 'pointer' : 'not-allowed';
+      }
+      const docNoInput = document.getElementById('docNo');
+      if(docNoInput) docNoInput.readOnly = !!isSaved;
+    }
+
+    function syncEditorFieldsToState() {
+      ['docNo','refNo','docDate','dueDate','salesName','docNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        if(id === 'docNotes') state.notes = el.value;
+        else state[id] = el.value;
+      });
+
+      state.customer = {
+        name: document.getElementById('custName')?.value || '',
+        phone: document.getElementById('custPhone')?.value || '',
+        taxId: document.getElementById('custTaxId')?.value || '',
+        address: document.getElementById('custAddress')?.value || '',
+        project: document.getElementById('projectName')?.value || ''
+      };
+    }
+
+    function scheduleLiveDocumentSync() {
+      // ซิงก์เฉพาะเอกสารที่มีอยู่แล้วในประวัติ เพื่อไม่สร้างเอกสารใหม่ทุกครั้งที่พิมพ์
+      // และไม่แตะ "รับชำระครั้งนี้" ระหว่างผู้ใช้กำลังกรอกยอดเงินจริง
+      if(!state.currentHistoryId || !userId || !db || Number(state.currentPayment || 0) > 0) return;
+      clearTimeout(state.liveSyncTimer);
+      state.liveSyncTimer = setTimeout(async () => {
+        if(state.liveSyncBusy || !state.currentHistoryId) return;
+        state.liveSyncBusy = true;
+        try {
+          await saveCurrentDoc({ recordPayment: false, silent: true });
+        } finally {
+          state.liveSyncBusy = false;
+        }
+      }, 800);
+    }
+
+    async function duplicateCurrentAsNew() {
+      calculateTotals();
+      syncEditorFieldsToState();
+
+      const oldDocNo = state.docNo;
+      const copied = clone(state);
+
+      state.currentHistoryId = null;
+      state.isReadOnlyDocument = false;
+      state.docNo = '';
+      state.refNo = oldDocNo || '';
+      state.docDate = new Date().toISOString().split('T')[0];
+      state.dueDate = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+      state.payments = [];
+      state.prevPaid = 0;
+      state.currentPayment = 0;
+      state.remainingAmt = Number(state.grandTotal || 0);
+      state.depositAmount = state.depositEnabled ? +(Number(state.grandTotal || 0) * Number(state.depositPercent || 0) / 100).toFixed(2) : 0;
+      state.paymentEnabled = false;
+      state.depositEnabled = false;
+      state.depositPercent = 0;
+      state.depositAmount = 0;
+
+      state.items = Array.isArray(copied.items) && copied.items.length ? copied.items : [{
+        id: 'item-'+Date.now(), type: 'alu', name: 'ชุดหน้าต่าง/ประตู', aluColor: 'อบขาว', glassType: 'เขียว 6 มม.',
+        width: 1, height: 1, area: 1, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 1000, total: 1000
+      }];
+
+      generateAutoDocNo(state.docType);
+      ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
+      safeSetValue('docNotes', state.notes || '');
+      safeSetValue('current-payment', 0);
+      safeSetValue('deposit-percent', 0);
+      safeSetChecked('payment-toggle', false);
+      safeSetChecked('deposit-toggle', false);
+      togglePaymentBox();
+      toggleDepositBox();
+      renderItems();
+      calculateTotals();
+      setCurrentDocUiState(false);
+      switchTab('editor');
+      showToast(`คัดลอก ${oldDocNo || 'เอกสารเดิม'} เป็นเลขที่ใหม่แล้ว — ประวัติรับชำระถูกรีเซ็ต`);
+    }
+
+    async function deleteCurrentDocument() {
+      if(!requireOwner('การลบเอกสาร')) return;
+      const id = state.currentHistoryId;
+      if(!id) return showToast('เอกสารนี้ยังไม่ได้บันทึก');
+      const h = state.history.find(x => x.id === id);
+      if(!h) return showToast('ไม่พบเอกสารที่กำลังแก้ไข');
+      if(!confirm(`ลบเอกสาร ${h.docNo || ''} ใช่หรือไม่?\nการลบครั้งนี้จะลบเอกสารนี้ออกจากประวัติและ Cloud ด้วย`)) return;
+
+      clearTimeout(state.liveSyncTimer);
+      state.history = state.history.filter(x => x.id !== id);
+      persist();
+      renderHistory();
+
+      if(userId && db) {
+        try {
+          await deleteDoc(cloudPath('history', id));
+          showToast('ลบเอกสารออกจาก Cloud แล้ว');
+        } catch(e) {
+          cloudError('Delete current document', e);
+          return;
+        }
+      } else {
+        showToast('ลบเอกสารแล้ว (ในเครื่อง)');
+      }
+
+      createNewDocument();
+    }
     
     function thaiBahtConversion(num) {
       if (isNaN(num) || num === 0) return 'ศูนย์บาทถ้วน';
@@ -592,78 +810,275 @@
       return res + (decP === '00' ? 'ถ้วน' : cvt(decP) + 'สตางค์');
     }
 
-    async function initFirebase() {
-      if (!firebaseReady || !auth || !db) {
-        showToast('โหมดเครื่อง: Firebase config ยังไม่ได้ตั้งค่า');
-        return;
-      }
-      try {
-        await setPersistence(auth, browserLocalPersistence);
-        if (initialToken) await signInWithCustomToken(auth, initialToken);
-        else if (!auth.currentUser) await signInAnonymously(auth);
-        userId = auth.currentUser?.uid || localStorage.getItem(LOCAL_USER_KEY);
-        if (userId) localStorage.setItem(LOCAL_USER_KEY, userId);
-        if (!userId) throw new Error('ไม่พบ Firebase UID');
-
-        // ย้ายข้อมูลในเครื่องขึ้น Cloud ครั้งแรก หาก Cloud ของบัญชีนี้ยังว่าง
-        // ป้องกันกรณีผู้ใช้กรอกข้อมูลไว้ก่อนใส่ Firebase config แล้วข้อมูลหายเมื่อเชื่อม Cloud
-        const migrationSets = [
-          ['history', state.history], ['customers', state.savedCustomers], ['sales', state.savedSales], ['presets', state.presets], ['printArchive', state.printArchive]
-        ];
-        for (const [name, rows] of migrationSets) {
-          try {
-            const existing = await getDocs(cloudCollection(name));
-            if (existing.empty && Array.isArray(rows) && rows.length) {
-              await Promise.all(rows.filter(x => x?.id).map(x => setDoc(cloudPath(name, x.id), x, {merge:true})));
-            }
-          } catch(e) { console.warn('Migration skipped:', name, e); }
-        }
-        try {
-          const shopSnap = await getDoc(cloudSettings());
-          if (!shopSnap.exists() && state.shop) await setDoc(cloudSettings(), state.shop, {merge:true});
-        } catch(e) { console.warn('Shop migration skipped:', e); }
-
-        unsubscribeFns.forEach(fn => { try { fn(); } catch(_){} });
-        unsubscribeFns = [];
-
-        unsubscribeFns.push(onSnapshot(cloudSettings(), (snap) => {
-          if (snap.exists()) {
-            state.shop = { ...state.shop, ...snap.data() };
-            ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
-            const logoPrev = document.getElementById('setting-logo-preview');
-            if(state.shop.logo && logoPrev) { logoPrev.src = state.shop.logo; logoPrev.classList.remove('hidden'); }
-            persist();
+    function roleLabel(role) { return role === 'owner' ? 'เจ้าของร้าน' : role === 'staff' ? 'พนักงาน' : '-'; }
+    function sanitizeMemberData(data, uid) {
+      const role = data?.role === 'owner' ? 'owner' : 'staff';
+      return { uid, role, email:String(data?.email||''), displayName:String(data?.displayName||''), active:data?.active !== false };
+    }
+    function updateRoleUi() {
+      const roleEl=document.getElementById('auth-user-role'); if(roleEl) roleEl.textContent=roleLabel(currentRole);
+      const staffCard=document.getElementById('staff-management-card'); if(staffCard) staffCard.classList.toggle('hidden',!isOwner());
+      const storeCard=document.getElementById('store-settings-card'); if(storeCard) storeCard.classList.toggle('hidden',!isOwner());
+      const presetBtn=document.getElementById('manage-presets-btn'); if(presetBtn) presetBtn.classList.toggle('hidden',!isOwner());
+      if(window.lucide) window.lucide.createIcons();
+    }
+    async function loadMembershipForUser(user) {
+      if(!user||!db) return null;
+      const snap=await getDoc(memberPath(user.uid));
+      if(snap.exists()) { const m=sanitizeMemberData(snap.data(),user.uid); return m.active?m:null; }
+      if(user.email) {
+        const invSnap=await getDoc(invitationPath(user.email));
+        if(invSnap.exists()) {
+          const inv=invSnap.data()||{};
+          if(inv.active!==false && String(inv.email||'').trim().toLowerCase()===String(user.email||'').trim().toLowerCase()) {
+            const m={uid:user.uid,role:inv.role==='owner'?'owner':'staff',email:user.email||'',displayName:user.displayName||inv.displayName||'',active:true,joinedAt:new Date().toISOString(),invitedBy:inv.invitedBy||null};
+            await setDoc(memberPath(user.uid),m,{merge:true});
+            return m;
           }
-        }, e => cloudError('Load shop settings', e)));
-
-        unsubscribeFns.push(onSnapshot(cloudCollection('presets'), (snap) => {
-          state.presets = []; snap.forEach(d => state.presets.push(d.data())); renderPresets(); persist();
-        }, e => cloudError('Load presets', e)));
-
-        unsubscribeFns.push(onSnapshot(cloudCollection('history'), (snap) => {
-          state.history = []; snap.forEach(d => state.history.push(d.data()));
-          state.history.sort((a,b) => String(b.id).localeCompare(String(a.id))); renderHistory(); persist();
-        }, e => cloudError('Load history', e)));
-
-        unsubscribeFns.push(onSnapshot(cloudCollection('customers'), (snap) => {
-          state.savedCustomers = []; snap.forEach(d => state.savedCustomers.push(d.data())); renderDatalists(); persist();
-        }, e => cloudError('Load customers', e)));
-
-        unsubscribeFns.push(onSnapshot(cloudCollection('sales'), (snap) => {
-          state.savedSales = []; snap.forEach(d => state.savedSales.push(d.data())); renderDatalists(); persist();
-        }, e => cloudError('Load sales', e)));
-
-        unsubscribeFns.push(onSnapshot(cloudCollection('printArchive'), (snap) => {
-          state.printArchive = []; snap.forEach(d => state.printArchive.push(d.data()));
-          state.printArchive.sort((a,b) => String(b.printedAt||'').localeCompare(String(a.printedAt||'')));
-          renderPrintArchive(); persist();
-        }, e => cloudError('Load print archive', e)));
-
-        showToast('เชื่อมต่อ Firebase สำเร็จ');
-      } catch (e) {
-        console.error('Firebase Init Error:', e);
-        showToast('Firebase เชื่อมต่อไม่ได้ — ใช้ข้อมูลในเครื่องแทน');
+        }
       }
+      return null;
+    }
+    async function migrateLegacyDataToCompany(data, sourceUid) {
+      if(!data||!db||!companyAccessReady) return;
+      const groups=['history','customers','sales','presets','printArchive'];
+      for(const name of groups){
+        const rows=Array.isArray(data[name])?data[name]:[];
+        for(const row of rows){
+          if(!row?.id) continue;
+          const next=clone(row);
+          if(name==='history'){
+            next.createdByUid=next.createdByUid||next.payload?.createdByUid||sourceUid||'legacy-anonymous';
+            next.createdByEmail=next.createdByEmail||next.payload?.createdByEmail||'';
+            next.createdByName=next.createdByName||next.payload?.createdByName||'';
+            next.migratedFromUid=next.migratedFromUid||sourceUid||null;
+            if(next.payload&&typeof next.payload==='object'){next.payload.createdByUid=next.payload.createdByUid||next.createdByUid;next.payload.createdByEmail=next.payload.createdByEmail||next.createdByEmail;next.payload.createdByName=next.payload.createdByName||next.createdByName;}
+          }
+          await setDoc(cloudPath(name,next.id),next,{merge:true});
+        }
+      }
+      if(data.shop) await setDoc(cloudSettings(),data.shop,{merge:true});
+      try{localStorage.removeItem(LEGACY_LOCAL_KEY);}catch(_){}
+    }
+    async function maybeMigrateLegacyDataForOwner() {
+      if(!isOwner()) return;
+      if(!pendingLegacyData){ try { const raw=localStorage.getItem(PENDING_MIGRATION_KEY); if(raw) pendingLegacyData=JSON.parse(raw); } catch(_) {} }
+      if(!pendingLegacyData) return;
+      const d=pendingLegacyData;
+      const hasLegacy=d.history?.length||d.customers?.length||d.sales?.length||d.presets?.length||d.printArchive?.length||d.shop;
+      if(!hasLegacy){ pendingLegacyData=null; try{localStorage.removeItem(PENDING_MIGRATION_KEY);}catch(_){} return; }
+      await migrateLegacyDataToCompany(d,anonymousMigrationUid);
+      pendingLegacyData=null; anonymousMigrationUid=null;
+      try{localStorage.removeItem(PENDING_MIGRATION_KEY);}catch(_){}
+      showToast('ย้ายข้อมูลเดิมเข้า Cloud กลางของร้านแล้ว');
+    }
+    async function renderMembers() {
+      const box=document.getElementById('staff-members-list'); if(!box||!isOwner()||!db) return;
+      try{
+        const snap=await getDocs(memberCollection()); const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+        rows.sort((a,b)=>String(a.email||'').localeCompare(String(b.email||'')));
+        box.innerHTML=rows.length?rows.map(m=>`<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-slate-50 border rounded-lg text-xs"><div class="min-w-0"><div class="font-bold text-slate-800 truncate">${escapeHtml(m.displayName||m.email||m.uid)}</div><div class="text-slate-500 truncate">${escapeHtml(m.email||'-')} · UID: ${escapeHtml(m.uid||m.id)}</div></div><div class="flex items-center gap-1.5"><select ${m.uid===userId?'disabled':''} onchange="changeMemberRole('${escapeHtml(m.uid||m.id)}',this.value)" class="text-[10px] p-1 border rounded bg-white ${m.uid===userId?'opacity-60':''}"><option value="owner" ${m.role==='owner'?'selected':''}>Owner</option><option value="staff" ${m.role==='staff'?'selected':''}>Staff</option></select>${m.uid!==userId?`<button type="button" onclick="removeMember('${escapeHtml(m.uid||m.id)}')" class="px-2 py-1 rounded bg-rose-50 text-rose-600 border border-rose-200 font-bold">ลบ</button>`:'<span class="text-[9px] text-sky-600 font-bold px-1">บัญชีปัจจุบัน</span>'}</div></div>`).join(''):'<div class="p-3 text-center text-xs text-slate-400 border border-dashed rounded-xl">ยังไม่มีสมาชิก</div>';
+      }catch(e){console.error('Render members error',e);}
+    }
+    async function inviteStaffByEmail(){
+      if(!requireOwner('การเชิญพนักงาน')) return;
+      const el=document.getElementById('staff-invite-email'); const email=String(el?.value||'').trim().toLowerCase();
+      if(!email||!email.includes('@')) return showToast('กรุณากรอกอีเมล Google ของพนักงาน');
+      try{await setDoc(invitationPath(email),{email,role:'staff',active:true,invitedBy:userId,invitedAt:new Date().toISOString()},{merge:true});if(el)el.value='';showToast('สร้างคำเชิญพนักงานแล้ว');}catch(e){cloudError('Invite staff',e);}
+    }
+    async function changeMemberRole(uid,role){
+      if(!requireOwner('การเปลี่ยนสิทธิ์')) return; if(!uid||uid===userId) return;
+      try{await updateDoc(memberPath(uid),{role:role==='owner'?'owner':'staff'});await renderMembers();showToast('เปลี่ยนสิทธิ์สมาชิกแล้ว');}catch(e){cloudError('Change member role',e);}
+    }
+    async function removeMember(uid){
+      if(!requireOwner('การลบพนักงาน')) return; if(!uid||uid===userId) return;
+      const snap=await getDoc(memberPath(uid)); const email=snap.exists()?snap.data()?.email||uid:uid;
+      if(!confirm(`ลบสิทธิ์ ${email} ออกจากร้านใช่หรือไม่?`)) return;
+      try{await deleteDoc(memberPath(uid));await renderMembers();showToast('ลบสมาชิกแล้ว');}catch(e){cloudError('Remove member',e);}
+    }
+
+    function setAuthGate(visible, message='') {
+      authGateVisible=!!visible;
+      const gate=document.getElementById('auth-gate'), box=document.getElementById('auth-user-box'), status=document.getElementById('auth-gate-status'), btn=document.getElementById('google-login-btn');
+      if(gate){gate.classList.toggle('hidden',!visible);gate.classList.toggle('flex',visible);}
+      if(status && message) status.innerHTML=escapeHtml(message).replace(/\n/g,'<br>');
+      if(btn) btn.disabled=authActionBusy || !firebaseReady;
+      if(box){const g=!!auth?.currentUser&&!auth.currentUser.isAnonymous;box.classList.toggle('hidden',!g);box.classList.toggle('flex',g);}
+      updateRoleUi(); if(window.lucide) window.lucide.createIcons();
+    }
+
+    function updateAuthUserUi(user) {
+      const box=document.getElementById('auth-user-box'), name=document.getElementById('auth-user-name'), email=document.getElementById('auth-user-email'), photo=document.getElementById('auth-user-photo'), icon=document.getElementById('auth-user-icon'), role=document.getElementById('auth-user-role');
+      const signed=!!user&&!user.isAnonymous;
+      if(box){box.classList.toggle('hidden',!signed);box.classList.toggle('flex',signed);}
+      if(name) name.textContent=user?.displayName||'บัญชี Google';
+      if(email) email.textContent=user?.email||'-';
+      if(role) role.textContent=roleLabel(currentRole);
+      if(photo){if(user?.photoURL){photo.src=user.photoURL;photo.classList.remove('hidden');if(icon)icon.classList.add('hidden');}else{photo.src='';photo.classList.add('hidden');if(icon)icon.classList.remove('hidden');}}
+    }
+
+    async function readCloudUserData(uid) {
+      if(!uid || !db) return { history:[], customers:[], sales:[], presets:[], printArchive:[], shop:null };
+      const result = { history:[], customers:[], sales:[], presets:[], printArchive:[], shop:null };
+      const names = ['history','customers','sales','presets','printArchive'];
+      for(const name of names) {
+        const snap = await getDocs(collection(db, 'artifacts', appId, 'users', uid, name));
+        snap.forEach(d => result[name].push(d.data()));
+      }
+      const shopSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid, 'settings', 'shopData'));
+      if(shopSnap.exists()) result.shop = shopSnap.data();
+      return result;
+    }
+
+    async function writeCloudUserData(uid, data) { await migrateLegacyDataToCompany(data, uid); }
+
+    async function attachCloudListenersForCurrentUser() {
+      if(!userId || !db || !companyAccessReady) return;
+      unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
+
+      unsubscribeFns.push(onSnapshot(cloudSettings(), snap=>{
+        if(snap.exists()){
+          state.shop={...state.shop,...snap.data()};
+          ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k=>safeSetValue('setting-shop-'+k,state.shop[k]));
+          const logoPrev=document.getElementById('setting-logo-preview');
+          if(state.shop.logo&&logoPrev){logoPrev.src=state.shop.logo;logoPrev.classList.remove('hidden');}
+          persist();
+        }
+      },e=>cloudError('Load shop settings',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('presets'), snap=>{
+        state.presets=[]; snap.forEach(d=>state.presets.push(d.data())); renderPresets(); persist();
+      },e=>cloudError('Load presets',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('history'), snap=>{
+        const incoming=[]; snap.forEach(d=>incoming.push(d.data()));
+        state.history=incoming.sort((a,b)=>String(b.savedAt||b.id||'').localeCompare(String(a.savedAt||a.id||'')));
+        if(!state.currentHistoryId && !state.docNo) generateAutoDocNo(state.docType);
+        renderHistory();
+        if(state.currentHistoryId){
+          const current=state.history.find(h=>h.id===state.currentHistoryId);
+          if(current&&!state.liveSyncBusy&&!authGateVisible){
+            const liveGrand=Number(current.grandTotal||0), livePaid=Number(current.paidTotal||0);
+            state.remainingAmt=Number(current.remainingAmt||Math.max(0,liveGrand-livePaid));
+            safeSetText('calc-total-paid','฿'+livePaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
+            safeSetText('calc-remaining-amt','฿'+Number(state.remainingAmt).toLocaleString('th-TH',{minimumFractionDigits:2}));
+          }
+        }
+        persist();
+      },e=>cloudError('Load history',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('customers'), snap=>{
+        state.savedCustomers=[]; snap.forEach(d=>state.savedCustomers.push(d.data())); renderDatalists(); persist();
+      },e=>cloudError('Load customers',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('sales'), snap=>{
+        state.savedSales=[]; snap.forEach(d=>state.savedSales.push(d.data())); renderDatalists(); persist();
+      },e=>cloudError('Load sales',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('printArchive'), snap=>{
+        state.printArchive=[]; snap.forEach(d=>state.printArchive.push(d.data())); state.printArchive.sort((a,b)=>String(b.printedAt||'').localeCompare(String(a.printedAt||''))); renderPrintArchive(); persist();
+      },e=>cloudError('Load print archive',e)));
+
+      if(isOwner()) renderMembers();
+    }
+
+    async function loginWithGoogle() {
+      if(!firebaseReady||!auth) return showToast('Firebase ยังไม่พร้อม');
+      if(authActionBusy) return; authActionBusy=true; setAuthGate(true,'กำลังเปิด Google Sign-In...');
+      const provider=new GoogleAuthProvider(); provider.setCustomParameters({prompt:'select_account'});
+      try {
+        const current=auth.currentUser;
+        if(current?.isAnonymous){
+          anonymousMigrationUid=current.uid;
+          const oldData=await readCloudUserData(current.uid);
+          let oldLocal=null; try { const raw=localStorage.getItem(LEGACY_LOCAL_KEY); if(raw) oldLocal=JSON.parse(raw); } catch(_){}
+          pendingLegacyData={...oldData};
+          for(const n of ['history','customers','sales','presets','printArchive']) {
+            pendingLegacyData[n]=[...(oldData[n]||[]),...((oldLocal&&Array.isArray(oldLocal[n]))?oldLocal[n]:[])];
+            const seen=new Map(); pendingLegacyData[n].forEach(row=>{if(row?.id)seen.set(String(row.id),row);}); pendingLegacyData[n]=Array.from(seen.values());
+          }
+          if(oldLocal?.shop) pendingLegacyData.shop={...(oldData.shop||{}),...oldLocal.shop};
+          try { localStorage.setItem(PENDING_MIGRATION_KEY, JSON.stringify(pendingLegacyData)); } catch(_) {}
+          try {
+            const linked=await linkWithPopup(current,provider); userId=linked.user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(linked.user);
+          } catch(linkErr){
+            if(!['auth/credential-already-in-use','auth/account-exists-with-different-credential'].includes(linkErr?.code)) throw linkErr;
+            const result=await signInWithPopup(auth,provider); userId=result.user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(result.user);
+          }
+        } else {
+          const result=await signInWithPopup(auth,provider); userId=result.user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(result.user);
+        }
+        clearCurrentCloudView();
+        const signedUser=auth.currentUser;
+        currentMember=await loadMembershipForUser(signedUser);
+        if(!currentMember){
+          companyAccessReady=false; currentRole=null; updateAuthUserUi(signedUser);
+          setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${signedUser?.email||'-'}\nUID: ${signedUser?.uid||'-'}\nให้เจ้าของร้านเพิ่มอีเมลนี้เป็นพนักงาน หรือกำหนดบัญชีนี้เป็น Owner ครั้งแรกใน Firestore ก่อน`);
+          showToast('ยังไม่ได้รับสิทธิ์เข้าร้าน'); return;
+        }
+        currentRole=currentMember.role; companyAccessReady=true; state.currentActor={uid:userId,email:signedUser?.email||'',displayName:signedUser?.displayName||''};
+        await maybeMigrateLegacyDataForOwner();
+        resetEditorForSession();
+        await attachCloudListenersForCurrentUser(); updateAuthUserUi(signedUser); updateRoleUi(); setAuthGate(false);
+        showToast(currentRole==='owner'?'เข้าสู่ระบบในฐานะเจ้าของร้าน':'เข้าสู่ระบบในฐานะพนักงาน');
+      } catch(e){
+        console.error('Google Sign-In Error',e);
+        let msg='เข้าสู่ระบบ Google ไม่สำเร็จ';
+        if(e?.code==='auth/popup-blocked') msg='เบราว์เซอร์บล็อกหน้าต่าง Google — อนุญาต Popup สำหรับเว็บไซต์นี้แล้วลองใหม่';
+        else if(e?.code==='auth/unauthorized-domain') msg='โดเมนนี้ยังไม่ได้เพิ่มใน Firebase Authentication > Authorized domains';
+        else if(e?.code==='auth/operation-not-allowed') msg='ยังไม่ได้เปิด Google เป็น Sign-in provider ใน Firebase Console';
+        else if(e?.message) msg+=' — '+e.message;
+        setAuthGate(true,msg); showToast(msg);
+      } finally {
+        authActionBusy=false; const btn=document.getElementById('google-login-btn'); if(btn) btn.disabled=false;
+      }
+    }
+
+    async function logoutGoogle() {
+      if(!auth) return;
+      try {
+        clearTimeout(state.liveSyncTimer); unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
+        companyAccessReady=false; currentMember=null; currentRole=null; pendingLegacyData=null; clearCurrentCloudView();
+        await signOut(auth); userId=null; updateAuthUserUi(null); setAuthGate(true,'ออกจากระบบแล้ว กรุณาเข้าสู่ระบบด้วย Google'); showToast('ออกจากระบบแล้ว');
+      } catch(e){console.error('Logout error',e);showToast('ออกจากระบบไม่สำเร็จ');}
+    }
+
+    async function handleGoogleUserReady(user) {
+      if(!user||user.isAnonymous){setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว กรุณากดเข้าสู่ระบบด้วย Google');return;}
+      userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
+      if(authActionBusy) return;
+      try {
+        currentMember=await loadMembershipForUser(user);
+        if(!currentMember){
+          companyAccessReady=false; currentRole=null;
+          setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์
+หากเป็นเจ้าของครั้งแรก ให้สร้างสมาชิกใน Firestore: companies/sumran-aluminum-shop/members/<UID>`);
+          return;
+        }
+        currentRole=currentMember.role; companyAccessReady=true; state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
+        if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
+        resetEditorForSession();
+        updateRoleUi(); setAuthGate(false); await attachCloudListenersForCurrentUser();
+      } catch(e){console.error(e);setAuthGate(true,'ตรวจสอบสิทธิ์ร้านไม่สำเร็จ — ตรวจสอบ Firestore Rules');}
+    }
+
+    function handleAuthStateChange(user) {
+      if(!user){userId=null;currentMember=null;currentRole=null;companyAccessReady=false;updateAuthUserUi(null);setAuthGate(true,'ยังไม่ได้เข้าสู่ระบบ');return;}
+      userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
+      if(user.isAnonymous){anonymousMigrationUid=user.uid;setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว เมื่อกด Google Login ระบบจะย้ายข้อมูลเดิมเข้า Cloud กลางของร้าน');}
+      else handleGoogleUserReady(user);
+    }
+
+    async function initFirebase() {
+      if(!firebaseReady||!auth||!db){setAuthGate(true,'Firebase config ไม่พร้อมใช้งาน');return;}
+      try {
+        await setPersistence(auth,browserLocalPersistence);
+        if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
+        if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
+        const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
+        if(current&&!current.isAnonymous&&!authActionBusy) await handleGoogleUserReady(current);
+        if(window.lucide) window.lucide.createIcons();
+      } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
     }
 
     window.getFirebaseStatus = () => ({ ready: firebaseReady, projectId: firebaseConfig?.projectId || null, userId });
@@ -676,6 +1091,23 @@
       } catch(e) { showToast('Firebase config ไม่ถูกต้อง'); console.error(e); }
     };
 
+
+    function bindLiveSyncEvents() {
+      const editor = document.getElementById('tab-editor');
+      if(!editor || editor.dataset.liveSyncBound === '1') return;
+      editor.dataset.liveSyncBound = '1';
+
+      editor.addEventListener('input', (e) => {
+        if(e.target?.id === 'current-payment') return;
+        if(e.target?.id === 'deposit-percent') return;
+        scheduleLiveDocumentSync();
+      });
+      editor.addEventListener('change', (e) => {
+        if(e.target?.id === 'current-payment' || e.target?.id === 'deposit-percent') return;
+        scheduleLiveDocumentSync();
+      });
+    }
+
     window.addEventListener('beforeunload', persist);
     setInterval(persist, 30000);
 
@@ -683,6 +1115,7 @@
       try {
         const hadLocal = loadLocalState();
         if (!state.docNo) generateAutoDocNo('quotation');
+        bindLiveSyncEvents();
         await initFirebase();
         
         safeSetValue('docNo', state.docNo); safeSetValue('docDate', state.docDate); safeSetValue('dueDate', state.dueDate);
@@ -691,6 +1124,7 @@
         ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
         
         renderPresets(); renderItems(); renderPrintArchive();
+        setCurrentDocUiState(!!state.currentHistoryId);
         safeSetChecked('payment-toggle', !!state.paymentEnabled);
         safeSetChecked('deposit-toggle', !!state.depositEnabled);
         safeSetValue('deposit-percent', state.depositPercent || 0);
@@ -797,6 +1231,7 @@
       // ถ้ากำลังอยู่หน้า Preview ให้ยอดในใบเสนอราคาเปลี่ยนทันทีด้วย
       if(state.currentTab === 'preview') renderPreview();
       persist();
+      scheduleLiveDocumentSync();
     }
 
     function renderItems() {
@@ -1002,6 +1437,10 @@
 
       // ถ้าผู้ใช้อยู่หน้าใบเสนอราคา/Preview ให้เอกสารด้านหน้าอัปเดตตามยอดล่าสุดทันที
       if(state.currentTab === 'preview') renderPreview();
+
+      // เอกสารที่เคยบันทึกแล้วจะซิงก์การเปลี่ยนแปลงของราคา/ยอดไป Firestore แบบหน่วงเล็กน้อย
+      // โดยจะไม่ auto-save ระหว่างกำลังกรอก "รับชำระครั้งนี้"
+      if(!skipPaymentSync) scheduleLiveDocumentSync();
     }
 
     function renderPreview() {
@@ -1118,8 +1557,13 @@
       return { quotation: 'quoting', invoice: 'pending', delivery: 'pending_delivery' }[type] || 'paid';
     }
 
-    async function saveCurrentDoc() {
-      calculateTotals();
+    async function saveCurrentDoc(options = {}) {
+      const recordPayment = options.recordPayment !== false;
+      const silent = !!options.silent;
+      if(!companyAccessReady || !currentMember || !userId) return showToast('กรุณาเข้าสู่ระบบและได้รับสิทธิ์ร้านก่อนบันทึก');
+      const existingBeforeSave = state.currentHistoryId ? state.history.find(h=>h.id===state.currentHistoryId) : null;
+      if(existingBeforeSave && !canEditHistoryItem(existingBeforeSave)) return showToast('พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองเป็นผู้จัดทำ');
+      calculateTotals(true);
       state.customer = {
         name: document.getElementById('custName')?.value || '',
         phone: document.getElementById('custPhone')?.value || '',
@@ -1137,11 +1581,12 @@
 
       // คำนวณยอดจากข้อมูลล่าสุดอีกครั้งก่อนบันทึกเสมอ
       // เพื่อป้องกัน payload เก็บ grandTotal / remaining / deposit เป็นค่าเก่า
-      calculateTotals();
+      // true = ไม่ตั้ง timer live-sync ซ้ำจากภายใน saveCurrentDoc
+      calculateTotals(true);
 
       // currentPayment = เงินที่ได้รับจริงในครั้งนี้เท่านั้น
       const receiveNow = Math.max(0, Number(state.currentPayment)||0);
-      if(receiveNow > 0) {
+      if(recordPayment && receiveNow > 0) {
         const totalBefore = getTotalPaid();
         const allowed = Math.max(0, Number(state.grandTotal||0) - totalBefore);
         const amount = Math.min(receiveNow, allowed);
@@ -1162,6 +1607,10 @@
       const payload = clone(state);
       // ไม่ฝังประวัติทั้งหมด/ประวัติการพิมพ์ไว้ในเอกสารแต่ละใบ เพื่อไม่ให้ Firestore โตซ้ำซ้อน
       delete payload.history; delete payload.printArchive; delete payload.presets; delete payload.savedCustomers; delete payload.savedSales;
+      payload.createdByUid = existing?.createdByUid || userId;
+      payload.createdByEmail = existing?.createdByEmail || (auth.currentUser?.email || '');
+      payload.createdByName = existing?.createdByName || (auth.currentUser?.displayName || '');
+      payload.updatedByUid = userId; payload.updatedByEmail = auth.currentUser?.email || ''; payload.updatedByName = auth.currentUser?.displayName || '';
       const rec = {
         id: existing?.id || ('doc-' + Date.now()),
         docNo: state.docNo, docType: state.docType, refNo: state.refNo,
@@ -1171,15 +1620,26 @@
         date: state.docDate, grandTotal: Number(state.grandTotal || 0), remainingAmt: Number(state.remainingAmt || 0),
         paidTotal: Number(state.prevPaid || 0), requiredDeposit: state.depositEnabled ? Number(state.depositAmount||0) : 0,
         depositPercent: state.depositEnabled ? Number(state.depositPercent||0) : 0, profit: Number(state.profit || 0),
+        createdByUid: existing?.createdByUid || userId,
+        createdByEmail: existing?.createdByEmail || (auth.currentUser?.email || ''),
+        createdByName: existing?.createdByName || (auth.currentUser?.displayName || ''),
+        updatedByUid: userId, updatedByEmail: auth.currentUser?.email || '', updatedByName: auth.currentUser?.displayName || '',
         status, payload, savedAt: new Date().toISOString()
       };
       const idx = state.history.findIndex(h => h.id === rec.id);
       if (idx >= 0) state.history[idx] = rec; else state.history.unshift(rec);
+      state.currentHistoryId = rec.id;
       persist(); renderHistory(); renderPreview();
+      setCurrentDocUiState(true);
       if (userId && db) {
-        try { await setDoc(cloudPath('history', rec.id), rec, { merge: true }); showToast('บันทึกเอกสารขึ้น Cloud แล้ว'); }
+        try {
+          await setDoc(cloudPath('history', rec.id), rec, { merge: true });
+          if(!silent) showToast('บันทึกเอกสารขึ้น Cloud แล้ว');
+        }
         catch(e) { cloudError('Save document', e); }
-      } else showToast('บันทึกเอกสารแล้ว (ในเครื่อง)');
+      } else if(!silent) {
+        showToast('บันทึกเอกสารแล้ว (ในเครื่อง)');
+      }
     }
 
     function renderPrintArchive() {
@@ -1202,6 +1662,7 @@
     }
 
     async function printDocument() {
+      if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
       calculateTotals();
       renderPreview();
       const existing = state.history.find(h => h.docNo === state.docNo);
@@ -1212,6 +1673,7 @@
       const archive = {
         id: 'print-'+Date.now(), historyId: existing.id, docNo: existing.docNo, docType: existing.docType,
         customerName: existing.customerName, printedAt: new Date().toISOString(),
+        createdByUid: userId, createdByEmail: auth.currentUser?.email || '', createdByName: auth.currentUser?.displayName || '',
         grandTotal: existing.grandTotal, paidTotal: existing.paidTotal||0, remainingAmt: existing.remainingAmt||0,
         payloadVersion: 1
       };
@@ -1225,6 +1687,7 @@
     }
 
     async function deletePrintArchive(id) {
+      if(!requireOwner('การลบประวัติการพิมพ์')) return;
       const row = (state.printArchive || []).find(x => x.id === id);
       if(!row) return showToast('ไม่พบประวัติการพิมพ์');
       if(!confirm(`ต้องการลบประวัติการพิมพ์ ${row.docNo || ''} ใช่หรือไม่?\n(ลบเฉพาะประวัติการพิมพ์ ไม่ลบเอกสารต้นฉบับ)`)) return;
@@ -1246,6 +1709,7 @@
     }
 
     async function clearPrintArchive() {
+      if(!requireOwner('การลบประวัติการพิมพ์ทั้งหมด')) return;
       const rows = Array.isArray(state.printArchive) ? [...state.printArchive] : [];
       if(!rows.length) return showToast('ยังไม่มีประวัติการพิมพ์');
       if(!confirm(`ต้องการลบประวัติการพิมพ์ทั้งหมด ${rows.length} รายการใช่หรือไม่?\n(ลบเฉพาะประวัติการพิมพ์ ไม่ลบเอกสารต้นฉบับ)`)) return;
@@ -1367,7 +1831,7 @@
       safeSetText('dash-total-profit', '฿' + totalProfit.toLocaleString('th-TH'));
       safeSetText('dash-total-debt', '฿' + totalDebt.toLocaleString('th-TH'));
 
-      if(filtered.length === 0) return tb.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบเอกสาร</td></tr>`;
+      if(filtered.length === 0) return tb.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบเอกสาร</td></tr>`;
       
       const tCol = { quotation: 'bg-slate-200 text-slate-700', invoice: 'bg-amber-100 text-amber-700', receipt: 'bg-emerald-100 text-emerald-700', delivery: 'bg-indigo-100 text-indigo-700', cashbill: 'bg-slate-700 text-white' };
 
@@ -1387,16 +1851,17 @@
             <td class="py-2 px-2"><div class="font-mono font-bold text-sky-700">${escapeHtml(h.docNo)}</div>${h.refNo ? `<div class="text-[9px] text-slate-500">อ้างอิง: ${escapeHtml(h.refNo)}</div>`:''}${linkedLabel}</td>
             <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[9px] font-semibold ${tCol[h.docType]}">${h.docType.toUpperCase()}</span></td>
             <td class="py-2 px-2"><div>${escapeHtml(h.customerName)}</div><div class="text-[9px] text-slate-500">${escapeHtml(h.project)}</div></td>
+            <td class="py-2 px-2"><div class="font-semibold text-slate-700">${escapeHtml(h.createdByName || h.createdByEmail || 'เดิม/ไม่ทราบ')}</div><div class="text-[9px] text-slate-400">${escapeHtml(h.createdByEmail || '')}</div></td>
             <td class="py-2 px-2 text-[10px]">${formatDateThai(h.date)}</td>
             <td class="py-2 px-2 text-right"><div class="font-mono font-bold text-slate-800">฿${Number(h.grandTotal||0).toLocaleString('th-TH')}</div>${h.requiredDeposit>0?`<div class="text-[9px] text-sky-600 mt-0.5">มัดจำที่กำหนด: ${Number(h.requiredDeposit).toLocaleString('th-TH')}</div>`:''}${txPaid>0?`<div class="text-[9px] text-emerald-600">รับเงินจริงรวมงาน: ฿${txPaid.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:''}${txRemaining>0&&h.docType!=='delivery'?`<div class="text-[9px] text-rose-500 mt-0.5">คงเหลืองานนี้: ฿${txRemaining.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:`<div class="text-[9px] text-emerald-600 mt-0.5">ชำระครบแล้ว</div>`}</td>
-            <td class="py-2 px-2"><select onchange="updateDocStatus('${h.id}', this.value)" class="text-[10px] p-1 rounded border w-full">${opts}</select></td>
+            <td class="py-2 px-2"><select ${isOwner()?'':'disabled'} onchange="updateDocStatus('${h.id}', this.value)" class="text-[10px] p-1 rounded border w-full ${isOwner()?'':'opacity-50 cursor-not-allowed'}">${opts}</select></td>
             <td class="py-2 px-2">
               <div class="flex items-center gap-1">
-                <select onchange="if(this.value){ generateFlowDoc('${h.id}', this.value); this.value=''; }" class="text-[10px] p-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-bold">
+                <select ${canEditHistoryItem(h)?'':'disabled'} onchange="if(this.value){ generateFlowDoc('${h.id}', this.value); this.value=''; }" class="text-[10px] p-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-bold ${canEditHistoryItem(h)?'':'opacity-50 cursor-not-allowed'}">
                   <option value="">+ ต่อยอด...</option><option value="invoice">-> ใบแจ้งหนี้</option><option value="receipt">-> ใบเสร็จ</option><option value="delivery">-> ใบส่งของ</option>
                 </select>
-                <button onclick="loadHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-sky-100 rounded"><i data-lucide="edit" class="w-3.5 h-3.5"></i></button>
-                <button onclick="delHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-rose-100 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                <button onclick="loadHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-sky-100 rounded" title="${canEditHistoryItem(h)?'แก้ไข':'ดูอย่างเดียว'}"><i data-lucide="${canEditHistoryItem(h)?'edit':'eye'}" class="w-3.5 h-3.5"></i></button>
+                ${isOwner() ? `<button onclick="delHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-rose-100 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
               </div>
             </td>
           </tr>
@@ -1406,13 +1871,16 @@
     }
 
     function updateDocStatus(id, stat) {
+      if(!requireOwner('การเปลี่ยนสถานะเอกสาร')) return;
       const h = state.history.find(x => x.id === id); if(h) h.status = stat; persist(); renderHistory();
-      if(userId && db) updateDoc(doc(db, 'artifacts', appId, 'users', userId, 'history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
+      if(userId && db) updateDoc(cloudPath('history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
     }
 
     function generateFlowDoc(oldId, newType) {
       const h = state.history.find(x => x.id === oldId); if(!h) return;
+      if(!canEditHistoryItem(h)) return showToast('พนักงานต่อยอดเอกสารของผู้อื่นไม่ได้ — สร้างเอกสารใหม่แทนได้');
       Object.assign(state, h.payload);
+      state.currentHistoryId = null;
       state.refNo = h.docNo; safeSetValue('refNo', state.refNo);
       
       const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
@@ -1430,12 +1898,15 @@
       toggleDepositBox();
       safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', state.currentPayment);
       
-      renderItems(); calculateTotals(); switchTab('editor'); showToast(`สร้าง ${newType} อ้างอิง ${h.docNo}`);
+      renderItems(); calculateTotals(); setCurrentDocUiState(false); switchTab('editor'); showToast(`สร้าง ${newType} อ้างอิง ${h.docNo} — เป็นเอกสารใหม่ รอกดบันทึก`);
     }
 
     function loadHistory(id) {
       const h = state.history.find(x => x.id === id); if(!h) return;
+      state.isReadOnlyDocument = !canEditHistoryItem(h);
       Object.assign(state, h.payload);
+      state.currentHistoryId = id;
+      state.isReadOnlyDocument = !canEditHistoryItem(h);
       const radioEl = document.querySelector(`input[name="docType"][value="${state.docType}"]`);
       if(radioEl) radioEl.checked = true;
       ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
@@ -1445,23 +1916,44 @@
       safeSetChecked('lump-sum-toggle', state.isLumpSum); safeSetValue('lump-sum-amt', state.lumpSumAmt); toggleLumpSum();
       state.payments = Array.isArray(state.payments) ? state.payments : []; state.currentPayment = 0; state.prevPaid = getTotalPaid(); safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', 0); togglePaymentBox();
       safeSetChecked('deposit-toggle', !!state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent || 0); toggleDepositBox();
-      renderItems(); calculateTotals(); switchTab('editor'); showToast('โหลดเอกสารแล้ว');
+      renderItems(); calculateTotals(); setCurrentDocUiState(true); switchTab('editor'); showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล — พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองจัดทำ' : 'โหลดเอกสารแล้ว');
     }
 
     function delHistory(id) {
+      if(!requireOwner('การลบเอกสาร')) return;
+      if(!confirm('ยืนยันลบเอกสารนี้หรือไม่?')) return;
+      if(state.currentHistoryId === id) {
+        state.currentHistoryId = null;
+        setCurrentDocUiState(false);
+      }
       state.history = state.history.filter(x => x.id !== id); persist(); renderHistory();
-      if(userId&&db) deleteDoc(doc(db,'artifacts',appId,'users',userId,'history',id)).then(()=>showToast('ลบประวัติแล้ว')).catch(e=>cloudError('Delete history',e)); else showToast('ลบประวัติแล้ว (ในเครื่อง)');
+      if(userId&&db) deleteDoc(cloudPath('history', id)).then(()=>showToast('ลบเอกสารแล้ว')).catch(e=>cloudError('Delete history',e)); else showToast('ลบเอกสารแล้ว (ในเครื่อง)');
     }
 
     function createNewDocument() {
-      state.items = []; addNewItem('alu');
+      clearTimeout(state.liveSyncTimer);
+      state.currentHistoryId = null;
+      state.isReadOnlyDocument = false;
+      state.items = [{
+        id: 'item-'+Date.now(), type: 'alu', name: 'ชุดหน้าต่าง/ประตู', aluColor: 'อบขาว', glassType: 'เขียว 6 มม.',
+        width: 1, height: 1, area: 1, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 1000, total: 1000
+      }];
       ['custName','custPhone','custTaxId','custAddress','projectName','refNo','total-cost'].forEach(id => safeSetValue(id, ''));
-      state.payments=[]; state.prevPaid=0; state.currentPayment=0; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; safeSetValue('prev-paid',0); safeSetValue('current-payment',0); safeSetValue('deposit-percent',0);
-      safeSetChecked('payment-toggle', false); safeSetChecked('deposit-toggle', false); togglePaymentBox(); toggleDepositBox();
-      generateAutoDocNo(state.docType); switchTab('editor'); showToast('สร้างเอกสารใหม่');
+      state.customer = { name:'', phone:'', taxId:'', address:'', project:'' };
+      state.payments=[]; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0;
+      state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0;
+      state.paymentEnabled=false;
+      safeSetValue('prev-paid',0); safeSetValue('current-payment',0); safeSetValue('deposit-percent',0);
+      safeSetChecked('payment-toggle', false); safeSetChecked('deposit-toggle', false);
+      togglePaymentBox(); toggleDepositBox();
+      generateAutoDocNo(state.docType);
+      renderItems(); calculateTotals();
+      setCurrentDocUiState(false);
+      switchTab('editor'); showToast('สร้างเอกสารใหม่และรีเซ็ตประวัติการรับชำระแล้ว');
     }
 
     function saveStoreSettings() {
+      if(!requireOwner('การตั้งค่าร้าน')) return;
       ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => {
         const el = document.getElementById('setting-shop-'+k);
         if(el) state.shop[k] = el.value;
@@ -1472,6 +1964,7 @@
     }
     
     function handleLogoUpload(input) {
+      if(!requireOwner('การเปลี่ยนโลโก้')) return;
       if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -1571,6 +2064,7 @@
     }
 
     async function savePreset() {
+      if(!requireOwner('การเพิ่มแบบมาตรฐาน')) return;
       const name = document.getElementById('preset-name')?.value.trim() || '';
       if(!name) return showToast('กรุณากรอกชื่อแบบมาตรฐาน');
       const type = document.getElementById('preset-type')?.value || 'alu';
@@ -1602,15 +2096,17 @@
     }
 
     function deleteData(type, id, idx) {
+      if(type === 'preset' && !requireOwner('การลบแบบมาตรฐาน')) return;
       const paths = { preset: 'presets', customer: 'customers', sales: 'sales' };
       if(type==='preset') state.presets.splice(idx, 1);
       if(type==='customer') state.savedCustomers.splice(idx, 1);
       if(type==='sales') state.savedSales.splice(idx, 1);
       persist(); renderDatalists(); openGenericModal(currentModalType);
-      if(userId && db && id) deleteDoc(doc(db, 'artifacts', appId, 'users', userId, paths[type], id)).catch(e=>cloudError('Delete data',e));
+      if(userId && db && id) deleteDoc(cloudPath(paths[type], id)).catch(e=>cloudError('Delete data',e));
     }
 
     function saveCustomerInfo() {
+      if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนบันทึกลูกค้า');
       const nameEl = document.getElementById('custName');
       const phoneEl = document.getElementById('custPhone');
       const taxEl = document.getElementById('custTaxId');
@@ -1629,6 +2125,7 @@
     }
 
     function saveSalesInfo() {
+      if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนบันทึกพนักงานขาย');
       const newSalesEl = document.getElementById('new-sales-name');
       const s = { id: 'sale-'+Date.now(), name: newSalesEl ? newSalesEl.value : '' };
       if(!s.name) return;
@@ -1664,7 +2161,7 @@
     }
 
     // Expose all globals
-    window.switchTab = switchTab; window.updateDocType = updateDocType; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
 </body>
 </html>
