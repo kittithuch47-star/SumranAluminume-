@@ -1064,7 +1064,7 @@
   </main>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // Firebase config ของโปรเจกต์จริง: sumranaluminum
@@ -1487,6 +1487,15 @@
       try{await deleteDoc(memberPath(uid));await renderMembers();showToast('ลบสมาชิกแล้ว');}catch(e){cloudError('Remove member',e);}
     }
 
+    function setAuthUiBusy(busy) {
+      authActionBusy = !!busy;
+      const btn = document.getElementById('google-login-btn');
+      if(btn) {
+        btn.disabled = authActionBusy || !firebaseReady;
+        btn.setAttribute('aria-busy', authActionBusy ? 'true' : 'false');
+      }
+    }
+
     function setAuthGate(visible, message='') {
       authGateVisible=!!visible;
       const gate=document.getElementById('auth-gate'), box=document.getElementById('auth-user-box'), status=document.getElementById('auth-gate-status'), btn=document.getElementById('google-login-btn');
@@ -1649,10 +1658,12 @@
       if(!firebaseReady||!auth||!db){setAuthGate(true,'Firebase config ไม่พร้อมใช้งาน');return;}
       try {
         await setPersistence(auth,browserLocalPersistence);
-      getRedirectResult(auth).catch(e => {
-        console.error('Google redirect result failed:', e);
-        showAuthError(e);
-      });
+        try {
+          await getRedirectResult(auth);
+        } catch(e) {
+          console.error('Google redirect result failed:', e);
+          showAuthError(e);
+        }
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
         if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
