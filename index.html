@@ -43,6 +43,285 @@
       }
     }
 
+    /* ============================================================
+       V8 MOBILE / TABLET UI
+       ใช้ HTML + Firebase + Login + ฟังก์ชันเดิมทั้งหมด
+       เปลี่ยนเฉพาะหน้าตาเมื่อเป็นหน้าจอสัมผัส/หน้าจอแคบ
+       ============================================================ */
+    .mobile-only-nav { display: none; }
+
+    @media screen and (max-width: 1024px) {
+      body {
+        background:
+          radial-gradient(circle at 15% 0%, rgba(14,165,233,.10), transparent 34%),
+          linear-gradient(180deg, #f0f9ff 0%, #f8fbff 45%, #f1f5f9 100%) !important;
+        padding-bottom: 76px;
+      }
+
+      /* Top bar */
+      body > header {
+        position: sticky;
+        top: 0;
+        z-index: 80;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 58%, #0f172a 100%) !important;
+        box-shadow: 0 5px 18px rgba(15,23,42,.16);
+      }
+      body > header > div {
+        max-width: none !important;
+        min-height: 62px;
+        padding: 9px 12px !important;
+        gap: 8px !important;
+      }
+      body > header .w-10.h-10 {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 12px !important;
+      }
+      body > header h1 {
+        font-size: 16px !important;
+      }
+      body > header h1 span {
+        font-size: 8px !important;
+      }
+      body > header p {
+        font-size: 9px !important;
+      }
+
+      /* Hide the desktop-style tab buttons; bottom nav becomes the main mobile nav. */
+      #tab-btn-editor,
+      #tab-btn-preview,
+      #tab-btn-history,
+      #tab-btn-settings {
+        display: none !important;
+      }
+      #auth-user-box {
+        padding: 4px !important;
+        border-radius: 999px !important;
+      }
+      #auth-user-box > div:nth-child(2),
+      #auth-user-role {
+        display: none !important;
+      }
+      #auth-user-box button {
+        font-size: 9px !important;
+        padding: 5px 8px !important;
+      }
+
+      /* Main canvas */
+      main.max-w-7xl {
+        max-width: none !important;
+        width: 100% !important;
+        padding: 10px !important;
+      }
+
+      /* Turn the existing large panels into friendly cards. */
+      main .bg-white.rounded-2xl {
+        border-radius: 18px !important;
+        box-shadow: 0 5px 18px rgba(15,23,42,.06) !important;
+        border-color: #dbeafe !important;
+      }
+      main .p-4.md\:p-6 {
+        padding: 13px !important;
+      }
+
+      /* Document type selector */
+      #tab-editor .grid.grid-cols-2.md\:grid-cols-5 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+      #tab-editor label > div {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px !important;
+      }
+
+      /* Inputs/buttons: touch friendly */
+      main input,
+      main select,
+      main textarea {
+        min-height: 42px;
+        border-radius: 11px !important;
+        font-size: 14px !important;
+      }
+      main textarea {
+        min-height: 96px;
+      }
+      main button {
+        min-height: 42px;
+        border-radius: 11px !important;
+      }
+
+      /* Most editor grids become one-column on a phone/tablet.
+         Explicit two-column blocks remain useful where they are short. */
+      #tab-editor .md\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+      }
+      #tab-editor .md\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Keep item tables usable: horizontal scroll rather than crushing columns. */
+      #tab-editor .overflow-x-auto,
+      #tab-history .overflow-x-auto,
+      #tab-settings .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        border-radius: 14px;
+      }
+      #tab-editor table,
+      #tab-history table,
+      #tab-settings table {
+        min-width: 720px;
+      }
+
+      /* History cards feel lighter on touch screens. */
+      #tab-history .grid {
+        gap: 10px !important;
+      }
+      #tab-history input {
+        min-height: 46px !important;
+        font-size: 15px !important;
+      }
+
+      /* Preview screen gets edge-to-edge space on small devices,
+         while the A4 document itself remains the print document. */
+      #tab-preview {
+        padding-bottom: 8px;
+      }
+      #tab-preview .a4-page {
+        width: 100% !important;
+        min-height: auto !important;
+        padding: 12px !important;
+        margin: 0 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 26px rgba(15,23,42,.10) !important;
+      }
+
+      /* Mobile bottom navigation */
+      .mobile-only-nav {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1.15fr 1fr 1fr;
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        z-index: 100;
+        height: 62px;
+        padding: 5px;
+        background: rgba(255,255,255,.94);
+        border: 1px solid #dbeafe;
+        border-radius: 22px;
+        box-shadow: 0 10px 30px rgba(15,23,42,.18);
+        backdrop-filter: blur(14px);
+      }
+      .mobile-nav-item {
+        border: 0 !important;
+        background: transparent !important;
+        color: #64748b !important;
+        min-height: 52px !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        font-size: 9px !important;
+        font-weight: 700;
+      }
+      .mobile-nav-item svg {
+        width: 19px;
+        height: 19px;
+      }
+      .mobile-nav-item:hover,
+      .mobile-nav-item:focus,
+      .mobile-nav-item.is-active {
+        color: #0284c7 !important;
+        background: #eff6ff !important;
+      }
+      .mobile-nav-add {
+        width: 52px !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        align-self: center;
+        justify-self: center;
+        border: 0 !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg,#0ea5e9,#0369a1) !important;
+        color: #fff !important;
+        box-shadow: 0 6px 15px rgba(2,132,199,.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mobile-nav-add svg {
+        width: 27px;
+        height: 27px;
+      }
+
+      /* Toasts/modals stay above the mobile nav */
+      .fixed.z-50, .fixed.z-\[60\], .fixed.z-\[70\], .fixed.z-\[80\] {
+        z-index: 120 !important;
+      }
+    }
+
+    @media screen and (max-width: 640px) {
+      main {
+        padding-bottom: 4px !important;
+      }
+
+      /* Phone-sized header: keep the brand, reduce clutter. */
+      body > header > div {
+        padding: 8px 10px !important;
+      }
+      body > header .flex.items-center.gap-3 > div:last-child p {
+        display: none !important;
+      }
+      body > header h1 {
+        font-size: 15px !important;
+      }
+
+      /* Full-width cards and controls */
+      main .space-y-6 > * + * {
+        margin-top: 10px !important;
+      }
+      main .rounded-2xl {
+        border-radius: 16px !important;
+      }
+
+      /* Make summary/value blocks easy to scan. */
+      #tab-editor .grid {
+        gap: 9px !important;
+      }
+      #tab-editor .text-2xl,
+      #tab-editor .text-3xl {
+        font-size: 22px !important;
+      }
+
+      /* Search is prominent on phone. */
+      #search-history {
+        min-height: 48px !important;
+        font-size: 15px !important;
+        box-shadow: 0 0 0 3px rgba(14,165,233,.06);
+      }
+
+      /* Avoid accidental sideways page scrolling. */
+      html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+    }
+
+    @media screen and (min-width: 641px) and (max-width: 1024px) {
+      /* iPad portrait/tablet: use two columns where it helps,
+         while retaining the mobile navigation and touch targets. */
+      #tab-editor .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+      #tab-editor .md\:grid-cols-3 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+    }
+
     @media print {
       /* ขอบกระดาษ A4 สำหรับงานพิมพ์จริง */
       @page { size: A4 portrait; margin: 10mm; }
@@ -281,6 +560,26 @@
       </div>
     </div>
   </header>
+
+
+  <!-- MOBILE NAVIGATION: screen-only, uses the existing tabs/functions -->
+  <nav id="mobile-bottom-nav" class="mobile-only-nav no-print" aria-label="เมนูมือถือ">
+    <button type="button" onclick="switchTab('editor')" class="mobile-nav-item">
+      <i data-lucide="home"></i><span>หน้าหลัก</span>
+    </button>
+    <button type="button" onclick="switchTab('history')" class="mobile-nav-item">
+      <i data-lucide="file-text"></i><span>เอกสาร</span>
+    </button>
+    <button type="button" onclick="switchTab('editor')" class="mobile-nav-add" aria-label="สร้างเอกสารใหม่">
+      <i data-lucide="plus"></i>
+    </button>
+    <button type="button" onclick="switchTab('preview')" class="mobile-nav-item">
+      <i data-lucide="printer"></i><span>พรีวิว</span>
+    </button>
+    <button type="button" onclick="switchTab('settings')" class="mobile-nav-item">
+      <i data-lucide="settings"></i><span>ตั้งค่า</span>
+    </button>
+  </nav>
 
   <div id="auth-gate" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
     <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
@@ -1360,6 +1659,14 @@
 
     function switchTab(tab) {
       state.currentTab = tab;
+      document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('is-active'));
+      const activeMobile = document.querySelector(
+        tab === 'history' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(2)' :
+        tab === 'preview' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(4)' :
+        tab === 'settings' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(5)' :
+        '#mobile-bottom-nav .mobile-nav-item:nth-child(1)'
+      );
+      if(activeMobile) activeMobile.classList.add('is-active');
       ['editor', 'preview', 'history', 'settings'].forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
         const btnEl = document.getElementById(`tab-btn-${t}`);
