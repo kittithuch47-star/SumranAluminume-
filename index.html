@@ -95,6 +95,37 @@
       }
       #print-area #p-items-table td:nth-child(6), #print-area #p-items-table td:nth-child(7) { white-space: nowrap !important; }
       #print-area .print-document-footer { display: flex !important; }
+      #print-area #p-items-table thead {
+        display: table-header-group !important;
+      }
+      #print-area #p-items-table tbody {
+        display: table-row-group !important;
+      }
+      #print-area #p-items-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      #print-area #p-items-table .print-repeat-doc-head th {
+        font-size: 8px !important;
+        line-height: 1.25 !important;
+        font-weight: 600 !important;
+        color: #64748b !important;
+        background: #fff !important;
+        border: 1px solid #e2e8f0 !important;
+        white-space: nowrap !important;
+      }
+      #print-area .grid.grid-cols-12,
+      #print-area .grid.grid-cols-3 {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      #print-area .grid.grid-cols-3 {
+        margin-top: 8mm !important;
+      }
+      #print-area .print-document-footer {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
 
       #print-area table {
         width: 100% !important;
@@ -447,6 +478,17 @@
               <col style="width:9%"><col style="width:8%"><col style="width:12%"><col style="width:13%">
             </colgroup>
             <thead>
+              <tr class="print-repeat-doc-head">
+                <th colspan="7" class="px-2 py-1 text-left border border-slate-200 bg-white text-slate-500 font-semibold">
+                  <span id="p-repeat-doc-title">เอกสาร</span>
+                  <span class="mx-2">|</span>
+                  เลขที่ <strong id="p-repeat-doc-no"></strong>
+                  <span class="mx-2">|</span>
+                  ลูกค้า <span id="p-repeat-cust"></span>
+                  <span class="mx-2">|</span>
+                  หน้าเอกสารต่อเนื่อง
+                </th>
+              </tr>
               <tr class="bg-slate-800 text-white font-semibold">
                 <th class="py-1.5 px-2 text-center border border-slate-700">#</th>
                 <th class="py-1.5 px-3 border border-slate-700">รายการสินค้า / รายละเอียด</th>
@@ -1596,6 +1638,9 @@
 
       safeSetText('p-doc-no', state.docNo); safeSetText('p-doc-date', formatDateThai(state.docDate)); safeSetText('p-due-date', formatDateThai(state.dueDate));
       safeSetText('p-printed-at', new Date().toLocaleString('th-TH', { dateStyle:'short', timeStyle:'short' }));
+      safeSetText('p-repeat-doc-title', m.th);
+      safeSetText('p-repeat-doc-no', state.docNo || '-');
+      safeSetText('p-repeat-cust', state.customer.name || '-');
       safeSetText('p-sales-name', state.salesName);
       safeSetText('p-cust-name', state.customer.name); safeSetText('p-cust-phone', state.customer.phone); safeSetText('p-cust-taxid', state.customer.taxId);
       safeSetText('p-cust-address', state.customer.address); safeSetText('p-project-name', state.customer.project);
