@@ -2230,6 +2230,32 @@
       if(window.lucide) window.lucide.createIcons();
     }
 
+    async function deletePrintArchive(id) {
+      if(!id) return showToast('ไม่พบรายการประวัติการพิมพ์');
+      if(!requireOwner('การลบประวัติการพิมพ์')) return;
+      if(!confirm('ต้องการลบประวัติการพิมพ์รายการนี้ใช่หรือไม่?')) return;
+      state.printArchive=(state.printArchive||[]).filter(x=>String(x.id)!==String(id));
+      persist(); renderPrintArchive();
+      if(userId&&db){
+        try { await deleteDoc(cloudPath('printArchive',id)); showToast('ลบประวัติการพิมพ์แล้ว'); }
+        catch(e){ cloudError('Delete print archive',e); }
+      } else showToast('ลบประวัติการพิมพ์แล้ว (ในเครื่อง)');
+    }
+
+    async function clearPrintArchive() {
+      if(!requireOwner('การล้างประวัติการพิมพ์')) return;
+      const rows=[...(state.printArchive||[])];
+      if(!rows.length) return showToast('ยังไม่มีประวัติการพิมพ์');
+      if(!confirm(`ต้องการลบประวัติการพิมพ์ทั้งหมด ${rows.length} รายการใช่หรือไม่?`)) return;
+      state.printArchive=[]; persist(); renderPrintArchive();
+      if(userId&&db){
+        const results=await Promise.allSettled(rows.filter(x=>x.id).map(x=>deleteDoc(cloudPath('printArchive',x.id))));
+        const failed=results.filter(x=>x.status==='rejected').length;
+        if(failed) showToast(`ลบแล้วบางส่วน แต่มี ${failed} รายการที่ Cloud ลบไม่สำเร็จ`);
+        else showToast('ลบประวัติการพิมพ์ทั้งหมดแล้ว');
+      } else showToast('ลบประวัติการพิมพ์ทั้งหมดแล้ว (ในเครื่อง)');
+    }
+
     function buildDocumentSnapshot(sourceState = state) {
       const snap = clone(sourceState || {});
       delete snap.history; delete snap.printArchive; delete snap.presets; delete snap.savedCustomers; delete snap.savedSales;
@@ -2256,7 +2282,7 @@
       const archive={id:action+'-'+Date.now(),historyId:existing.id,docNo:existing.docNo,docType:existing.docType,
         customerName:existing.customerName,printedAt:new Date().toISOString(),createdByUid:userId,
         createdByEmail:auth.currentUser?.email||'',createdByName:auth.currentUser?.displayName||'',
-        grandTotal:existing.grandTotal,paidTotal:existing.paidTotal||0,action};
+        grandTotal:existing.grandTotal,paidTotal:existing.paidTotal||0,action,snapshot:buildDocumentSnapshot(state)};
       if(userId&&db)setDoc(cloudPath('printArchive',archive.id),archive,{merge:true}).catch(e=>cloudError('Archive output',e));
     }
 
