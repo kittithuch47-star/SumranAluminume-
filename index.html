@@ -795,7 +795,7 @@
     <div id="tab-preview" class="hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 no-print">
         <button onclick="switchTab('editor')" class="px-3.5 py-1.5 text-xs font-medium border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"><i data-lucide="arrow-left" class="w-4 h-4"></i> กลับไปแก้ไข</button>
-        <button onclick="printDocument()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ / Save PDF</button>
+        <button onclick="printDocument()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> ดาวน์โหลด PDF</button>
       </div>
 
       <div id="print-area" class="a4-page font-doc text-slate-900 border border-slate-200 sm:rounded-lg text-sm print-a4-document">
@@ -1060,7 +1060,8 @@
 
   </main>
 
-  <script type="module">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -1132,6 +1133,25 @@
       clearTimeout(state.liveSyncTimer); state.history=[]; state.printArchive=[]; state.savedCustomers=[]; state.savedSales=[]; state.presets=[];
       state.currentHistoryId=null; state.liveSyncBusy=false; renderHistory(); renderPrintArchive(); renderDatalists(); renderPresets();
     }
+    const DEFAULT_PRESET_COLORS=['อบขาว','ดำ','ชา','เงิน','บรอนซ์'];
+    const DEFAULT_UNIT_OPTIONS=['ชุด','ชิ้น','บาน','ตู้','เมตร','ตร.ม.','งาน','จุด'];
+    function normalizePresetOptions(){
+      state.presetColors=[...new Set([...(state.presetColors||[]),...DEFAULT_PRESET_COLORS].map(v=>String(v||'').trim()).filter(Boolean))];
+      state.unitOptions=[...new Set([...(state.unitOptions||[]),...DEFAULT_UNIT_OPTIONS].map(v=>String(v||'').trim()).filter(Boolean))];
+      state.presets=(state.presets||[]).map(p=>({...p,showQty:p.showQty!==false,showUnit:p.showUnit!==false,priceTypeLabel:p.priceTypeLabel||''}));
+    }
+    function renderPresetEditorOptions(){
+      normalizePresetOptions();
+      const c=document.getElementById('preset-alu-color');
+      if(c){const old=c.value;c.innerHTML=state.presetColors.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');if(state.presetColors.includes(old))c.value=old;}
+      const u=document.getElementById('preset-unit-select');
+      if(u){const old=u.value;u.innerHTML=state.unitOptions.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')+'<option value="__custom__">พิมพ์หน่วยเอง...</option>';if(state.unitOptions.includes(old)||old==='__custom__')u.value=old;}
+    }
+    function handlePresetUnitMode(){const u=document.getElementById('preset-unit-select'),i=document.getElementById('preset-new-unit');if(!u||!i)return;const x=u.value==='__custom__';i.classList.toggle('hidden',!x);i.style.display=x?'':'none';}
+    function getPresetUnitValue(){const u=document.getElementById('preset-unit-select');return u?.value==='__custom__'?(document.getElementById('preset-new-unit')?.value.trim()||'ชุด'):(u?.value||'ชุด');}
+    function addPresetColor(){if(!requireOwner('การเพิ่มสี'))return;const i=document.getElementById('preset-new-color'),v=String(i?.value||'').trim();if(!v)return showToast('กรุณาพิมพ์ชื่อสี');if(!state.presetColors.includes(v))state.presetColors.push(v);persist();renderPresetEditorOptions();document.getElementById('preset-alu-color').value=v;if(i)i.value='';if(userId&&db)setDoc(cloudPath('presetColors','color-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(e=>cloudError('Save color',e));showToast('เพิ่มสีแล้ว');}
+    function addPresetUnit(){if(!requireOwner('การเพิ่มหน่วย'))return;const i=document.getElementById('preset-new-unit'),v=String(i?.value||'').trim();if(!v)return showToast('กรุณาพิมพ์หน่วย');if(!state.unitOptions.includes(v))state.unitOptions.push(v);persist();renderPresetEditorOptions();document.getElementById('preset-unit-select').value=v;if(i)i.value='';if(userId&&db)setDoc(cloudPath('presetUnits','unit-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(e=>cloudError('Save unit',e));showToast('เพิ่มหน่วยแล้ว');}
+
     function persist() { saveLocalState(); }
     function cloudPath(name, id) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, name, id); }
     function cloudCollection(name) { return collection(db, 'artifacts', appId, 'companies', COMPANY_ID, name); }
@@ -1164,6 +1184,8 @@
         { id: 'p1', type: 'alu', name: 'บานเลื่อน 2 บาน', icon: 'columns-2', aluColor: 'อบขาว', glassType: 'เขียว 6mm', width: 1.6, height: 1.2, unit: 'ชุด', price: 2100, priceType: 'per_sqm' },
         { id: 'p2', type: 'general', name: 'ตู้กระจกสำเร็จรูป', icon: 'package', aluColor: '-', glassType: '-', width: 0, height: 0, unit: 'ตู้', price: 4500, priceType: 'per_unit' }
       ],
+      presetColors: ['อบขาว', 'ดำ', 'ชา', 'เงิน', 'บรอนซ์'],
+      unitOptions: ['ชุด', 'ชิ้น', 'บาน', 'ตู้', 'เมตร', 'ตร.ม.', 'งาน', 'จุด'],
       savedCustomers: [], savedSales: [],
       notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
       discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
@@ -1712,13 +1734,13 @@
 
     function applyPreset(pid) {
       const p = state.presets.find(x => x.id === pid); if(!p) return;
-      const i = { id: 'item-'+Date.now(), type: p.type, name: p.name, aluColor: p.aluColor, glassType: p.glassType, width: p.width, height: p.height, area: +(p.width*p.height).toFixed(2), qty: 1, unit: p.unit||'ชุด', pricingType: p.priceType, unitPrice: p.price, total: 0 };
+      const i = { id: 'item-'+Date.now(), type: p.type, name: p.name, aluColor: p.aluColor, glassType: p.glassType, width: p.width, height: p.height, area: +(p.width*p.height).toFixed(2), qty: 1, unit: p.unit||'ชุด', pricingType: p.priceType, priceTypeLabel: p.priceTypeLabel||'', showQty: p.showQty!==false, showUnit: p.showUnit!==false, unitPrice: p.price, total: 0 };
       i.total = i.pricingType === 'per_sqm' ? (i.area>0?i.area*i.unitPrice:i.unitPrice) : i.unitPrice;
       state.items.push(i); renderItems(); calculateTotals(); showToast(`เพิ่ม "${p.name}" แล้ว`);
     }
 
     function addNewItem(type) {
-      state.items.push({ id: 'item-'+Date.now(), type: type, name: type==='alu'?'ชุดหน้าต่าง/ประตู':'สินค้าทั่วไป', aluColor: type==='alu'?'อบขาว':'-', glassType: type==='alu'?'เขียว 6 มม.':'-', width: type==='alu'?1:0, height: type==='alu'?1:0, area: type==='alu'?1:0, qty: 1, unit: type==='alu'?'ชุด':'ชิ้น', pricingType: type==='alu'?'per_sqm':'per_unit', unitPrice: 1000, total: 1000 });
+      state.items.push({ id: 'item-'+Date.now(), type: type, name: type==='alu'?'ชุดหน้าต่าง/ประตู':'สินค้าทั่วไป', aluColor: type==='alu'?'อบขาว':'-', glassType: type==='alu'?'เขียว 6 มม.':'-', width: type==='alu'?1:0, height: type==='alu'?1:0, area: type==='alu'?1:0, qty: 1, unit: type==='alu'?'ชุด':'ชิ้น', pricingType: type==='alu'?'per_sqm':'per_unit', priceTypeLabel:'', showQty:true, showUnit:true, unitPrice: 1000, total: 1000 });
       renderItems(); calculateTotals();
     }
 
@@ -1783,6 +1805,7 @@
               <div><label class="text-slate-500 block">กระจก</label><input type="text" value="${escapeHtml(item.glassType)}" oninput="updateItem('${item.id}', 'glassType', this.value)" class="w-full px-2 py-1 border rounded"></div>
               <div><label class="text-slate-500 block">การคิดราคา</label><select onchange="updateItem('${item.id}', 'pricingType', this.value)" class="w-full px-2 py-1 border rounded"><option value="per_sqm" ${item.pricingType==='per_sqm'?'selected':''}>ต่อ ตร.ม.</option><option value="per_unit" ${item.pricingType==='per_unit'?'selected':''}>ต่อชิ้น</option></select></div>
             </div>
+            ${!isAlu ? `<div class="flex flex-wrap items-center gap-3 pt-1 text-[10px] border-t border-slate-200"><span class="font-semibold">แสดง:</span><label><input type="checkbox" ${item.showQty!==false?'checked':''} onchange="updateItem('${item.id}','showQty',this.checked);renderItems()"> จำนวน</label><label><input type="checkbox" ${item.showUnit!==false?'checked':''} onchange="updateItem('${item.id}','showUnit',this.checked);renderItems()"> หน่วย</label><button type="button" onclick="updateItem('${item.id}','showQty',false);updateItem('${item.id}','showUnit',false);renderItems()" class="px-2 py-1 border bg-white rounded">ราคาอย่างเดียว</button></div>` : ''}
             <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 pt-1 text-[10px] items-end">
               ${isAlu ? `<div><label class="text-slate-500 block">กว้าง(ม.)</label><input type="number" step="0.01" value="${item.width}" oninput="updateItem('${item.id}', 'width', this.value)" class="w-full p-1.5 border rounded text-center"></div><div><label class="text-slate-500 block">สูง(ม.)</label><input type="number" step="0.01" value="${item.height}" oninput="updateItem('${item.id}', 'height', this.value)" class="w-full p-1.5 border rounded text-center"></div><div><label class="text-slate-500 block">ตร.ม.</label><div class="p-1.5 bg-slate-100 rounded text-center font-bold" id="area-${item.id}">${item.area.toFixed(2)}</div></div>` : `<div class="col-span-3"></div>`}
               <div><label class="text-slate-500 block">จำนวน</label><input type="number" value="${item.qty}" oninput="updateItem('${item.id}', 'qty', this.value)" class="w-full p-1.5 border rounded text-center font-bold"></div>
@@ -2057,7 +2080,7 @@
           let up = state.isLumpSum ? '-' : '฿'+Number(item.unitPrice||0).toLocaleString('th-TH');
           let tot = state.isLumpSum ? (idx===0 ? '฿'+Number(state.lumpSumAmt||0).toLocaleString('th-TH',{minimumFractionDigits:2}) : '-') : '฿'+Number(item.total||0).toLocaleString('th-TH',{minimumFractionDigits:2});
           
-          tb.innerHTML += `<tr class="border-b border-slate-100 ${idx%2===0?'bg-white':'bg-slate-50/50'}"><td class="py-1.5 px-2 text-center">${idx+1}</td><td class="py-1.5 px-3"><div class="font-bold text-slate-900">${escapeHtml(item.name)}</div><div class="text-[9px] text-slate-500">${sub}</div></td><td class="py-1.5 px-2 text-center font-mono">${dim}</td><td class="py-1.5 px-2 text-center font-mono">${area}</td><td class="py-1.5 px-2 text-center font-mono">${item.qty} <span class="text-[9px]">${escapeHtml(item.unit)}</span></td><td class="py-1.5 px-2 text-right font-mono">${up}</td><td class="py-1.5 px-2 text-right font-mono font-bold">${tot}</td></tr>`;
+          tb.innerHTML += `<tr class="border-b border-slate-100 ${idx%2===0?'bg-white':'bg-slate-50/50'}"><td class="py-1.5 px-2 text-center">${idx+1}</td><td class="py-1.5 px-3"><div class="font-bold text-slate-900">${escapeHtml(item.name)}</div><div class="text-[9px] text-slate-500">${sub}</div></td><td class="py-1.5 px-2 text-center font-mono">${dim}</td><td class="py-1.5 px-2 text-center font-mono">${area}</td><td class="py-1.5 px-2 text-center font-mono">${(item.type==='general'&&item.showQty===false)?'-':item.qty} <span class="text-[9px]">${(item.type==='general'&&item.showUnit===false)?'':escapeHtml(item.unit)}</span></td><td class="py-1.5 px-2 text-right font-mono">${up}</td><td class="py-1.5 px-2 text-right font-mono font-bold">${tot}</td></tr>`;
         });
       }
 
@@ -2226,98 +2249,22 @@
       renderPaymentHistory();
     }
 
-    function printDocument() {
-      if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-
-      // พิมพ์จากข้อมูลที่บันทึกแล้วเท่านั้น ห้ามคำนวณใหม่ตอนกดพิมพ์
-      const existing = state.history.find(h => String(h?.docNo || '') === String(state.docNo || ''));
-      if(!existing) {
-        showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์ เพื่อให้ใช้ยอดที่บันทึกไว้ตรงกับเอกสาร');
-        return;
-      }
-
-      syncEditorFieldsToState();
-      renderPreview();
-
-      const archive = {
-        id: 'print-'+Date.now(),
-        historyId: existing.id,
-        docNo: existing.docNo,
-        docType: existing.docType,
-        customerName: existing.customerName,
-        printedAt: new Date().toISOString(),
-        createdByUid: userId,
-        createdByEmail: auth.currentUser?.email || '',
-        createdByName: auth.currentUser?.displayName || '',
-        grandTotal: Number(existing.grandTotal || state.grandTotal || 0),
-        paidTotal: Number(existing.paidTotal || state.prevPaid || 0),
-        remainingAmt: Number(existing.remainingAmt || state.remainingAmt || 0),
-        payloadVersion: 2,
-        snapshot: buildDocumentSnapshot(state)
-      };
-
-      state.printArchive = [archive, ...(state.printArchive || [])];
-      persist();
-      renderPrintArchive();
-
-      // ต้องเรียกทันทีจากการกดปุ่ม เพื่อให้มือถือเปิด Print / Save PDF ได้
-      showToast('กำลังเปิดหน้าพิมพ์ / Save PDF...');
-      try {
-        if(typeof window.print !== 'function') throw new Error('window.print unavailable');
-        window.print();
-      } catch(e) {
-        console.error('Print failed:', e);
-        showToast('เบราว์เซอร์นี้ไม่รองรับการพิมพ์ กรุณาเปิดด้วย Safari/Chrome');
-      }
-
-      if(userId && db) {
-        setDoc(cloudPath('printArchive', archive.id), archive, {merge:true})
-          .catch(e => cloudError('Save print archive', e));
-      }
-    }
-
-    async function deletePrintArchive(id) {
-      if(!requireOwner('การลบประวัติการพิมพ์')) return;
-      const row = (state.printArchive || []).find(x => x.id === id);
-      if(!row) return showToast('ไม่พบประวัติการพิมพ์');
-      if(!confirm(`ต้องการลบประวัติการพิมพ์ ${row.docNo || ''} ใช่หรือไม่?\n(ลบเฉพาะประวัติการพิมพ์ ไม่ลบเอกสารต้นฉบับ)`)) return;
-
-      state.printArchive = (state.printArchive || []).filter(x => x.id !== id);
-      persist();
-      renderPrintArchive();
-
-      if(userId && db) {
-        try {
-          await deleteDoc(cloudPath('printArchive', id));
-          showToast('ลบประวัติการพิมพ์แล้ว');
-        } catch(e) {
-          cloudError('Delete print archive', e);
-        }
-      } else {
-        showToast('ลบประวัติการพิมพ์แล้ว (ในเครื่อง)');
-      }
-    }
-
-    async function clearPrintArchive() {
-      if(!requireOwner('การลบประวัติการพิมพ์ทั้งหมด')) return;
-      const rows = Array.isArray(state.printArchive) ? [...state.printArchive] : [];
-      if(!rows.length) return showToast('ยังไม่มีประวัติการพิมพ์');
-      if(!confirm(`ต้องการลบประวัติการพิมพ์ทั้งหมด ${rows.length} รายการใช่หรือไม่?\n(ลบเฉพาะประวัติการพิมพ์ ไม่ลบเอกสารต้นฉบับ)`)) return;
-
-      state.printArchive = [];
-      persist();
-      renderPrintArchive();
-
-      if(userId && db) {
-        try {
-          await Promise.all(rows.filter(x => x?.id).map(x => deleteDoc(cloudPath('printArchive', x.id))));
-          showToast('ลบประวัติการพิมพ์ทั้งหมดแล้ว');
-        } catch(e) {
-          cloudError('Clear print archive', e);
-        }
-      } else {
-        showToast('ลบประวัติการพิมพ์ทั้งหมดแล้ว (ในเครื่อง)');
-      }
+    async function printDocument() {
+      if(!companyAccessReady||!currentMember)return showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+      calculateTotals();renderPreview();
+      const existing=state.history.find(h=>h.docNo===state.docNo);
+      if(!existing)return showToast('กรุณากดบันทึกข้อมูลก่อนดาวน์โหลด PDF');
+      const element=document.getElementById('print-area');
+      if(!element)return showToast('ไม่พบพื้นที่เอกสาร');
+      if(typeof html2pdf==='undefined')return showToast('โหลดระบบ PDF ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต');
+      const safe=String(state.docNo||'document').replace(/[\\/:*?"<>|]+/g,'-');
+      try{
+        showToast('กำลังสร้าง PDF...');
+        await html2pdf().set({margin:0,filename:safe+'.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',scrollX:0,scrollY:0},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['avoid-all','css','legacy']}}).from(element).save();
+        const archive={id:'pdf-'+Date.now(),historyId:existing.id,docNo:existing.docNo,docType:existing.docType,customerName:existing.customerName,printedAt:new Date().toISOString(),createdByUid:userId,createdByEmail:auth.currentUser?.email||'',createdByName:auth.currentUser?.displayName||'',grandTotal:existing.grandTotal,paidTotal:existing.paidTotal||0,action:'download_pdf'};
+        if(userId&&db)setDoc(cloudPath('printArchive',archive.id),archive,{merge:true}).catch(e=>cloudError('Archive PDF',e));
+        showToast('ดาวน์โหลด PDF แล้ว');
+      }catch(e){console.error(e);showToast('สร้าง PDF ไม่สำเร็จ กรุณาลองใหม่');}
     }
 
     function reprintArchivedDoc(historyId) {
@@ -2676,65 +2623,26 @@
     }
 
     function openPresetEditor() {
-      const list = document.getElementById('gmodal-list');
-      if(!list) return;
-      list.innerHTML = `
-        <div class="border border-sky-200 bg-sky-50 rounded-xl p-3 space-y-3">
-          <div class="text-xs font-bold text-sky-900">เพิ่มแบบมาตรฐานใหม่</div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div class="sm:col-span-2"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชื่อแบบมาตรฐาน *</label><input id="preset-name" type="text" placeholder="เช่น ประตูบานเลื่อน 2 บาน" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ประเภท</label><select id="preset-type" onchange="togglePresetFields()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="alu">อลูมิเนียม / งานกระจก</option><option value="general">สินค้าทั่วไป / ค่าแรง</option></select></div>
-            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">วิธีคิดราคา</label><select id="preset-price-type" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="per_sqm">ต่อตารางเมตร</option><option value="per_unit">ต่อหน่วย</option></select></div>
-            <div id="preset-width-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">กว้าง (ม.)</label><input id="preset-width" type="number" min="0" step="0.01" value="1.6" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-            <div id="preset-height-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สูง (ม.)</label><input id="preset-height" type="number" min="0" step="0.01" value="1.2" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">หน่วย</label><input id="preset-unit" type="text" value="ชุด" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-            <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ราคา</label><input id="preset-price" type="number" min="0" step="0.01" value="0" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-            <div id="preset-color-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สีอลูมิเนียม</label><input id="preset-alu-color" type="text" value="อบขาว" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-            <div id="preset-glass-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชนิดกระจก</label><input id="preset-glass" type="text" value="เขียวตัดแสง 6 มม." class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-          </div>
-          <div class="flex justify-end gap-2 pt-1">
-            <button type="button" onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white border rounded-lg text-xs">ยกเลิก</button>
-            <button type="button" onclick="savePreset()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold">บันทึกแบบมาตรฐาน</button>
-          </div>
-        </div>`;
-      togglePresetFields();
+      const list=document.getElementById('gmodal-list'); if(!list)return; normalizePresetOptions();
+      list.innerHTML=`<div class="border border-sky-200 bg-sky-50 rounded-xl p-3 space-y-3">
+      <div class="text-xs font-bold text-sky-900">เพิ่มแบบมาตรฐานใหม่</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div class="sm:col-span-2"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชื่อแบบมาตรฐาน *</label><input id="preset-name" class="w-full p-2 text-xs border rounded-lg bg-white" placeholder="เช่น ประตูบานเลื่อน"></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ประเภท</label><select id="preset-type" onchange="togglePresetFields()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="alu">อลูมิเนียม / งานกระจก</option><option value="general">สินค้าทั่วไป / ค่าแรง</option></select></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">วิธีคิดราคา</label><select id="preset-price-type" onchange="togglePresetPriceLabel()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="per_sqm">ต่อตารางเมตร</option><option value="per_unit">ต่อหน่วย</option><option value="custom">พิมพ์วิธีคิดเอง</option></select><input id="preset-price-type-label" class="hidden w-full p-2 text-xs border rounded-lg bg-white mt-1" placeholder="เช่น ต่อเมตร / ต่อบาน / ต่อจุด"></div>
+      <div id="preset-width-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">กว้าง (ม.)</label><input id="preset-width" type="number" step=".01" value="1.6" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div id="preset-height-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สูง (ม.)</label><input id="preset-height" type="number" step=".01" value="1.2" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">หน่วย</label><select id="preset-unit-select" onchange="handlePresetUnitMode()" class="w-full p-2 text-xs border rounded-lg bg-white"></select><input id="preset-new-unit" class="hidden w-full p-2 text-xs border rounded-lg bg-white mt-1" placeholder="พิมพ์หน่วยใหม่"><button type="button" onclick="addPresetUnit()" class="mt-1 px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มหน่วยไว้ใช้</button></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ราคา</label><input id="preset-price" type="number" value="0" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div id="preset-color-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สีอลูมิเนียม</label><select id="preset-alu-color" class="w-full p-2 text-xs border rounded-lg bg-white"></select><div class="flex gap-1 mt-1"><input id="preset-new-color" class="flex-1 p-2 text-xs border rounded-lg bg-white" placeholder="เพิ่มสีใหม่"><button type="button" onclick="addPresetColor()" class="px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มสี</button></div></div>
+      <div id="preset-glass-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชนิดกระจก</label><input id="preset-glass" value="เขียวตัดแสง 6 มม." class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div class="sm:col-span-2 border-t pt-2"><div class="text-[10px] font-medium text-slate-600 mb-1">สินค้าทั่วไปจะแสดงอะไร</div><label class="flex gap-2 text-xs"><input id="preset-show-qty" type="checkbox" checked> แสดงจำนวน</label><label class="flex gap-2 text-xs mt-1"><input id="preset-show-unit" type="checkbox" checked> แสดงหน่วย</label><div class="text-[10px] text-slate-500 mt-1">เอาออกทั้งสองช่อง = แสดงราคาอย่างเดียว</div></div>
+      </div><div class="flex justify-end gap-2"><button onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white border rounded-lg text-xs">ยกเลิก</button><button onclick="savePreset()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-bold">บันทึกแบบมาตรฐาน</button></div></div>`;
+      renderPresetEditorOptions(); const c=document.getElementById('preset-alu-color');if(c)c.value=state.presetColors.includes('อบขาว')?'อบขาว':state.presetColors[0];togglePresetFields();
     }
-
-    function togglePresetFields() {
-      const type = document.getElementById('preset-type')?.value || 'alu';
-      const isAlu = type === 'alu';
-      ['preset-width-wrap','preset-height-wrap','preset-color-wrap','preset-glass-wrap'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.style.display = isAlu ? '' : 'none';
-      });
-      const priceType = document.getElementById('preset-price-type');
-      if(priceType && !isAlu) { priceType.value = 'per_unit'; priceType.disabled = true; }
-      else if(priceType) priceType.disabled = false;
-    }
-
-    async function savePreset() {
-      if(!requireOwner('การเพิ่มแบบมาตรฐาน')) return;
-      const name = document.getElementById('preset-name')?.value.trim() || '';
-      if(!name) return showToast('กรุณากรอกชื่อแบบมาตรฐาน');
-      const type = document.getElementById('preset-type')?.value || 'alu';
-      const p = {
-        id: 'preset-' + Date.now(), type, name, icon: type === 'alu' ? 'columns-2' : 'package',
-        aluColor: document.getElementById('preset-alu-color')?.value.trim() || '-',
-        glassType: document.getElementById('preset-glass')?.value.trim() || '-',
-        width: parseFloat(document.getElementById('preset-width')?.value) || 0,
-        height: parseFloat(document.getElementById('preset-height')?.value) || 0,
-        unit: document.getElementById('preset-unit')?.value.trim() || 'ชุด',
-        price: parseFloat(document.getElementById('preset-price')?.value) || 0,
-        priceType: type === 'alu' ? (document.getElementById('preset-price-type')?.value || 'per_sqm') : 'per_unit'
-      };
-      state.presets = [...(state.presets || []), p];
-      persist(); renderPresets();
-      if(userId && db) {
-        try { await setDoc(cloudPath('presets', p.id), p, {merge:true}); showToast('บันทึกแบบมาตรฐานขึ้น Cloud แล้ว'); }
-        catch(e) { cloudError('Save preset', e); }
-      } else showToast('บันทึกแบบมาตรฐานแล้ว (ในเครื่อง)');
-      openGenericModal('presetModal');
-    }
+    function togglePresetFields(){const alu=document.getElementById('preset-type')?.value==='alu';['preset-width-wrap','preset-height-wrap','preset-color-wrap','preset-glass-wrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=alu?'':'none'});const p=document.getElementById('preset-price-type');if(p&&!alu&&p.value==='per_sqm')p.value='per_unit';togglePresetPriceLabel();}
+    function togglePresetPriceLabel(){const e=document.getElementById('preset-price-type-label');if(!e)return;const x=document.getElementById('preset-price-type')?.value==='custom';e.classList.toggle('hidden',!x);e.style.display=x?'':'none';}
+    async function savePreset(){if(!requireOwner('การเพิ่มแบบมาตรฐาน'))return;normalizePresetOptions();const name=document.getElementById('preset-name')?.value.trim();if(!name)return showToast('กรุณากรอกชื่อแบบมาตรฐาน');const type=document.getElementById('preset-type')?.value||'alu',pt=document.getElementById('preset-price-type')?.value||'per_unit',unit=getPresetUnitValue();if(!state.unitOptions.includes(unit))state.unitOptions.push(unit);const p={id:'preset-'+Date.now(),type,name,icon:type==='alu'?'columns-2':'package',aluColor:type==='alu'?(document.getElementById('preset-alu-color')?.value||'-'):'-',glassType:type==='alu'?(document.getElementById('preset-glass')?.value||'-'):'-',width:type==='alu'?(+document.getElementById('preset-width')?.value||0):0,height:type==='alu'?(+document.getElementById('preset-height')?.value||0):0,unit,price:+document.getElementById('preset-price')?.value||0,priceType:pt==='custom'?'per_unit':pt,priceTypeLabel:pt==='custom'?(document.getElementById('preset-price-type-label')?.value.trim()||'ต่อหน่วย'):'',showQty:type==='general'?document.getElementById('preset-show-qty').checked:true,showUnit:type==='general'?document.getElementById('preset-show-unit').checked:true};state.presets.push(p);persist();renderPresets();if(userId&&db)try{await setDoc(cloudPath('presets',p.id),p,{merge:true})}catch(e){cloudError('Save preset',e)}showToast('บันทึกแบบมาตรฐานแล้ว');openGenericModal('presetModal');}
 
     function closeGenericModal() { 
       const modal = document.getElementById('generic-modal');
@@ -2810,7 +2718,7 @@
     }
 
     // Expose all globals
-    window.loginWithGoogle = loginWithGoogle; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
 </body>
 </html>
