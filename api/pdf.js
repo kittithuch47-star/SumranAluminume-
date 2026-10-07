@@ -2,32 +2,35 @@ const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
 
 module.exports = async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  let browser;
+  let browser = null;
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const html = String(body.html || '');
+    const fragment = String(body.html || '');
     const styles = String(body.styles || '');
     const links = String(body.links || '');
 
-    if (!html || html.length > 3_500_000) {
-      return res.status(400).json({ error: 'ข้อมูลเอกสารไม่ถูกต้องหรือมีขนาดใหญ่เกินไป' });
-    }
+    if (!fragment) return res.status(400).json({ error: 'ไม่พบเนื้อหาเอกสาร' });
+    if (fragment.length > 3500000) return res.status(413).json({ error: 'เอกสารมีขนาดใหญ่เกินไป' });
+
+    const executablePath = await chromium.executablePath();
+    if (!executablePath) throw new Error('Chromium executablePath unavailable');
 
     browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: { width: 1200, height: 1600, deviceScaleFactor: 1 },
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless
+      executablePath,
+      headless: true,
+      defaultViewport: { width: 794, height: 1123, deviceScaleFactor: 1 }
     });
 
     const page = await browser.newPage();
-
-    const documentHtml = `<!doctype html>
+    await page.setContent(`<!doctype html>
 <html lang="th">
 <head>
 <meta charset="utf-8">
@@ -35,42 +38,48 @@ module.exports = async function handler(req, res) {
 ${links}
 <style>
 ${styles}
-
-/* Server PDF normalization: use the same A4 print geometry as physical print. */
+/* PDF server overrides only screen/mobile geometry; preserve V8 print rules. */
 @page { size: A4 portrait; margin: 10mm; }
 html, body {
   margin: 0 !important;
   padding: 0 !important;
   background: #fff !important;
+  width: auto !important;
+  min-width: 0 !important;
+  overflow: visible !important;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
-body * { visibility: visible !important; }
 #print-area {
   position: static !important;
-  width: 100% !important;
+  transform: none !important;
+  zoom: 1 !important;
+  width: auto !important;
   max-width: none !important;
   min-width: 0 !important;
-  min-height: 277mm !important;
   margin: 0 !important;
-  padding: 2mm !important;
-  box-sizing: border-box !important;
   box-shadow: none !important;
-  border: 0 !important;
-  border-radius: 0 !important;
   overflow: visible !important;
 }
+.a4-page {
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
+table { max-width: 100% !important; }
+img, svg { max-width: 100%; }
 </style>
 </head>
-<body>${html}</body>
-</html>`;
+<body>${fragment}</body>
+</html>`, { waitUntil: 'networkidle0', timeout: 45000 });
 
-    await page.setContent(documentHtml, { waitUntil: 'networkidle0', timeout: 30000 });
     await page.emulateMediaType('print');
-
-    // Wait for Prompt/Sarabun (or any other web fonts) before PDF generation.
     await page.evaluate(async () => {
-      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (document.fonts?.ready) await document.fonts.ready;
     });
 
     const pdf = await page.pdf({
@@ -81,20 +90,10 @@ body * { visibility: visible !important; }
     });
 
     const safe = String(body.title || 'Sumran-Aluminum')
-      .replace(/[\\/:*?"<>|]+/g, '-')
-      .slice(0, 120);
+      .replace(/[\\/:*?"<>|]+/g, '-').slice(0, 100);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safe)}.pdf"`);
-    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).send(Buffer.from(pdf));
   } catch (err) {
-    console.error('PDF endpoint error:', err);
-    return res.status(500).json({ error: 'ระบบสร้าง PDF มีปัญหา กรุณาลองใหม่อีกครั้ง' });
-  } finally {
-    if (browser) {
-      try { await browser.close(); } catch (_) {}
-    }
-  }
-};
-
+    console.error('PDF_ERROR', err);
