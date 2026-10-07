@@ -795,7 +795,10 @@
     <div id="tab-preview" class="hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 no-print">
         <button onclick="switchTab('editor')" class="px-3.5 py-1.5 text-xs font-medium border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"><i data-lucide="arrow-left" class="w-4 h-4"></i> กลับไปแก้ไข</button>
-        <button onclick="printDocument()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> ดาวน์โหลด PDF</button>
+        <div class="flex flex-wrap gap-2 justify-end">
+          <button onclick="downloadPdf()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="download" class="w-4 h-4"></i> บันทึก / ดาวน์โหลด PDF</button>
+          <button onclick="printDocument()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ผ่านเครื่องพิมพ์</button>
+        </div>
       </div>
 
       <div id="print-area" class="a4-page font-doc text-slate-900 border border-slate-200 sm:rounded-lg text-sm print-a4-document">
@@ -1059,8 +1062,6 @@
     </div>
 
   </main>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -2249,22 +2250,41 @@
       renderPaymentHistory();
     }
 
-    async function printDocument() {
-      if(!companyAccessReady||!currentMember)return showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-      calculateTotals();renderPreview();
+    async function archiveOutputAction(action) {
       const existing=state.history.find(h=>h.docNo===state.docNo);
-      if(!existing)return showToast('กรุณากดบันทึกข้อมูลก่อนดาวน์โหลด PDF');
-      const element=document.getElementById('print-area');
-      if(!element)return showToast('ไม่พบพื้นที่เอกสาร');
-      if(typeof html2pdf==='undefined')return showToast('โหลดระบบ PDF ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต');
-      const safe=String(state.docNo||'document').replace(/[\\/:*?"<>|]+/g,'-');
-      try{
-        showToast('กำลังสร้าง PDF...');
-        await html2pdf().set({margin:0,filename:safe+'.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',scrollX:0,scrollY:0},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['avoid-all','css','legacy']}}).from(element).save();
-        const archive={id:'pdf-'+Date.now(),historyId:existing.id,docNo:existing.docNo,docType:existing.docType,customerName:existing.customerName,printedAt:new Date().toISOString(),createdByUid:userId,createdByEmail:auth.currentUser?.email||'',createdByName:auth.currentUser?.displayName||'',grandTotal:existing.grandTotal,paidTotal:existing.paidTotal||0,action:'download_pdf'};
-        if(userId&&db)setDoc(cloudPath('printArchive',archive.id),archive,{merge:true}).catch(e=>cloudError('Archive PDF',e));
-        showToast('ดาวน์โหลด PDF แล้ว');
-      }catch(e){console.error(e);showToast('สร้าง PDF ไม่สำเร็จ กรุณาลองใหม่');}
+      if(!existing) return;
+      const archive={id:action+'-'+Date.now(),historyId:existing.id,docNo:existing.docNo,docType:existing.docType,
+        customerName:existing.customerName,printedAt:new Date().toISOString(),createdByUid:userId,
+        createdByEmail:auth.currentUser?.email||'',createdByName:auth.currentUser?.displayName||'',
+        grandTotal:existing.grandTotal,paidTotal:existing.paidTotal||0,action};
+      if(userId&&db)setDoc(cloudPath('printArchive',archive.id),archive,{merge:true}).catch(e=>cloudError('Archive output',e));
+    }
+
+    function prepareDocumentForOutput() {
+      if(!companyAccessReady||!currentMember){showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');return false;}
+      calculateTotals(); renderPreview();
+      const existing=state.history.find(h=>h.docNo===state.docNo);
+      if(!existing){showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์หรือบันทึก PDF');return false;}
+      return true;
+    }
+
+    function printDocument() {
+      if(!prepareDocumentForOutput()) return;
+      archiveOutputAction('print');
+      /* Native browser print preserves the real HTML/CSS, Thai fonts, tables and
+         multi-page layout much more faithfully than screenshot-to-PDF conversion. */
+      requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
+    }
+
+    function downloadPdf() {
+      if(!prepareDocumentForOutput()) return;
+      archiveOutputAction('save_pdf');
+      /* On iPhone/iPad/Safari a web page cannot silently write a real vector PDF
+         into Files. The reliable, non-distorted route is the native print sheet:
+         Print Preview -> Share -> Save to Files. This keeps exactly the same
+         print CSS and typography as physical printing. */
+      showToast('กำลังเปิดหน้าบันทึก PDF — เลือกแชร์ แล้ว “บันทึกไปยังไฟล์”');
+      requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
     }
 
     function reprintArchivedDoc(historyId) {
@@ -2718,7 +2738,7 @@
     }
 
     // Expose all globals
-    window.loginWithGoogle = loginWithGoogle; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
 </body>
 </html>
