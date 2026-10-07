@@ -1064,7 +1064,7 @@
   </main>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // Firebase config ของโปรเจกต์จริง: sumranaluminum
@@ -1136,34 +1136,91 @@
     }
     const DEFAULT_PRESET_COLORS=['อบขาว','ดำ','ชา','เงิน','บรอนซ์'];
     const DEFAULT_UNIT_OPTIONS=['ชุด','ชิ้น','บาน','ตู้','เมตร','ตร.ม.','งาน','จุด'];
+    const DEFAULT_PRICE_METHODS=['ต่อหน่วย','ต่อเมตร','ต่อบาน','ต่อชุด','ต่อจุด'];
     function normalizePresetOptions(){
-      state.presetColors=[...new Set([...(state.presetColors||[]),...DEFAULT_PRESET_COLORS].map(v=>String(v||'').trim()).filter(Boolean))];
-      state.unitOptions=[...new Set([...(state.unitOptions||[]),...DEFAULT_UNIT_OPTIONS].map(v=>String(v||'').trim()).filter(Boolean))];
+      state.presetColors=[...new Set((Array.isArray(state.presetColors)?state.presetColors:DEFAULT_PRESET_COLORS).map(v=>String(v||'').trim()).filter(Boolean))];
+      state.unitOptions=[...new Set((Array.isArray(state.unitOptions)?state.unitOptions:DEFAULT_UNIT_OPTIONS).map(v=>String(v||'').trim()).filter(Boolean))];
+      state.priceMethods=[...new Set((Array.isArray(state.priceMethods)?state.priceMethods:DEFAULT_PRICE_METHODS).map(v=>String(v||'').trim()).filter(Boolean))];
       state.presets=(state.presets||[]).map(p=>({...p,showQty:p.showQty!==false,showUnit:p.showUnit!==false,priceTypeLabel:p.priceTypeLabel||''}));
     }
     function renderPresetEditorOptions(){
       normalizePresetOptions();
       const c=document.getElementById('preset-alu-color');
-      if(c){const old=c.value;c.innerHTML=state.presetColors.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');if(state.presetColors.includes(old))c.value=old;}
+      if(c){
+        const old=c.value;
+        c.innerHTML=state.presetColors.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        if(state.presetColors.includes(old)) c.value=old;
+      }
       const u=document.getElementById('preset-unit-select');
-      if(u){const old=u.value;u.innerHTML=state.unitOptions.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')+'<option value="__custom__">พิมพ์หน่วยเอง...</option>';if(state.unitOptions.includes(old)||old==='__custom__')u.value=old;}
+      if(u){
+        const old=u.value;
+        u.innerHTML=state.unitOptions.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')+'<option value="__custom__">พิมพ์หน่วยเอง...</option>';
+        if(state.unitOptions.includes(old)||old==='__custom__') u.value=old;
+      }
+      const pm=document.getElementById('preset-price-method-select');
+      if(pm){
+        const old=pm.value;
+        pm.innerHTML=state.priceMethods.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')+'<option value="__custom__">พิมพ์วิธีคิดเอง...</option>';
+        if(state.priceMethods.includes(old)||old==='__custom__') pm.value=old;
+      }
+      const cb=document.getElementById('preset-color-chips');
+      if(cb) cb.innerHTML=state.presetColors.map(v=>`<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-sky-50 border border-sky-200 text-[10px]">${escapeHtml(v)}<button type="button" onclick="deletePresetColor(decodeURIComponent('${encodeURIComponent(v)}'))" class="text-rose-500 font-bold text-sm leading-none">×</button></span>`).join('');
+      const pb=document.getElementById('preset-price-method-chips');
+      if(pb) pb.innerHTML=state.priceMethods.map(v=>`<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px]">${escapeHtml(v)}<button type="button" onclick="deletePresetPriceMethod(decodeURIComponent('${encodeURIComponent(v)}'))" class="text-rose-500 font-bold text-sm leading-none">×</button></span>`).join('');
     }
     function handlePresetUnitMode(){const u=document.getElementById('preset-unit-select'),i=document.getElementById('preset-new-unit');if(!u||!i)return;const x=u.value==='__custom__';i.classList.toggle('hidden',!x);i.style.display=x?'':'none';}
     function getPresetUnitValue(){const u=document.getElementById('preset-unit-select');return u?.value==='__custom__'?(document.getElementById('preset-new-unit')?.value.trim()||'ชุด'):(u?.value||'ชุด');}
-    function addPresetColor(){if(!requireOwner('การเพิ่มสี'))return;const i=document.getElementById('preset-new-color'),v=String(i?.value||'').trim();if(!v)return showToast('กรุณาพิมพ์ชื่อสี');if(!state.presetColors.includes(v))state.presetColors.push(v);persist();renderPresetEditorOptions();document.getElementById('preset-alu-color').value=v;if(i)i.value='';if(userId&&db)setDoc(cloudPath('presetColors','color-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(e=>cloudError('Save color',e));showToast('เพิ่มสีแล้ว');}
-    function addPresetUnit(){if(!requireOwner('การเพิ่มหน่วย'))return;const i=document.getElementById('preset-new-unit'),v=String(i?.value||'').trim();if(!v)return showToast('กรุณาพิมพ์หน่วย');if(!state.unitOptions.includes(v))state.unitOptions.push(v);persist();renderPresetEditorOptions();document.getElementById('preset-unit-select').value=v;if(i)i.value='';if(userId&&db)setDoc(cloudPath('presetUnits','unit-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(e=>cloudError('Save unit',e));showToast('เพิ่มหน่วยแล้ว');}
-
-    function canEditHistoryDocument(h) {
-      if(!currentMember || currentMember.active !== true) return false;
-      if(currentMember.role === 'owner') return true;
-      return currentMember.role === 'staff' &&
-        String(h?.createdByUid || '') === String(userId || '');
+    function handlePresetPriceMethodMode(){
+      const s=document.getElementById('preset-price-method-select'),i=document.getElementById('preset-new-price-method');
+      if(!s||!i)return; const x=s.value==='__custom__'; i.classList.toggle('hidden',!x); i.style.display=x?'':'none';
+    }
+    function getPresetPriceMethodValue(){
+      const s=document.getElementById('preset-price-method-select');
+      return s?.value==='__custom__'?(document.getElementById('preset-new-price-method')?.value.trim()||'ต่อหน่วย'):(s?.value||'ต่อหน่วย');
+    }
+    function addPresetColor(){
+      if(!requireOwner('การเพิ่มสี'))return;
+      const i=document.getElementById('preset-new-color'),v=String(i?.value||'').trim();
+      if(!v)return showToast('กรุณาพิมพ์ชื่อสี');
+      if(!state.presetColors.includes(v))state.presetColors.push(v);
+      persist();renderPresetEditorOptions();
+      const c=document.getElementById('preset-alu-color');if(c)c.value=v;if(i)i.value='';
+      if(userId&&db)setDoc(cloudPath('presetColors','color-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(()=>{});
+      showToast('เพิ่มสีแล้ว');
+    }
+    async function deletePresetColor(v){
+      if(!requireOwner('การลบสี'))return;
+      v=String(v||'').trim(); if(!v)return;
+      if(!confirm(`ลบสี "${v}" ออกจากตัวเลือกใช่หรือไม่?`))return;
+      state.presetColors=state.presetColors.filter(x=>x!==v);persist();renderPresetEditorOptions();renderItems();
+      if(userId&&db){try{await deleteDoc(cloudPath('presetColors','color-'+encodeURIComponent(v)))}catch(e){}}
+      showToast('ลบสีออกจากตัวเลือกแล้ว');
+    }
+    function addPresetUnit(){if(!requireOwner('การเพิ่มหน่วย'))return;const i=document.getElementById('preset-new-unit'),v=String(i?.value||'').trim();if(!v)return showToast('กรุณาพิมพ์หน่วย');if(!state.unitOptions.includes(v))state.unitOptions.push(v);persist();renderPresetEditorOptions();document.getElementById('preset-unit-select').value=v;if(i)i.value='';if(userId&&db)setDoc(cloudPath('presetUnits','unit-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(()=>{});showToast('เพิ่มหน่วยแล้ว');}
+    function addPresetPriceMethod(){
+      if(!requireOwner('การเพิ่มวิธีคำนวณ'))return;
+      const i=document.getElementById('preset-new-price-method'),v=String(i?.value||'').trim();
+      if(!v)return showToast('กรุณาพิมพ์วิธีคำนวณ');
+      if(!state.priceMethods.includes(v))state.priceMethods.push(v);
+      persist();renderPresetEditorOptions();
+      const pm=document.getElementById('preset-price-method-select');if(pm)pm.value=v;if(i)i.value='';
+      showToast('เพิ่มวิธีคำนวณแล้ว');
+    }
+    function deletePresetPriceMethod(v){
+      if(!requireOwner('การลบวิธีคำนวณ'))return;
+      v=String(v||'').trim();if(!v)return;
+      if(!confirm(`ลบวิธีคำนวณ "${v}" ออกจากตัวเลือกใช่หรือไม่?`))return;
+      state.priceMethods=state.priceMethods.filter(x=>x!==v);persist();renderPresetEditorOptions();renderItems();
+      showToast('ลบวิธีคำนวณออกจากตัวเลือกแล้ว');
+    }
+    function setItemAluColor(id,color){updateItem(id,'aluColor',color);renderItems();}
+    function setItemPriceMethod(id,value){
+      const item=state.items.find(x=>x.id===id);if(!item)return;
+      if(value==='per_sqm'){item.pricingType='per_sqm';item.priceTypeLabel='';}
+      else {item.pricingType='per_unit';item.priceTypeLabel=value==='per_unit'?'':value;}
+      recalculateItem(item);calculateTotals();persist();scheduleLiveDocumentSync();renderItems();
     }
 
-    function canChangeHistoryStatus(h) {
-      return !!currentMember && currentMember.active === true &&
-        (currentMember.role === 'owner' || currentMember.role === 'staff');
-    }
 
     async function updateDocumentStatus(historyId, newStatus) {
       if(!isMemberRole()) return showToast('บัญชีนี้ยังไม่ได้รับสิทธิ์ใช้งาน');
@@ -1234,6 +1291,7 @@
       ],
       presetColors: ['อบขาว', 'ดำ', 'ชา', 'เงิน', 'บรอนซ์'],
       unitOptions: ['ชุด', 'ชิ้น', 'บาน', 'ตู้', 'เมตร', 'ตร.ม.', 'งาน', 'จุด'],
+      priceMethods: ['ต่อหน่วย','ต่อเมตร','ต่อบาน','ต่อชุด','ต่อจุด'],
       savedCustomers: [], savedSales: [],
       notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
       discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
@@ -1487,15 +1545,6 @@
       try{await deleteDoc(memberPath(uid));await renderMembers();showToast('ลบสมาชิกแล้ว');}catch(e){cloudError('Remove member',e);}
     }
 
-    function setAuthUiBusy(busy) {
-      authActionBusy = !!busy;
-      const btn = document.getElementById('google-login-btn');
-      if(btn) {
-        btn.disabled = authActionBusy || !firebaseReady;
-        btn.setAttribute('aria-busy', authActionBusy ? 'true' : 'false');
-      }
-    }
-
     function setAuthGate(visible, message='') {
       authGateVisible=!!visible;
       const gate=document.getElementById('auth-gate'), box=document.getElementById('auth-user-box'), status=document.getElementById('auth-gate-status'), btn=document.getElementById('google-login-btn');
@@ -1658,12 +1707,10 @@
       if(!firebaseReady||!auth||!db){setAuthGate(true,'Firebase config ไม่พร้อมใช้งาน');return;}
       try {
         await setPersistence(auth,browserLocalPersistence);
-        try {
-          await getRedirectResult(auth);
-        } catch(e) {
-          console.error('Google redirect result failed:', e);
-          showAuthError(e);
-        }
+      getRedirectResult(auth).catch(e => {
+        console.error('Google redirect result failed:', e);
+        showAuthError(e);
+      });
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
         if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
@@ -1851,9 +1898,9 @@
               <button onclick="removeItem('${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[10px] ${!isAlu ? 'hidden' : ''}">
-              <div><label class="text-slate-500 block">สีอลูมิเนียม</label><input type="text" value="${escapeHtml(item.aluColor)}" oninput="updateItem('${item.id}', 'aluColor', this.value)" class="w-full px-2 py-1 border rounded"></div>
+              <div><label class="text-slate-500 block">สีอลูมิเนียม</label><input type="text" value="${escapeHtml(item.aluColor)}" oninput="updateItem('${item.id}', 'aluColor', this.value)" class="w-full px-2 py-1 border rounded"><div class="flex flex-wrap gap-1 mt-1">${(state.presetColors||[]).map(v=>`<button type="button" onclick="setItemAluColor('${item.id}',decodeURIComponent('${encodeURIComponent(v)}'))" class="px-2 py-1 rounded-full border text-[9px] ${item.aluColor===v?'bg-sky-600 text-white border-sky-600':'bg-white text-slate-600 border-slate-200'}">${escapeHtml(v)}</button>`).join('')}</div></div>
               <div><label class="text-slate-500 block">กระจก</label><input type="text" value="${escapeHtml(item.glassType)}" oninput="updateItem('${item.id}', 'glassType', this.value)" class="w-full px-2 py-1 border rounded"></div>
-              <div><label class="text-slate-500 block">การคิดราคา</label><select onchange="updateItem('${item.id}', 'pricingType', this.value)" class="w-full px-2 py-1 border rounded"><option value="per_sqm" ${item.pricingType==='per_sqm'?'selected':''}>ต่อ ตร.ม.</option><option value="per_unit" ${item.pricingType==='per_unit'?'selected':''}>ต่อชิ้น</option></select></div>
+              <div><label class="text-slate-500 block">การคิดราคา</label><select onchange="setItemPriceMethod('${item.id}',this.value)" class="w-full px-2 py-1 border rounded"><option value="per_sqm" ${item.pricingType==='per_sqm'?'selected':''}>ต่อ ตร.ม.</option>${(state.priceMethods||[]).map(v=>`<option value="${escapeHtml(v)}" ${item.pricingType!=='per_sqm' && (item.priceTypeLabel||'ต่อหน่วย')===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div>
             </div>
             ${!isAlu ? `<div class="flex flex-wrap items-center gap-3 pt-1 text-[10px] border-t border-slate-200"><span class="font-semibold">แสดง:</span><label><input type="checkbox" ${item.showQty!==false?'checked':''} onchange="updateItem('${item.id}','showQty',this.checked);renderItems()"> จำนวน</label><label><input type="checkbox" ${item.showUnit!==false?'checked':''} onchange="updateItem('${item.id}','showUnit',this.checked);renderItems()"> หน่วย</label><button type="button" onclick="updateItem('${item.id}','showQty',false);updateItem('${item.id}','showUnit',false);renderItems()" class="px-2 py-1 border bg-white rounded">ราคาอย่างเดียว</button></div>` : ''}
             <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 pt-1 text-[10px] items-end">
@@ -2351,85 +2398,15 @@
       requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
     }
 
-    async function downloadPdf() {
+    function downloadPdf() {
       if(!prepareDocumentForOutput()) return;
-
-      const btn = document.querySelector('button[onclick="downloadPdf()"]');
-      const oldHtml = btn?.innerHTML;
-      try {
-        if(btn){
-          btn.disabled = true;
-          btn.innerHTML = '<span class="animate-pulse">กำลังสร้าง PDF...</span>';
-        }
-        showToast('กำลังสร้างไฟล์ PDF...');
-
-        // Wait until browser fonts are fully loaded before capturing the document HTML.
-        if(document.fonts?.ready) await document.fonts.ready;
-
-        const printArea = document.getElementById('print-area');
-        if(!printArea) throw new Error('ไม่พบพื้นที่เอกสารสำหรับสร้าง PDF');
-
-        // Send the real rendered document markup to the Vercel PDF endpoint.
-        // The server uses Chromium print-to-PDF, not html2canvas, so Thai text,
-        // tables and multi-page print CSS remain browser-rendered/vector text.
-        const styles = Array.from(document.querySelectorAll('style'))
-          .map(el => el.textContent || '')
-          .join('\n');
-
-        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-          .map(el => `<link rel="stylesheet" href="${el.href}">`)
-          .join('\n');
-
-        const payload = {
-          title: String(state.docNo || 'Sumran-Aluminum'),
-          html: printArea.outerHTML,
-          styles,
-          links
-        };
-
-        const res = await fetch('/api/pdf', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify(payload)
-        });
-
-        if(!res.ok){
-          let msg='สร้าง PDF ไม่สำเร็จ';
-          try {
-            const data=await res.json();
-            if(data?.error) msg=data.error;
-          } catch(_){}
-          throw new Error(msg);
-        }
-
-        const blob = await res.blob();
-        if(!blob.size) throw new Error('ไฟล์ PDF ว่างเปล่า');
-
-        const safe = String(state.docNo || 'Sumran-Aluminum')
-          .replace(/[\\/:*?"<>|]+/g,'-')
-          .trim() || 'Sumran-Aluminum';
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = safe + '.pdf';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url), 30000);
-
-        archiveOutputAction('save_pdf');
-        showToast('ดาวน์โหลด PDF แล้ว');
-      } catch(e) {
-        console.error('Direct PDF failed:', e);
-        showToast('สร้าง PDF ไม่สำเร็จ: ' + (e?.message || 'กรุณาลองใหม่'));
-      } finally {
-        if(btn){
-          btn.disabled = false;
-          if(oldHtml) btn.innerHTML = oldHtml;
-          if(window.lucide) window.lucide.createIcons();
-        }
-      }
+      archiveOutputAction('save_pdf');
+      /* On iPhone/iPad/Safari a web page cannot silently write a real vector PDF
+         into Files. The reliable, non-distorted route is the native print sheet:
+         Print Preview -> Share -> Save to Files. This keeps exactly the same
+         print CSS and typography as physical printing. */
+      showToast('กำลังเปิดหน้าบันทึก PDF — เลือกแชร์ แล้ว “บันทึกไปยังไฟล์”');
+      requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
     }
 
     function reprintArchivedDoc(historyId) {
@@ -2586,7 +2563,7 @@
             <td class="py-2 px-2"><div class="font-semibold text-slate-700">${escapeHtml(h.createdByName || h.createdByEmail || 'เดิม/ไม่ทราบ')}</div><div class="text-[9px] text-slate-400">${escapeHtml(h.createdByEmail || '')}</div></td>
             <td class="py-2 px-2 text-[10px]">${formatDateThai(h.date)}</td>
             <td class="py-2 px-2 text-right"><div class="font-mono font-bold text-slate-800">฿${Number(h.grandTotal||0).toLocaleString('th-TH')}</div>${h.requiredDeposit>0?`<div class="text-[9px] text-sky-600 mt-0.5">มัดจำที่กำหนด: ${Number(h.requiredDeposit).toLocaleString('th-TH')}</div>`:''}${txPaid>0?`<div class="text-[9px] text-emerald-600">รับเงินจริงรวมงาน: ฿${txPaid.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:''}${txRemaining>0&&h.docType!=='delivery'?`<div class="text-[9px] text-rose-500 mt-0.5">คงเหลืองานนี้: ฿${txRemaining.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:`<div class="text-[9px] text-emerald-600 mt-0.5">ชำระครบแล้ว</div>`}</td>
-            <td class="py-2 px-2"><select ${canChangeHistoryStatus(h)?'':'disabled'} onchange="updateDocumentStatus('${h.id}', this.value)" class="text-[10px] p-1 rounded border w-full ${canChangeHistoryStatus(h)?'':'opacity-50 cursor-not-allowed'}">${opts}</select></td>
+            <td class="py-2 px-2"><select ${isOwner()?'':'disabled'} onchange="updateDocStatus('${h.id}', this.value)" class="text-[10px] p-1 rounded border w-full ${isOwner()?'':'opacity-50 cursor-not-allowed'}">${opts}</select></td>
             <td class="py-2 px-2">
               <div class="flex items-center gap-1">
                 <select ${canEditHistoryItem(h)?'':'disabled'} onchange="if(this.value){ generateFlowDoc('${h.id}', this.value); this.value=''; }" class="text-[10px] p-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-bold ${canEditHistoryItem(h)?'':'opacity-50 cursor-not-allowed'}">
@@ -2794,20 +2771,43 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
       <div class="sm:col-span-2"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชื่อแบบมาตรฐาน *</label><input id="preset-name" class="w-full p-2 text-xs border rounded-lg bg-white" placeholder="เช่น ประตูบานเลื่อน"></div>
       <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ประเภท</label><select id="preset-type" onchange="togglePresetFields()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="alu">อลูมิเนียม / งานกระจก</option><option value="general">สินค้าทั่วไป / ค่าแรง</option></select></div>
-      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">วิธีคิดราคา</label><select id="preset-price-type" onchange="togglePresetPriceLabel()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="per_sqm">ต่อตารางเมตร</option><option value="per_unit">ต่อหน่วย</option><option value="custom">พิมพ์วิธีคิดเอง</option></select><input id="preset-price-type-label" class="hidden w-full p-2 text-xs border rounded-lg bg-white mt-1" placeholder="เช่น ต่อเมตร / ต่อบาน / ต่อจุด"></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">วิธีคิดราคา</label><select id="preset-price-type" onchange="togglePresetPriceLabel()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="per_sqm">ต่อตารางเมตร</option><option value="per_unit">ต่อหน่วย / วิธีที่บันทึกไว้</option></select><select id="preset-price-method-select" onchange="handlePresetPriceMethodMode()" class="w-full p-2 text-xs border rounded-lg bg-white mt-1"></select><div class="flex gap-1 mt-1"><input id="preset-new-price-method" class="hidden flex-1 p-2 text-xs border rounded-lg bg-white" placeholder="เช่น ต่อเมตร / ต่อบาน / ต่อจุด"><button type="button" onclick="addPresetPriceMethod()" class="px-2 py-1 bg-white border rounded text-[10px] text-emerald-700">+ เพิ่มวิธี</button></div><div id="preset-price-method-chips" class="flex flex-wrap gap-1 mt-2"></div></div>
       <div id="preset-width-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">กว้าง (ม.)</label><input id="preset-width" type="number" step=".01" value="1.6" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
       <div id="preset-height-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สูง (ม.)</label><input id="preset-height" type="number" step=".01" value="1.2" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
       <div><label class="block text-[10px] font-medium text-slate-600 mb-1">หน่วย</label><select id="preset-unit-select" onchange="handlePresetUnitMode()" class="w-full p-2 text-xs border rounded-lg bg-white"></select><input id="preset-new-unit" class="hidden w-full p-2 text-xs border rounded-lg bg-white mt-1" placeholder="พิมพ์หน่วยใหม่"><button type="button" onclick="addPresetUnit()" class="mt-1 px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มหน่วยไว้ใช้</button></div>
       <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ราคา</label><input id="preset-price" type="number" value="0" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
-      <div id="preset-color-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สีอลูมิเนียม</label><select id="preset-alu-color" class="w-full p-2 text-xs border rounded-lg bg-white"></select><div class="flex gap-1 mt-1"><input id="preset-new-color" class="flex-1 p-2 text-xs border rounded-lg bg-white" placeholder="เพิ่มสีใหม่"><button type="button" onclick="addPresetColor()" class="px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มสี</button></div></div>
+      <div id="preset-color-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สีอลูมิเนียม</label><select id="preset-alu-color" class="w-full p-2 text-xs border rounded-lg bg-white"></select><div class="flex gap-1 mt-1"><input id="preset-new-color" class="flex-1 p-2 text-xs border rounded-lg bg-white" placeholder="เพิ่มสีใหม่"><button type="button" onclick="addPresetColor()" class="px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มสี</button></div><div id="preset-color-chips" class="flex flex-wrap gap-1 mt-2"></div></div>
       <div id="preset-glass-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชนิดกระจก</label><input id="preset-glass" value="เขียวตัดแสง 6 มม." class="w-full p-2 text-xs border rounded-lg bg-white"></div>
       <div class="sm:col-span-2 border-t pt-2"><div class="text-[10px] font-medium text-slate-600 mb-1">สินค้าทั่วไปจะแสดงอะไร</div><label class="flex gap-2 text-xs"><input id="preset-show-qty" type="checkbox" checked> แสดงจำนวน</label><label class="flex gap-2 text-xs mt-1"><input id="preset-show-unit" type="checkbox" checked> แสดงหน่วย</label><div class="text-[10px] text-slate-500 mt-1">เอาออกทั้งสองช่อง = แสดงราคาอย่างเดียว</div></div>
       </div><div class="flex justify-end gap-2"><button onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white border rounded-lg text-xs">ยกเลิก</button><button onclick="savePreset()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-bold">บันทึกแบบมาตรฐาน</button></div></div>`;
       renderPresetEditorOptions(); const c=document.getElementById('preset-alu-color');if(c)c.value=state.presetColors.includes('อบขาว')?'อบขาว':state.presetColors[0];togglePresetFields();
     }
     function togglePresetFields(){const alu=document.getElementById('preset-type')?.value==='alu';['preset-width-wrap','preset-height-wrap','preset-color-wrap','preset-glass-wrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=alu?'':'none'});const p=document.getElementById('preset-price-type');if(p&&!alu&&p.value==='per_sqm')p.value='per_unit';togglePresetPriceLabel();}
-    function togglePresetPriceLabel(){const e=document.getElementById('preset-price-type-label');if(!e)return;const x=document.getElementById('preset-price-type')?.value==='custom';e.classList.toggle('hidden',!x);e.style.display=x?'':'none';}
-    async function savePreset(){if(!requireOwner('การเพิ่มแบบมาตรฐาน'))return;normalizePresetOptions();const name=document.getElementById('preset-name')?.value.trim();if(!name)return showToast('กรุณากรอกชื่อแบบมาตรฐาน');const type=document.getElementById('preset-type')?.value||'alu',pt=document.getElementById('preset-price-type')?.value||'per_unit',unit=getPresetUnitValue();if(!state.unitOptions.includes(unit))state.unitOptions.push(unit);const p={id:'preset-'+Date.now(),type,name,icon:type==='alu'?'columns-2':'package',aluColor:type==='alu'?(document.getElementById('preset-alu-color')?.value||'-'):'-',glassType:type==='alu'?(document.getElementById('preset-glass')?.value||'-'):'-',width:type==='alu'?(+document.getElementById('preset-width')?.value||0):0,height:type==='alu'?(+document.getElementById('preset-height')?.value||0):0,unit,price:+document.getElementById('preset-price')?.value||0,priceType:pt==='custom'?'per_unit':pt,priceTypeLabel:pt==='custom'?(document.getElementById('preset-price-type-label')?.value.trim()||'ต่อหน่วย'):'',showQty:type==='general'?document.getElementById('preset-show-qty').checked:true,showUnit:type==='general'?document.getElementById('preset-show-unit').checked:true};state.presets.push(p);persist();renderPresets();if(userId&&db)try{await setDoc(cloudPath('presets',p.id),p,{merge:true})}catch(e){cloudError('Save preset',e)}showToast('บันทึกแบบมาตรฐานแล้ว');openGenericModal('presetModal');}
+    function togglePresetPriceLabel(){const pt=document.getElementById('preset-price-type')?.value||'per_unit';const m=document.getElementById('preset-price-method-select');if(m){m.disabled=pt==='per_sqm';m.classList.toggle('opacity-50',pt==='per_sqm');}handlePresetPriceMethodMode();}
+    async function savePreset(){
+      if(!requireOwner('การเพิ่มแบบมาตรฐาน'))return;
+      normalizePresetOptions();
+      const name=document.getElementById('preset-name')?.value.trim();
+      if(!name)return showToast('กรุณากรอกชื่อแบบมาตรฐาน');
+      const type=document.getElementById('preset-type')?.value||'alu';
+      const pt=document.getElementById('preset-price-type')?.value||'per_unit';
+      const unit=getPresetUnitValue();
+      if(!state.unitOptions.includes(unit))state.unitOptions.push(unit);
+      const method=pt==='per_sqm'?'':getPresetPriceMethodValue();
+      if(method && !state.priceMethods.includes(method))state.priceMethods.push(method);
+      const p={id:'preset-'+Date.now(),type,name,icon:type==='alu'?'columns-2':'package',
+        aluColor:type==='alu'?(document.getElementById('preset-alu-color')?.value||'-'):'-',
+        glassType:type==='alu'?(document.getElementById('preset-glass')?.value||'-'):'-',
+        width:type==='alu'?(+document.getElementById('preset-width')?.value||0):0,
+        height:type==='alu'?(+document.getElementById('preset-height')?.value||0):0,
+        unit,price:+document.getElementById('preset-price')?.value||0,
+        priceType:pt==='per_sqm'?'per_sqm':'per_unit',priceTypeLabel:method,
+        showQty:type==='general'?document.getElementById('preset-show-qty').checked:true,
+        showUnit:type==='general'?document.getElementById('preset-show-unit').checked:true};
+      state.presets.push(p);persist();renderPresets();
+      if(userId&&db)try{await setDoc(cloudPath('presets',p.id),p,{merge:true})}catch(e){cloudError('Save preset',e)}
+      showToast('บันทึกแบบมาตรฐานแล้ว');openGenericModal('presetModal');
+    }
 
     function closeGenericModal() { 
       const modal = document.getElementById('generic-modal');
@@ -2883,41 +2883,7 @@
     }
 
     // Expose all globals
-    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.canEditHistoryDocument = canEditHistoryDocument; window.canChangeHistoryStatus = canChangeHistoryStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
-
-<!--
-FIRESTORE RULES REQUIRED FOR STAFF STATUS UPDATE
-Replace the existing HISTORY update rule with:
-
-allow update: if isMember()
-  && (
-    isOwner()
-    ||
-    (
-      resource.data.createdByUid == request.auth.uid
-      && request.resource.data.createdByUid == resource.data.createdByUid
-    )
-    ||
-    (
-      request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'status',
-        'statusUpdatedAt',
-        'statusUpdatedByUid',
-        'statusUpdatedByEmail',
-        'statusUpdatedByName'
-      ])
-      && request.resource.data.statusUpdatedByUid == request.auth.uid
-    )
-  );
-
-This permits Staff to change workflow status on another member's document
-without granting permission to edit prices, items, customers, totals, or creator identity.
--->
-
-
-<!-- DIRECT PDF V1:
-     /api/pdf uses headless Chromium on Vercel.
-     Physical printing continues to use window.print() unchanged. -->
 </body>
 </html>
