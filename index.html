@@ -196,24 +196,34 @@
                 <input type="checkbox" id="payment-toggle" onchange="togglePaymentBox()" class="rounded border-sky-300 text-sky-600 w-3.5 h-3.5"> ระบบแบ่งจ่าย / บันทึกรับชำระเงิน
               </label>
               <div id="payment-box" class="hidden space-y-2 pt-2 border-t border-sky-200">
-                <div class="flex justify-between items-center text-[11px]">
-                  <label class="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
-                    <input type="checkbox" id="deposit-toggle" onchange="toggleDepositBox()" class="rounded border-sky-300 text-sky-600 w-3.5 h-3.5"> กำหนดมัดจำเป็นเปอร์เซ็นต์
+                <div class="border-b border-sky-200 pb-2">
+                  <label class="flex items-center gap-2 font-medium text-slate-700 cursor-pointer text-[11px]">
+                    <input type="checkbox" id="deposit-toggle" onchange="toggleDepositBox()" class="rounded border-sky-300 text-sky-600 w-3.5 h-3.5">
+                    <span>กำหนดมัดจำเป็นเปอร์เซ็นต์</span>
                   </label>
-                  <div id="deposit-percent-box" class="hidden items-center gap-1">
-                    <input type="number" id="deposit-percent" value="0" min="0" max="100" step="0.01" oninput="updateDepositPercent()" class="w-20 text-right p-1 bg-white border border-sky-400 rounded focus:ring-1 focus:ring-sky-500 font-bold text-sky-700">
-                    <span class="font-bold text-sky-700">%</span>
+                  <div id="deposit-percent-box" class="hidden mt-2 items-center gap-2">
+                    <span class="text-slate-600 font-medium whitespace-nowrap text-[11px]">เปอร์เซ็นต์มัดจำ</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="deposit-percent" value="0" min="0" max="100" step="0.01" inputmode="decimal" oninput="updateDepositPercent()" class="w-24 text-right p-1.5 bg-white border-2 border-sky-400 rounded focus:ring-2 focus:ring-sky-500 font-bold text-sky-700" aria-label="เปอร์เซ็นต์มัดจำ">
+                      <span class="font-bold text-sky-700">%</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500">เช่น 30 = มัดจำ 30%</span>
                   </div>
                 </div>
                 <div id="deposit-amount-row" class="hidden justify-between items-center text-[11px] bg-white/70 rounded px-2 py-1 border border-sky-100">
-                  <span class="text-slate-600">ยอดมัดจำที่คำนวณได้:</span>
-                  <div class="flex items-center gap-2">
-                    <span id="calc-deposit-amt" class="font-mono font-bold text-sky-700">฿0.00</span>
-                    <button type="button" onclick="applyDepositToPayment()" class="px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-[10px] font-bold">ใส่เป็นยอดชำระ</button>
+                  <div>
+                    <span class="text-slate-600">มัดจำที่ต้องชำระ:</span>
+                    <span id="calc-deposit-amt" class="font-mono font-bold text-sky-700 ml-1">฿0.00</span>
+                    <div class="text-[9px] text-slate-400 mt-0.5">เป็นยอดที่ต้องแจ้งลูกค้า ไม่ถือว่าได้รับเงินจนกว่าจะบันทึกรับชำระ</div>
                   </div>
+                  <button type="button" onclick="applyDepositToPayment()" class="px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-[10px] font-bold">รับมัดจำจำนวนนี้</button>
                 </div>
-                <div class="flex justify-between items-center text-[11px]"><span class="text-slate-600">ยอดที่เคยชำระแล้ว (ก่อนหน้า):</span><div class="flex items-center gap-1"><span class="text-slate-400">฿</span><input type="number" id="prev-paid" value="0" min="0" oninput="calculateTotals()" class="w-24 text-right p-1 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-sky-500"></div></div>
-                <div class="flex justify-between items-center text-[11px]"><span class="font-bold text-sky-800">ยอดชำระครั้งนี้:</span><div class="flex items-center gap-1"><span class="text-sky-600 font-bold">฿</span><input type="number" id="current-payment" value="0" min="0" oninput="calculateTotals()" class="w-24 text-right p-1 bg-white border border-sky-400 rounded focus:ring-1 focus:ring-sky-500 font-bold text-sky-700"></div></div>
+                <div class="flex justify-between items-center text-[11px]"><span class="text-slate-600">ยอดที่ชำระแล้วสะสม:</span><span id="calc-total-paid" class="font-mono font-bold text-emerald-700">฿0.00</span></div>
+                <div class="flex justify-between items-center text-[11px]"><span class="font-bold text-sky-800">รับชำระครั้งนี้:</span><div class="flex items-center gap-1"><span class="text-sky-600 font-bold">฿</span><input type="number" id="current-payment" value="0" min="0" oninput="calculateTotals()" class="w-24 text-right p-1 bg-white border border-sky-400 rounded focus:ring-1 focus:ring-sky-500 font-bold text-sky-700"></div></div>
+                <div id="payment-history-box" class="hidden bg-white/70 rounded px-2 py-1 border border-sky-100 text-[10px]">
+                  <div class="font-bold text-slate-600 mb-1">ประวัติรับชำระ</div>
+                  <div id="payment-history-list" class="space-y-0.5"></div>
+                </div>
                 <div class="flex justify-between items-center text-[11px] mt-1 pt-1 border-t border-dashed border-sky-300"><span class="font-bold text-rose-700">ยอดค้างชำระ (คงเหลือ):</span><span id="calc-remaining-amt" class="font-mono font-bold text-rose-700">฿0.00</span></div>
               </div>
             </div>
@@ -231,7 +241,7 @@
     <div id="tab-preview" class="hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 no-print">
         <button onclick="switchTab('editor')" class="px-3.5 py-1.5 text-xs font-medium border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"><i data-lucide="arrow-left" class="w-4 h-4"></i> กลับไปแก้ไข</button>
-        <button onclick="window.print()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ / Save PDF</button>
+        <button onclick="printDocument()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ / Save PDF</button>
       </div>
 
       <div id="print-area" class="a4-page font-doc text-slate-900 border border-slate-200 sm:rounded-lg text-sm">
@@ -308,10 +318,9 @@
             <div class="text-right text-[10px] text-slate-500 italic pb-2" id="p-baht-text">(ศูนย์บาทถ้วน)</div>
             
             <div id="p-deposit-box" class="mt-2 pt-2 border-t border-dashed border-slate-300 hidden">
-              <div class="flex justify-between py-0.5 font-bold text-slate-500" id="p-prev-paid-row"><span>หัก ยอดที่เคยชำระแล้ว:</span><span id="p-prev-paid-amt" class="font-mono">-฿0.00</span></div>
-              <div class="flex justify-between py-0.5 font-bold text-sky-800 text-[12px] border-b border-slate-200 pb-1 mb-1">
-                <span id="p-deposit-label">ยอดชำระครั้งนี้:</span><span id="p-deposit-amt" class="font-mono">฿0.00</span>
-              </div>
+              <div id="p-required-deposit-row" class="flex justify-between py-0.5 font-bold text-sky-800"><span>มัดจำที่ต้องชำระ:</span><span id="p-required-deposit-amt" class="font-mono">฿0.00</span></div>
+              <div id="p-prev-paid-row" class="flex justify-between py-0.5 font-bold text-emerald-700"><span>ยอดที่รับชำระแล้วสะสม:</span><span id="p-prev-paid-amt" class="font-mono">฿0.00</span></div>
+              <div id="p-current-paid-row" class="flex justify-between py-0.5 font-bold text-sky-800 text-[12px] border-b border-slate-200 pb-1 mb-1"><span id="p-deposit-label">รับชำระครั้งนี้:</span><span id="p-deposit-amt" class="font-mono">฿0.00</span></div>
               <div class="flex justify-between py-0.5 font-bold text-rose-700"><span>ยอดคงเหลือค้างชำระ:</span><span id="p-remaining-amt" class="font-mono">฿0.00</span></div>
             </div>
           </div>
@@ -386,6 +395,19 @@
               </tr>
             </thead>
             <tbody id="history-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i data-lucide="printer-check" class="w-4 h-4 text-sky-600"></i> ประวัติการพิมพ์ / PDF</h3>
+          <span class="text-[10px] text-slate-400">ระบบบันทึกเลขที่เอกสารและเวลาที่สั่งพิมพ์ เพื่อเรียกเอกสารกลับมาพิมพ์ซ้ำได้</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-[11px] text-left">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600"><tr><th class="py-2 px-2">เลขที่</th><th class="py-2 px-2">ประเภท</th><th class="py-2 px-2">ลูกค้า</th><th class="py-2 px-2">พิมพ์เมื่อ</th><th class="py-2 px-2 text-center">จัดการ</th></tr></thead>
+            <tbody id="print-archive-tbody" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
       </div>
@@ -493,6 +515,8 @@
         state.savedCustomers = Array.isArray(saved.savedCustomers) ? saved.savedCustomers : [];
         state.savedSales = Array.isArray(saved.savedSales) ? saved.savedSales : [];
         state.history = Array.isArray(saved.history) ? saved.history : [];
+        state.printArchive = Array.isArray(saved.printArchive) ? saved.printArchive : [];
+        state.history.forEach(h => { if(h.payload && !Array.isArray(h.payload.payments)) h.payload.payments = []; });
         return true;
       } catch(e) { console.warn('Local load failed:', e); return false; }
     }
@@ -526,7 +550,7 @@
       notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
       discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
       isLumpSum: false, lumpSumAmt: 0,
-      paymentEnabled: false, depositEnabled: false, depositPercent: 0, depositAmount: 0, prevPaid: 0, currentPayment: 0, remainingAmt: 0, history: []
+      paymentEnabled: false, depositEnabled: false, depositPercent: 0, depositAmount: 0, prevPaid: 0, currentPayment: 0, remainingAmt: 0, payments: [], printArchive: [], history: []
     };
 
     function safeSetValue(id, val) { const el = document.getElementById(id); if(el) el.value = val !== undefined ? val : ''; }
@@ -574,7 +598,7 @@
         // ย้ายข้อมูลในเครื่องขึ้น Cloud ครั้งแรก หาก Cloud ของบัญชีนี้ยังว่าง
         // ป้องกันกรณีผู้ใช้กรอกข้อมูลไว้ก่อนใส่ Firebase config แล้วข้อมูลหายเมื่อเชื่อม Cloud
         const migrationSets = [
-          ['history', state.history], ['customers', state.savedCustomers], ['sales', state.savedSales], ['presets', state.presets]
+          ['history', state.history], ['customers', state.savedCustomers], ['sales', state.savedSales], ['presets', state.presets], ['printArchive', state.printArchive]
         ];
         for (const [name, rows] of migrationSets) {
           try {
@@ -619,6 +643,12 @@
           state.savedSales = []; snap.forEach(d => state.savedSales.push(d.data())); renderDatalists(); persist();
         }, e => cloudError('Load sales', e)));
 
+        unsubscribeFns.push(onSnapshot(cloudCollection('printArchive'), (snap) => {
+          state.printArchive = []; snap.forEach(d => state.printArchive.push(d.data()));
+          state.printArchive.sort((a,b) => String(b.printedAt||'').localeCompare(String(a.printedAt||'')));
+          renderPrintArchive(); persist();
+        }, e => cloudError('Load print archive', e)));
+
         showToast('เชื่อมต่อ Firebase สำเร็จ');
       } catch (e) {
         console.error('Firebase Init Error:', e);
@@ -650,7 +680,13 @@
         
         ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
         
-        renderPresets(); renderItems(); calculateTotals();
+        renderPresets(); renderItems(); renderPrintArchive();
+        safeSetChecked('payment-toggle', !!state.paymentEnabled);
+        safeSetChecked('deposit-toggle', !!state.depositEnabled);
+        safeSetValue('deposit-percent', state.depositPercent || 0);
+        togglePaymentBox();
+        toggleDepositBox();
+        calculateTotals();
         if(window.lucide) window.lucide.createIcons();
       } catch (e) { console.error("Init error:", e); }
     };
@@ -765,20 +801,53 @@
       renderItems(); calculateTotals();
     }
 
+    function getPaymentRecords() {
+      if(!Array.isArray(state.payments)) state.payments = [];
+      return state.payments;
+    }
+
+    function getTotalPaid() {
+      const payments = getPaymentRecords();
+      if(payments.length) return +payments.reduce((sum,p) => sum + (Number(p.amount)||0), 0).toFixed(2);
+      return +(Number(state.prevPaid)||0).toFixed(2);
+    }
+
+    function renderPaymentHistory() {
+      const box = document.getElementById('payment-history-box');
+      const list = document.getElementById('payment-history-list');
+      if(!box || !list) return;
+      const payments = getPaymentRecords();
+      if(!payments.length) { box.style.display = 'none'; list.innerHTML = ''; return; }
+      box.style.display = 'block';
+      list.innerHTML = payments.map((p,i) => {
+        const d = p.date ? formatDateThai(String(p.date).slice(0,10)) : '-';
+        return `<div class="flex justify-between gap-2"><span>${i+1}. ${d}</span><strong class="font-mono text-emerald-700">฿${Number(p.amount||0).toLocaleString('th-TH',{minimumFractionDigits:2})}</strong></div>`;
+      }).join('');
+    }
+
     function toggleDepositBox() {
       const toggle = document.getElementById('deposit-toggle');
       const percentBox = document.getElementById('deposit-percent-box');
       const amountRow = document.getElementById('deposit-amount-row');
       state.depositEnabled = !!toggle?.checked;
+
+      // ใช้ทั้ง classList และ inline style เพื่อไม่ให้ Tailwind .hidden ค้างบังช่องกรอก
       if(percentBox) {
+        percentBox.classList.toggle('hidden', !state.depositEnabled);
+        percentBox.classList.toggle('flex', state.depositEnabled);
         percentBox.style.display = state.depositEnabled ? 'flex' : 'none';
       }
       if(amountRow) {
+        amountRow.classList.toggle('hidden', !state.depositEnabled);
+        amountRow.classList.toggle('flex', state.depositEnabled);
         amountRow.style.display = state.depositEnabled ? 'flex' : 'none';
       }
+
       if(!state.depositEnabled) {
         state.depositPercent = 0;
         state.depositAmount = 0;
+        safeSetValue('deposit-percent', 0);
+        safeSetText('calc-deposit-amt', '฿0.00');
       }
       updateDepositPercent();
     }
@@ -789,35 +858,36 @@
       percent = Math.min(100, Math.max(0, percent));
       state.depositPercent = percent;
       if(input && parseFloat(input.value) !== percent) input.value = percent;
-
       state.depositAmount = +(state.grandTotal * percent / 100).toFixed(2);
       safeSetText('calc-deposit-amt', '฿' + state.depositAmount.toLocaleString('th-TH',{minimumFractionDigits:2}));
-
-      // เมื่อกำหนดมัดจำ ให้ใช้ยอดมัดจำเป็นยอดชำระครั้งนี้โดยอัตโนมัติ
-      if(state.depositEnabled) {
-        state.currentPayment = state.depositAmount;
-        safeSetValue('current-payment', state.currentPayment);
-      }
-      calculateTotals();
+      // สำคัญ: การกำหนดมัดจำเป็นเพียง "ยอดที่ต้องชำระ" ไม่ถือว่าได้รับเงินจริง
+      calculateTotals(true);
     }
 
     function applyDepositToPayment() {
       if(!state.depositEnabled) return;
-      state.currentPayment = state.depositAmount || 0;
+      const alreadyPaid = getTotalPaid();
+      const amountToReceive = Math.max(0, Math.min(state.depositAmount - alreadyPaid, state.grandTotal - alreadyPaid));
+      state.currentPayment = +amountToReceive.toFixed(2);
       safeSetValue('current-payment', state.currentPayment);
       calculateTotals();
-      showToast('นำยอดมัดจำไปใส่ในยอดชำระครั้งนี้แล้ว');
+      showToast('ใส่ยอดมัดจำเป็นยอดรับชำระครั้งนี้แล้ว — กดบันทึกเมื่อได้รับเงินจริง');
     }
 
     function togglePaymentBox() {
       const paymentToggle = document.getElementById('payment-toggle');
       const paymentBox = document.getElementById('payment-box');
       if(paymentToggle) state.paymentEnabled = paymentToggle.checked;
-      if(paymentBox) paymentBox.style.display = state.paymentEnabled ? 'block' : 'none';
+      if(paymentBox) {
+        paymentBox.classList.toggle('hidden', !state.paymentEnabled);
+        paymentBox.style.display = state.paymentEnabled ? 'block' : 'none';
+      }
       calculateTotals();
+      // ให้สถานะของช่องมัดจำสัมพันธ์กับระบบแบ่งจ่ายทุกครั้ง
+      if(state.paymentEnabled) toggleDepositBox();
     }
 
-    function calculateTotals() {
+    function calculateTotals(skipPaymentSync = false) {
       let sub = 0;
       if (state.isLumpSum) {
         const lumpSumInput = document.getElementById('lump-sum-amt');
@@ -826,17 +896,15 @@
       } else {
         sub = state.items.reduce((s, i) => s + (i.total || 0), 0);
       }
-      
+
       const discInput = document.getElementById('calc-discount');
       let disc = discInput ? (parseFloat(discInput.value) || 0) : 0;
       let after = Math.max(0, sub - disc);
-      
       let vatEl = document.getElementById('vat-toggle'), whtEl = document.getElementById('wht-toggle');
       let vat = vatEl?.checked ? +(after * 0.07).toFixed(2) : 0;
       let wht = whtEl?.checked ? +(after * 0.03).toFixed(2) : 0;
       let grand = +(after + vat - wht).toFixed(2);
 
-      // คำนวณยอดมัดจำจากเปอร์เซ็นต์ของยอดสุทธิ โดยไม่แสดงเปอร์เซ็นต์ในเอกสารพิมพ์
       const depositToggle = document.getElementById('deposit-toggle');
       const depositPercentInput = document.getElementById('deposit-percent');
       state.depositEnabled = depositToggle ? !!depositToggle.checked : !!state.depositEnabled;
@@ -845,33 +913,33 @@
         state.depositAmount = +(grand * state.depositPercent / 100).toFixed(2);
         safeSetText('calc-deposit-amt', '฿' + state.depositAmount.toLocaleString('th-TH',{minimumFractionDigits:2}));
       } else {
-        state.depositPercent = 0;
-        state.depositAmount = 0;
+        state.depositPercent = 0; state.depositAmount = 0;
       }
-      
-      const prevPaidInput = document.getElementById('prev-paid');
+
       const currentPaymentInput = document.getElementById('current-payment');
-      state.prevPaid = prevPaidInput ? (parseFloat(prevPaidInput.value) || 0) : 0;
-      state.currentPayment = currentPaymentInput ? (parseFloat(currentPaymentInput.value) || 0) : 0;
-      let remAmt = Math.max(0, grand - state.prevPaid - state.currentPayment);
+      state.currentPayment = currentPaymentInput ? Math.max(0, parseFloat(currentPaymentInput.value) || 0) : 0;
+      const totalPaidBeforeCurrent = getTotalPaid();
+      const remAmt = Math.max(0, +(grand - totalPaidBeforeCurrent - state.currentPayment).toFixed(2));
 
       safeSetText('calc-subtotal', '฿' + sub.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-after-discount', '฿' + after.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-vat', '฿' + vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-wht', '-฿' + wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-grandtotal', '฿' + grand.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('calc-total-paid', '฿' + (totalPaidBeforeCurrent + state.currentPayment).toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-remaining-amt', '฿' + remAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
 
-      // Calculate Profit
       const totalCostInput = document.getElementById('total-cost');
       state.totalCost = totalCostInput ? (parseFloat(totalCostInput.value) || 0) : 0;
       let profit = after - state.totalCost;
       safeSetText('profit-calc-display', `กำไรสุทธิ: ฿${profit.toLocaleString('th-TH',{minimumFractionDigits:2})}`);
-      
+
       state.subtotal = sub; state.discount = disc; state.afterDiscount = after;
       state.vat = vat; state.vatEnabled = !!vatEl?.checked; state.wht = wht; state.whtEnabled = !!whtEl?.checked;
       state.grandTotal = grand; state.remainingAmt = remAmt; state.profit = profit;
+      state.prevPaid = totalPaidBeforeCurrent;
       state.bahtText = thaiBahtConversion(grand);
+      renderPaymentHistory();
     }
 
     function renderPreview() {
@@ -965,14 +1033,19 @@
 
       let depBox = document.getElementById('p-deposit-box');
       if (depBox) {
-        if (state.paymentEnabled && (state.prevPaid > 0 || state.currentPayment > 0)) {
+        const totalPaid = getTotalPaid() + (Number(state.currentPayment)||0);
+        const showPaymentInfo = state.paymentEnabled && (state.depositEnabled || totalPaid > 0 || state.remainingAmt > 0);
+        if (showPaymentInfo) {
           depBox.style.display = 'block';
-          const prevPaidRow = document.getElementById('p-prev-paid-row');
-          if(prevPaidRow) prevPaidRow.style.display = state.prevPaid > 0 ? 'flex' : 'none';
-          safeSetText('p-prev-paid-amt', '-฿' + state.prevPaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
-          safeSetText('p-deposit-label', ['receipt','cashbill'].includes(state.docType) ? 'รับชำระเงินครั้งนี้:' : 'ยอดชำระครั้งนี้ / มัดจำ:');
-          safeSetText('p-deposit-amt', '฿' + state.currentPayment.toLocaleString('th-TH',{minimumFractionDigits:2}));
-          safeSetText('p-remaining-amt', '฿' + state.remainingAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
+          const reqRow = document.getElementById('p-required-deposit-row');
+          if(reqRow) reqRow.style.display = state.depositEnabled ? 'flex' : 'none';
+          safeSetText('p-required-deposit-amt', '฿' + Number(state.depositAmount||0).toLocaleString('th-TH',{minimumFractionDigits:2}));
+          safeSetText('p-prev-paid-amt', '฿' + totalPaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
+          const curRow = document.getElementById('p-current-paid-row');
+          if(curRow) curRow.style.display = state.currentPayment > 0 ? 'flex' : 'none';
+          safeSetText('p-deposit-label', ['receipt','cashbill'].includes(state.docType) ? 'รับชำระเงินครั้งนี้:' : 'รับชำระครั้งนี้:');
+          safeSetText('p-deposit-amt', '฿' + Number(state.currentPayment||0).toLocaleString('th-TH',{minimumFractionDigits:2}));
+          safeSetText('p-remaining-amt', '฿' + Number(state.remainingAmt||0).toLocaleString('th-TH',{minimumFractionDigits:2}));
         } else {
           depBox.style.display = 'none';
         }
@@ -985,7 +1058,6 @@
 
     async function saveCurrentDoc() {
       calculateTotals();
-      // ดึงค่าจากฟอร์มเข้า state ก่อนสร้าง payload ป้องกันข้อมูลลูกค้า/เอกสารเก่าค้าง
       state.customer = {
         name: document.getElementById('custName')?.value || '',
         phone: document.getElementById('custPhone')?.value || '',
@@ -999,22 +1071,171 @@
       state.dueDate = document.getElementById('dueDate')?.value || state.dueDate;
       state.salesName = document.getElementById('salesName')?.value || state.salesName;
       state.notes = document.getElementById('docNotes')?.value || '';
+      if(!Array.isArray(state.payments)) state.payments = [];
+
+      // currentPayment = เงินที่ได้รับจริงในครั้งนี้เท่านั้น
+      const receiveNow = Math.max(0, Number(state.currentPayment)||0);
+      if(receiveNow > 0) {
+        const totalBefore = getTotalPaid();
+        const allowed = Math.max(0, Number(state.grandTotal||0) - totalBefore);
+        const amount = Math.min(receiveNow, allowed);
+        if(amount > 0) {
+          state.payments.push({ id:'pay-'+Date.now(), amount:+amount.toFixed(2), date:new Date().toISOString(), docNo:state.docNo });
+          showToast('บันทึกรับชำระเงินจำนวน ฿' + amount.toLocaleString('th-TH',{minimumFractionDigits:2}) + ' แล้ว');
+        }
+        state.currentPayment = 0;
+        safeSetValue('current-payment', 0);
+      }
+      state.prevPaid = getTotalPaid();
+      state.remainingAmt = Math.max(0, +(Number(state.grandTotal||0) - state.prevPaid).toFixed(2));
+
       const existing = state.history.find(h => h.docNo === state.docNo);
+      let status = existing?.status || getInitialStatus(state.docType);
+      if(state.docType === 'invoice') status = state.remainingAmt <= 0 ? 'paid' : state.prevPaid > 0 ? 'partial' : 'pending';
+      if(['receipt','cashbill'].includes(state.docType) && state.remainingAmt > 0) status = 'partial';
+      const payload = clone(state);
+      // ไม่ฝังประวัติทั้งหมด/ประวัติการพิมพ์ไว้ในเอกสารแต่ละใบ เพื่อไม่ให้ Firestore โตซ้ำซ้อน
+      delete payload.history; delete payload.printArchive; delete payload.presets; delete payload.savedCustomers; delete payload.savedSales;
       const rec = {
         id: existing?.id || ('doc-' + Date.now()),
         docNo: state.docNo, docType: state.docType, refNo: state.refNo,
+        rootDocNo: getRootDocNo({docNo: state.docNo, refNo: state.refNo}, state.history),
         customerName: state.customer.name || 'ไม่ระบุ', project: state.customer.project || '-',
-        date: state.docDate, grandTotal: Number(state.grandTotal || 0), remainingAmt: Number(state.remainingAmt || 0), profit: Number(state.profit || 0),
-        status: existing?.status || getInitialStatus(state.docType),
-        payload: clone(state), savedAt: new Date().toISOString()
+        totalCost: Number(state.totalCost || 0),
+        date: state.docDate, grandTotal: Number(state.grandTotal || 0), remainingAmt: Number(state.remainingAmt || 0),
+        paidTotal: Number(state.prevPaid || 0), requiredDeposit: state.depositEnabled ? Number(state.depositAmount||0) : 0,
+        depositPercent: state.depositEnabled ? Number(state.depositPercent||0) : 0, profit: Number(state.profit || 0),
+        status, payload, savedAt: new Date().toISOString()
       };
       const idx = state.history.findIndex(h => h.id === rec.id);
       if (idx >= 0) state.history[idx] = rec; else state.history.unshift(rec);
-      persist(); renderHistory();
+      persist(); renderHistory(); renderPreview();
       if (userId && db) {
         try { await setDoc(cloudPath('history', rec.id), rec, { merge: true }); showToast('บันทึกเอกสารขึ้น Cloud แล้ว'); }
         catch(e) { cloudError('Save document', e); }
       } else showToast('บันทึกเอกสารแล้ว (ในเครื่อง)');
+    }
+
+    function renderPrintArchive() {
+      const tb = document.getElementById('print-archive-tbody');
+      if(!tb) return;
+      const rows = Array.isArray(state.printArchive) ? state.printArchive : [];
+      if(!rows.length) { tb.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-400">ยังไม่มีประวัติการพิมพ์</td></tr>'; return; }
+      tb.innerHTML = rows.slice(0,100).map(r => `
+        <tr class="hover:bg-slate-50 border-b border-slate-100">
+          <td class="py-2 px-2 font-mono font-bold text-sky-700">${escapeHtml(r.docNo||'-')}</td>
+          <td class="py-2 px-2">${escapeHtml((r.docType||'').toUpperCase())}</td>
+          <td class="py-2 px-2">${escapeHtml(r.customerName||'-')}</td>
+          <td class="py-2 px-2 text-[10px]">${r.printedAt ? new Date(r.printedAt).toLocaleString('th-TH') : '-'}</td>
+          <td class="py-2 px-2 text-center"><button onclick="reprintArchivedDoc('${r.historyId||''}')" class="px-2 py-1 bg-sky-50 text-sky-700 rounded border border-sky-200 font-bold">พิมพ์ซ้ำ</button></td>
+        </tr>`).join('');
+      if(window.lucide) window.lucide.createIcons();
+    }
+
+    async function printDocument() {
+      calculateTotals();
+      renderPreview();
+      const existing = state.history.find(h => h.docNo === state.docNo);
+      if(!existing) {
+        showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์ เพื่อให้เอกสารถูกเก็บในระบบ');
+        return;
+      }
+      const archive = {
+        id: 'print-'+Date.now(), historyId: existing.id, docNo: existing.docNo, docType: existing.docType,
+        customerName: existing.customerName, printedAt: new Date().toISOString(),
+        grandTotal: existing.grandTotal, paidTotal: existing.paidTotal||0, remainingAmt: existing.remainingAmt||0,
+        payloadVersion: 1
+      };
+      state.printArchive = [archive, ...(state.printArchive||[])].filter((x,i,a) => i === a.findIndex(y => y.id === x.id));
+      persist(); renderPrintArchive();
+      if(userId && db) {
+        try { await setDoc(cloudPath('printArchive', archive.id), archive, {merge:true}); } catch(e) { cloudError('Save print archive', e); }
+      }
+      showToast('บันทึกประวัติการพิมพ์แล้ว — เปิดหน้าพิมพ์/PDF ได้เลย');
+      setTimeout(() => window.print(), 250);
+    }
+
+    function reprintArchivedDoc(historyId) {
+      const h = state.history.find(x => x.id === historyId);
+      if(!h) return showToast('ไม่พบเอกสารต้นฉบับ');
+      Object.assign(state, clone(h.payload||{}));
+      state.payments = Array.isArray(state.payments) ? state.payments : [];
+      state.currentPayment = 0; state.prevPaid = getTotalPaid();
+      const radioEl = document.querySelector(`input[name="docType"][value="${state.docType}"]`);
+      if(radioEl) radioEl.checked = true;
+      ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
+      ['name','phone','taxId','address','project'].forEach(k => safeSetValue(k==='name'?'custName':k==='taxId'?'custTaxId':k==='project'?'projectName':'cust'+k.charAt(0).toUpperCase()+k.slice(1), state.customer[k]));
+      safeSetValue('docNotes', state.notes); safeSetValue('calc-discount', state.discount); safeSetValue('total-cost', state.totalCost);
+      safeSetChecked('vat-toggle', state.vatEnabled); safeSetChecked('wht-toggle', state.whtEnabled);
+      safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', 0); togglePaymentBox();
+      safeSetChecked('deposit-toggle', !!state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent || 0); toggleDepositBox();
+      renderItems(); calculateTotals(); switchTab('preview');
+    }
+
+    // ---- Transaction / document linking helpers ----
+    // ใบเสนอราคา -> ใบแจ้งหนี้ -> ใบเสร็จ ต้องนับเป็น "งานเดียว" ใน Dashboard
+    function getRootDocNo(historyItem, allHistory = state.history) {
+      if(!historyItem) return '';
+      const byDocNo = new Map(allHistory.map(x => [String(x.docNo || ''), x]));
+      let current = historyItem;
+      const seen = new Set();
+      for(let i=0; i<30; i++) {
+        const no = String(current?.docNo || '');
+        if(!no || seen.has(no)) break;
+        seen.add(no);
+        const ref = String(current?.refNo || '').trim();
+        if(!ref) break;
+        const parent = byDocNo.get(ref);
+        if(!parent) break;
+        current = parent;
+      }
+      return String(current?.docNo || historyItem.docNo || '');
+    }
+
+    function getTransactionSummary(rootDocNo, allHistory = state.history) {
+      const docs = allHistory.filter(h => getRootDocNo(h, allHistory) === rootDocNo);
+      if(!docs.length) return null;
+      const quotation = docs.find(h => h.docType === 'quotation');
+      const financial = docs.filter(h => ['quotation','invoice','receipt','cashbill'].includes(h.docType));
+      const master = quotation || financial[0] || docs[0];
+      const total = Number((quotation || financial[0] || master).grandTotal || 0);
+      let cost = 0;
+      docs.forEach(h => {
+        const c = Number(h.payload?.totalCost ?? h.totalCost ?? 0);
+        if(c > cost) cost = c;
+      });
+
+      // รวมเงินที่รับจริงจากทุกเอกสารในงานเดียวกัน แต่ไม่ซ้ำ payment id
+      const seenPayments = new Set();
+      let paid = 0;
+      let hasPaymentRecords = false;
+      docs.forEach(h => {
+        const payments = Array.isArray(h.payload?.payments) ? h.payload.payments : [];
+        payments.forEach(p => {
+          hasPaymentRecords = true;
+          const pid = String(p.id || `${h.docNo}-${p.date || ''}-${p.amount || 0}`);
+          if(seenPayments.has(pid)) return;
+          seenPayments.add(pid);
+          paid += Number(p.amount || 0);
+        });
+      });
+      if(!hasPaymentRecords) paid = Math.max(...docs.map(h => Number(h.paidTotal || 0)), 0);
+      paid = Math.min(total, +paid.toFixed(2));
+      const remaining = Math.max(0, +(total - paid).toFixed(2));
+      const profit = +(total - cost).toFixed(2);
+      const accepted = !!quotation && quotation.status === 'accepted';
+      const hasSaleDoc = docs.some(h => ['invoice','receipt','cashbill'].includes(h.docType));
+      const active = accepted || hasSaleDoc;
+      return { rootDocNo, docs, master, total, cost, paid, remaining, profit, accepted, hasSaleDoc, active };
+    }
+
+    function getTransactionMap(allHistory = state.history) {
+      const map = new Map();
+      allHistory.forEach(h => {
+        const root = getRootDocNo(h, allHistory);
+        if(root && !map.has(root)) map.set(root, getTransactionSummary(root, allHistory));
+      });
+      return map;
     }
 
     function renderHistory() {
@@ -1023,10 +1244,13 @@
       let q = searchInput ? searchInput.value.toLowerCase() : '';
       let filtered = state.history.filter(h => h.docNo.toLowerCase().includes(q) || h.customerName.toLowerCase().includes(q) || (h.refNo && h.refNo.toLowerCase().includes(q)));
       
+      const txMap = getTransactionMap(state.history);
       let totalSales = 0, totalProfit = 0, totalDebt = 0;
-      state.history.forEach(h => {
-        if(h.docType === 'quotation' && h.status !== 'accepted') return; 
-        totalSales += h.grandTotal; totalProfit += h.profit || 0; totalDebt += h.remainingAmt || 0;
+      txMap.forEach(tx => {
+        if(!tx?.active) return;
+        totalSales += tx.total;
+        totalProfit += tx.profit;
+        totalDebt += tx.remaining;
       });
       safeSetText('dash-total-sales', '฿' + totalSales.toLocaleString('th-TH'));
       safeSetText('dash-total-profit', '฿' + totalProfit.toLocaleString('th-TH'));
@@ -1043,13 +1267,17 @@
         else if(['receipt','cashbill'].includes(h.docType)) opts=`<option value="paid" ${h.status==='paid'?'selected':''}>รับเงินแล้ว</option><option value="cancelled" ${h.status==='cancelled'?'selected':''}>ยกเลิก</option>`;
         else if(h.docType==='delivery') opts=`<option value="pending_delivery" ${h.status==='pending_delivery'?'selected':''}>รอส่งมอบ</option><option value="delivered" ${h.status==='delivered'?'selected':''}>ส่งมอบแล้ว</option>`;
 
+        const tx = txMap.get(getRootDocNo(h, state.history));
+        const txPaid = tx ? tx.paid : Number(h.paidTotal || 0);
+        const txRemaining = tx ? tx.remaining : Number(h.remainingAmt || 0);
+        const linkedLabel = tx && tx.docs.length > 1 ? `<div class="text-[9px] text-indigo-600 mt-0.5">งานเดียวกัน: ${escapeHtml(tx.rootDocNo)} · ${tx.docs.length} เอกสาร</div>` : '';
         tb.innerHTML += `
           <tr class="hover:bg-slate-50 border-b border-slate-100">
-            <td class="py-2 px-2"><div class="font-mono font-bold text-sky-700">${h.docNo}</div>${h.refNo ? `<div class="text-[9px] text-slate-500">อ้างอิง: ${h.refNo}</div>`:''}</td>
+            <td class="py-2 px-2"><div class="font-mono font-bold text-sky-700">${escapeHtml(h.docNo)}</div>${h.refNo ? `<div class="text-[9px] text-slate-500">อ้างอิง: ${escapeHtml(h.refNo)}</div>`:''}${linkedLabel}</td>
             <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[9px] font-semibold ${tCol[h.docType]}">${h.docType.toUpperCase()}</span></td>
             <td class="py-2 px-2"><div>${escapeHtml(h.customerName)}</div><div class="text-[9px] text-slate-500">${escapeHtml(h.project)}</div></td>
             <td class="py-2 px-2 text-[10px]">${formatDateThai(h.date)}</td>
-            <td class="py-2 px-2 text-right"><div class="font-mono font-bold text-slate-800">฿${h.grandTotal.toLocaleString('th-TH')}</div>${h.remainingAmt>0&&h.docType!=='delivery'?`<div class="text-[9px] text-rose-500 mt-0.5">ค้าง: ฿${h.remainingAmt.toLocaleString('th-TH')}</div>`:''}</td>
+            <td class="py-2 px-2 text-right"><div class="font-mono font-bold text-slate-800">฿${Number(h.grandTotal||0).toLocaleString('th-TH')}</div>${h.requiredDeposit>0?`<div class="text-[9px] text-sky-600 mt-0.5">มัดจำที่กำหนด: ${Number(h.requiredDeposit).toLocaleString('th-TH')}</div>`:''}${txPaid>0?`<div class="text-[9px] text-emerald-600">รับเงินจริงรวมงาน: ฿${txPaid.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:''}${txRemaining>0&&h.docType!=='delivery'?`<div class="text-[9px] text-rose-500 mt-0.5">คงเหลืองานนี้: ฿${txRemaining.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>`:`<div class="text-[9px] text-emerald-600 mt-0.5">ชำระครบแล้ว</div>`}</td>
             <td class="py-2 px-2"><select onchange="updateDocStatus('${h.id}', this.value)" class="text-[10px] p-1 rounded border w-full">${opts}</select></td>
             <td class="py-2 px-2">
               <div class="flex items-center gap-1">
@@ -1080,13 +1308,9 @@
       if(radioEl) radioEl.checked = true;
       updateDocType(newType); 
       
-      if (['receipt','cashbill'].includes(newType)) {
-        state.prevPaid = (state.prevPaid||0) + (state.currentPayment||0);
-        state.currentPayment = Math.max(0, state.grandTotal - state.prevPaid);
-      } else {
-        state.prevPaid = (state.prevPaid||0) + (state.currentPayment||0);
-        state.currentPayment = 0;
-      }
+      state.payments = Array.isArray(state.payments) ? clone(state.payments) : [];
+      state.prevPaid = getTotalPaid();
+      state.currentPayment = 0;
       
       state.paymentEnabled = true; safeSetChecked('payment-toggle', true);
       safeSetChecked('deposit-toggle', !!state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent || 0);
@@ -1108,7 +1332,7 @@
       safeSetValue('docNotes', state.notes); safeSetValue('calc-discount', state.discount); safeSetValue('total-cost', state.totalCost);
       safeSetChecked('vat-toggle', state.vatEnabled); safeSetChecked('wht-toggle', state.whtEnabled);
       safeSetChecked('lump-sum-toggle', state.isLumpSum); safeSetValue('lump-sum-amt', state.lumpSumAmt); toggleLumpSum();
-      safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', state.currentPayment); togglePaymentBox();
+      state.payments = Array.isArray(state.payments) ? state.payments : []; state.currentPayment = 0; state.prevPaid = getTotalPaid(); safeSetChecked('payment-toggle', state.paymentEnabled); safeSetValue('prev-paid', state.prevPaid); safeSetValue('current-payment', 0); togglePaymentBox();
       safeSetChecked('deposit-toggle', !!state.depositEnabled); safeSetValue('deposit-percent', state.depositPercent || 0); toggleDepositBox();
       renderItems(); calculateTotals(); switchTab('editor'); showToast('โหลดเอกสารแล้ว');
     }
@@ -1121,7 +1345,7 @@
     function createNewDocument() {
       state.items = []; addNewItem('alu');
       ['custName','custPhone','custTaxId','custAddress','projectName','refNo','total-cost'].forEach(id => safeSetValue(id, ''));
-      state.prevPaid=0; state.currentPayment=0; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; safeSetValue('prev-paid',0); safeSetValue('current-payment',0); safeSetValue('deposit-percent',0);
+      state.payments=[]; state.prevPaid=0; state.currentPayment=0; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; safeSetValue('prev-paid',0); safeSetValue('current-payment',0); safeSetValue('deposit-percent',0);
       safeSetChecked('payment-toggle', false); safeSetChecked('deposit-toggle', false); togglePaymentBox(); toggleDepositBox();
       generateAutoDocNo(state.docType); switchTab('editor'); showToast('สร้างเอกสารใหม่');
     }
@@ -1259,7 +1483,7 @@
     }
 
     // Expose all globals
-    window.switchTab = switchTab; window.updateDocType = updateDocType; window.applyPreset = applyPreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer;
+    window.switchTab = switchTab; window.updateDocType = updateDocType; window.applyPreset = applyPreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.reprintArchivedDoc = reprintArchivedDoc; window.renderPrintArchive = renderPrintArchive;
   </script>
 </body>
 </html>
