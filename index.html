@@ -1,0 +1,2877 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sumran Aluminum - ระบบจัดการเอกสาร</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Prompt', 'Sarabun', 'sans-serif'], doc: ['Sarabun', 'sans-serif'] },
+          colors: { primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0284c7', 600: '#0369a1', 700: '#075985', 800: '#0c4a6e' } }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* A4 screen preview */
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 15mm;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      box-sizing: border-box;
+    }
+
+    /* Responsive sizing is SCREEN ONLY. Never let the phone viewport change the
+       physical A4 size while printing. */
+    @media screen and (max-width: 820px) {
+      .a4-page {
+        width: 100%;
+        min-height: auto;
+        padding: 12px;
+      }
+    }
+
+    /* ============================================================
+       V8 MOBILE / TABLET UI
+       ใช้ HTML + Firebase + Login + ฟังก์ชันเดิมทั้งหมด
+       เปลี่ยนเฉพาะหน้าตาเมื่อเป็นหน้าจอสัมผัส/หน้าจอแคบ
+       ============================================================ */
+    .mobile-only-nav { display: none; }
+
+    @media screen and (max-width: 1024px) {
+      body {
+        background:
+          radial-gradient(circle at 15% 0%, rgba(14,165,233,.10), transparent 34%),
+          linear-gradient(180deg, #f0f9ff 0%, #f8fbff 45%, #f1f5f9 100%) !important;
+        padding-bottom: 76px;
+      }
+
+      /* Top bar */
+      body > header {
+        position: sticky;
+        top: 0;
+        z-index: 80;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 58%, #0f172a 100%) !important;
+        box-shadow: 0 5px 18px rgba(15,23,42,.16);
+      }
+      body > header > div {
+        max-width: none !important;
+        min-height: 62px;
+        padding: 9px 12px !important;
+        gap: 8px !important;
+      }
+      body > header .w-10.h-10 {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 12px !important;
+      }
+      body > header h1 {
+        font-size: 16px !important;
+      }
+      body > header h1 span {
+        font-size: 8px !important;
+      }
+      body > header p {
+        font-size: 9px !important;
+      }
+
+      /* Hide the desktop-style tab buttons; bottom nav becomes the main mobile nav. */
+      #tab-btn-editor,
+      #tab-btn-preview,
+      #tab-btn-history,
+      #tab-btn-settings {
+        display: none !important;
+      }
+      #auth-user-box {
+        padding: 4px !important;
+        border-radius: 999px !important;
+      }
+      #auth-user-box > div:nth-child(2),
+      #auth-user-role {
+        display: none !important;
+      }
+      #auth-user-box button {
+        font-size: 9px !important;
+        padding: 5px 8px !important;
+      }
+
+      /* Main canvas */
+      main.max-w-7xl {
+        max-width: none !important;
+        width: 100% !important;
+        padding: 10px !important;
+      }
+
+      /* Turn the existing large panels into friendly cards. */
+      main .bg-white.rounded-2xl {
+        border-radius: 18px !important;
+        box-shadow: 0 5px 18px rgba(15,23,42,.06) !important;
+        border-color: #dbeafe !important;
+      }
+      main .p-4.md\:p-6 {
+        padding: 13px !important;
+      }
+
+      /* Document type selector */
+      #tab-editor .grid.grid-cols-2.md\:grid-cols-5 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+      #tab-editor label > div {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px !important;
+      }
+
+      /* Inputs/buttons: touch friendly */
+      main input,
+      main select,
+      main textarea {
+        min-height: 42px;
+        border-radius: 11px !important;
+        font-size: 14px !important;
+      }
+      main textarea {
+        min-height: 96px;
+      }
+      main button {
+        min-height: 42px;
+        border-radius: 11px !important;
+      }
+
+      /* Most editor grids become one-column on a phone/tablet.
+         Explicit two-column blocks remain useful where they are short. */
+      #tab-editor .md\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+      }
+      #tab-editor .md\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Keep item tables usable: horizontal scroll rather than crushing columns. */
+      #tab-editor .overflow-x-auto,
+      #tab-history .overflow-x-auto,
+      #tab-settings .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        border-radius: 14px;
+      }
+      #tab-editor table,
+      #tab-history table,
+      #tab-settings table {
+        min-width: 720px;
+      }
+
+      /* History cards feel lighter on touch screens. */
+      #tab-history .grid {
+        gap: 10px !important;
+      }
+      #tab-history input {
+        min-height: 46px !important;
+        font-size: 15px !important;
+      }
+
+      /* Preview screen gets edge-to-edge space on small devices,
+         while the A4 document itself remains the print document. */
+      #tab-preview {
+        padding-bottom: 8px;
+      }
+      #tab-preview .a4-page {
+        width: 100% !important;
+        min-height: auto !important;
+        padding: 12px !important;
+        margin: 0 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 26px rgba(15,23,42,.10) !important;
+      }
+
+      /* Mobile bottom navigation */
+      .mobile-only-nav {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1.15fr 1fr 1fr;
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        z-index: 100;
+        height: 62px;
+        padding: 5px;
+        background: rgba(255,255,255,.94);
+        border: 1px solid #dbeafe;
+        border-radius: 22px;
+        box-shadow: 0 10px 30px rgba(15,23,42,.18);
+        backdrop-filter: blur(14px);
+      }
+      .mobile-nav-item {
+        border: 0 !important;
+        background: transparent !important;
+        color: #64748b !important;
+        min-height: 52px !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        font-size: 9px !important;
+        font-weight: 700;
+      }
+      .mobile-nav-item svg {
+        width: 19px;
+        height: 19px;
+      }
+      .mobile-nav-item:hover,
+      .mobile-nav-item:focus,
+      .mobile-nav-item.is-active {
+        color: #0284c7 !important;
+        background: #eff6ff !important;
+      }
+      .mobile-nav-add {
+        width: 52px !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        align-self: center;
+        justify-self: center;
+        border: 0 !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg,#0ea5e9,#0369a1) !important;
+        color: #fff !important;
+        box-shadow: 0 6px 15px rgba(2,132,199,.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mobile-nav-add svg {
+        width: 27px;
+        height: 27px;
+      }
+
+      /* Toasts/modals stay above the mobile nav */
+      .fixed.z-50, .fixed.z-\[60\], .fixed.z-\[70\], .fixed.z-\[80\] {
+        z-index: 120 !important;
+      }
+    }
+
+    @media screen and (max-width: 640px) {
+      main {
+        padding-bottom: 4px !important;
+      }
+
+      /* Phone-sized header: keep the brand, reduce clutter. */
+      body > header > div {
+        padding: 8px 10px !important;
+      }
+      body > header .flex.items-center.gap-3 > div:last-child p {
+        display: none !important;
+      }
+      body > header h1 {
+        font-size: 15px !important;
+      }
+
+      /* Full-width cards and controls */
+      main .space-y-6 > * + * {
+        margin-top: 10px !important;
+      }
+      main .rounded-2xl {
+        border-radius: 16px !important;
+      }
+
+      /* Make summary/value blocks easy to scan. */
+      #tab-editor .grid {
+        gap: 9px !important;
+      }
+      #tab-editor .text-2xl,
+      #tab-editor .text-3xl {
+        font-size: 22px !important;
+      }
+
+      /* Search is prominent on phone. */
+      #search-history {
+        min-height: 48px !important;
+        font-size: 15px !important;
+        box-shadow: 0 0 0 3px rgba(14,165,233,.06);
+      }
+
+      /* Avoid accidental sideways page scrolling. */
+      html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+    }
+
+    @media screen and (min-width: 641px) and (max-width: 1024px) {
+      /* iPad portrait/tablet: use two columns where it helps,
+         while retaining the mobile navigation and touch targets. */
+      #tab-editor .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+      #tab-editor .md\:grid-cols-3 {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+      }
+    }
+
+    @media print {
+      /* ขอบกระดาษ A4 สำหรับงานพิมพ์จริง */
+      @page { size: A4 portrait; margin: 10mm; }
+
+      html, body {
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+
+      #print-area {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        min-height: 277mm !important;
+        margin: 0 !important;
+        padding: 2mm !important;
+        box-sizing: border-box !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+      }
+
+      /* Keep the document's columns/rows from reflowing because of the phone
+         viewport. */
+      #print-area .grid { display: grid !important; }
+      #print-area .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      #print-area .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)) !important; }
+      #print-area .col-span-7 { grid-column: span 7 / span 7 !important; }
+      #print-area .col-span-5 { grid-column: span 5 / span 5 !important; }
+      #print-area #p-items-table { width: 100% !important; table-layout: fixed !important; }
+      #print-area #p-items-table th, #print-area #p-items-table td { box-sizing: border-box !important; vertical-align: top !important; }
+      #print-area #p-items-table th:nth-child(3), #print-area #p-items-table td:nth-child(3),
+      #print-area #p-items-table th:nth-child(4), #print-area #p-items-table td:nth-child(4),
+      #print-area #p-items-table th:nth-child(5), #print-area #p-items-table td:nth-child(5) {
+        white-space: nowrap !important; overflow: hidden !important; padding-left: 3px !important; padding-right: 3px !important;
+      }
+      #print-area #p-items-table th:nth-child(3), #print-area #p-items-table td:nth-child(3),
+      #print-area #p-items-table th:nth-child(4), #print-area #p-items-table td:nth-child(4) {
+        border-left: 1px solid #e2e8f0 !important; border-right: 1px solid #e2e8f0 !important;
+      }
+      #print-area #p-items-table td:nth-child(6), #print-area #p-items-table td:nth-child(7) { white-space: nowrap !important; }
+      #print-area .print-document-footer { display: flex !important; }
+      #print-area #p-items-table thead {
+        display: table-header-group !important;
+      }
+      #print-area #p-items-table tbody {
+        display: table-row-group !important;
+      }
+      #print-area #p-items-table + * {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+      #print-area #p-items-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      #print-area #p-items-table .print-repeat-doc-head th {
+        font-size: 8px !important;
+        line-height: 1.25 !important;
+        font-weight: 600 !important;
+        color: #64748b !important;
+        background: #fff !important;
+        border: 1px solid #e2e8f0 !important;
+        white-space: nowrap !important;
+      }
+      #print-area .grid.grid-cols-3 {
+        margin-top: 8mm !important;
+      }
+      #print-area .print-document-footer {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      #print-area table {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+
+      #print-area img { max-width: 100%; }
+
+      /* Multi-page flow:
+         - document header + customer block stay together
+         - the item table is allowed to flow naturally across pages
+         - each item row stays intact
+         - totals/payment/signatures stay together when possible
+         IMPORTANT: do NOT apply break-inside:avoid to every direct child,
+         otherwise the whole item table is pushed to the next page. */
+      #print-area > div:nth-child(1),
+      #print-area > div:nth-child(2) {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      #print-area > div:nth-child(3) {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+
+      #print-area #p-items-table,
+      #print-area #p-items-table tbody {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+
+      #print-area #p-items-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      #print-area > div:nth-child(4),
+      #print-area > div:nth-child(5),
+      #print-area > div:nth-child(6) {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      /* ใช้ขนาดและโครงสร้างเดียวกับ Preview ไม่ให้มือถือ reflow ตอนพิมพ์ */
+      #print-area .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+      #print-area .gap-4 { gap: 1rem !important; }
+      #print-area .font-doc { font-family: Sarabun, sans-serif !important; }
+
+      /* ตัวเลขใช้เลข 0 แบบปกติ ไม่ใช้ฟอนต์ monospace ที่อาจทำเลข 0 เป็นขีด */
+      #print-area .font-mono,
+      #print-area [class*="font-mono"] {
+        font-family: Sarabun, "Noto Sans Thai", Arial, sans-serif !important;
+        font-variant-numeric: normal !important;
+        font-feature-settings: normal !important;
+      }
+
+      /* ช่องตัวเลขในเอกสารให้ใช้เลข 0 ปกติและอ่านง่าย */
+      #print-area input,
+      #print-area textarea,
+      #print-area button {
+        font-family: Sarabun, "Noto Sans Thai", Arial, sans-serif !important;
+      }
+      #print-area .text-xl { font-size: 1.25rem !important; }
+      #print-area .text-lg { font-size: 1.125rem !important; }
+      #print-area .text-sm { font-size: .875rem !important; }
+      #print-area .text-xs { font-size: .75rem !important; }
+      #print-area .text-\[10px\] { font-size: 10px !important; }
+      #print-area .text-\[11px\] { font-size: 11px !important; }
+      #print-area .text-\[13px\] { font-size: 13px !important; }
+      #print-area .py-1\.5 { padding-top: .375rem !important; padding-bottom: .375rem !important; }
+      #print-area .mb-6 { margin-bottom: 1.5rem !important; }
+      #print-area .mb-4 { margin-bottom: 1rem !important; }
+      #print-area .p-3 { padding: .75rem !important; }
+      #print-area .p-2\.5 { padding: .625rem !important; }
+      #print-area .overflow-hidden { overflow: visible !important; }
+      #print-area * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      /* ทำตัวหนังสือที่เดิมเป็นสีเทาอ่อนให้เข้มขึ้นสำหรับกระดาษขาว */
+      #print-area { color: #1f2937 !important; }
+      #print-area .text-slate-300 { color: #475569 !important; }
+      #print-area .text-slate-400 { color: #475569 !important; }
+      #print-area .text-slate-500 { color: #334155 !important; }
+      #print-area .text-slate-600 { color: #1e293b !important; }
+      #print-area .text-gray-400 { color: #475569 !important; }
+      #print-area .text-gray-500 { color: #334155 !important; }
+
+      /* เส้นขอบในตารางให้ชัดขึ้นเมื่อพิมพ์ */
+      #print-area #p-items-table th,
+      #print-area #p-items-table td {
+        border-color: #94a3b8 !important;
+      }
+      #print-area #p-items-table tbody tr {
+        border-bottom: 1px solid #cbd5e1 !important;
+      }
+      #print-area .print-repeat-doc-head th {
+        color: #334155 !important;
+        border-color: #94a3b8 !important;
+      }
+      #print-area .print-document-footer {
+        color: #475569 !important;
+        border-top-color: #94a3b8 !important;
+      }
+
+      .no-print { display: none !important; }
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .modal-overlay { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+  <header class="bg-gradient-to-r from-sky-800 to-slate-900 text-white shadow-md sticky top-0 z-40 no-print">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm shadow-inner">
+          <i data-lucide="layers" class="w-6 h-6 text-sky-300"></i>
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight flex items-center gap-2">
+            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">Pro</span>
+          </h1>
+          <p class="text-xs text-sky-200/80">ระบบจัดการเอกสารและการเงินครบวงจร</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <div id="auth-user-box" class="hidden items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15">
+          <div class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center overflow-hidden shrink-0">
+            <img id="auth-user-photo" src="" alt="" class="w-full h-full object-cover hidden">
+            <i data-lucide="user" id="auth-user-icon" class="w-4 h-4 text-sky-200"></i>
+          </div>
+          <div class="min-w-0 hidden sm:block">
+            <div id="auth-user-name" class="text-[10px] font-bold text-white truncate max-w-[150px]">-</div>
+            <div id="auth-user-email" class="text-[9px] text-sky-200 truncate max-w-[180px]">-</div>
+          </div>
+          <span id="auth-user-role" class="text-[9px] px-1.5 py-0.5 rounded bg-white/10 border border-white/10 text-sky-100 whitespace-nowrap">-</span>
+          <button type="button" onclick="logoutGoogle()" class="text-[10px] px-2 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/10 font-semibold">ออกจากระบบ</button>
+        </div>
+        <button onclick="switchTab('editor')" id="tab-btn-editor" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow">
+          <i data-lucide="file-pen" class="w-4 h-4"></i> แก้ไขเอกสาร
+        </button>
+        <button onclick="switchTab('preview')" id="tab-btn-preview" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white">
+          <i data-lucide="printer" class="w-4 h-4"></i> พรีวิว & พิมพ์
+        </button>
+        <button onclick="switchTab('history')" id="tab-btn-history" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white">
+          <i data-lucide="folder-archive" class="w-4 h-4"></i> ประวัติงาน
+        </button>
+        <button onclick="switchTab('settings')" id="tab-btn-settings" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white">
+          <i data-lucide="settings" class="w-4 h-4"></i> ตั้งค่าร้าน
+        </button>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- MOBILE NAVIGATION: screen-only, uses the existing tabs/functions -->
+  <nav id="mobile-bottom-nav" class="mobile-only-nav no-print" aria-label="เมนูมือถือ">
+    <button type="button" onclick="switchTab('editor')" class="mobile-nav-item">
+      <i data-lucide="home"></i><span>หน้าหลัก</span>
+    </button>
+    <button type="button" onclick="switchTab('history')" class="mobile-nav-item">
+      <i data-lucide="file-text"></i><span>เอกสาร</span>
+    </button>
+    <button type="button" onclick="switchTab('editor')" class="mobile-nav-add" aria-label="สร้างเอกสารใหม่">
+      <i data-lucide="plus"></i>
+    </button>
+    <button type="button" onclick="switchTab('preview')" class="mobile-nav-item">
+      <i data-lucide="printer"></i><span>พรีวิว</span>
+    </button>
+    <button type="button" onclick="switchTab('settings')" class="mobile-nav-item">
+      <i data-lucide="settings"></i><span>ตั้งค่า</span>
+    </button>
+  </nav>
+
+  <div id="auth-gate" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-br from-sky-800 via-slate-900 to-slate-950 text-white p-6">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
+            <i data-lucide="shield-check" class="w-6 h-6 text-sky-300"></i>
+          </div>
+          <div>
+            <div class="text-lg font-black">เข้าสู่ระบบ Sumran Aluminum</div>
+            <div class="text-[11px] text-sky-200">ข้อมูลเอกสารและการเงินจะผูกกับบัญชี Google ของคุณ</div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <div id="auth-gate-status" class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3 leading-relaxed">กำลังตรวจสอบบัญชี...</div>
+        <button id="google-login-btn" type="button" onclick="loginWithGoogle()" class="w-full py-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-300 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
+          <span class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black">G</span>
+          <span>เข้าสู่ระบบด้วย Google</span>
+        </button>
+        <div class="text-[10px] text-slate-400 leading-relaxed text-center">
+          ระบบจะพยายามผูก Google เข้ากับบัญชี Anonymous เดิมก่อน หาก Google บัญชีนี้มีอยู่แล้ว ระบบจะย้ายเอกสารเดิมไปยังบัญชี Google
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 relative">
+
+    <!-- TAB 1: EDITOR -->
+    <div id="tab-editor" class="space-y-6">
+      
+      <!-- Doc Types -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
+          <div><h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-check" class="w-5 h-5 text-sky-600"></i> เลือกประเภทเอกสาร</h2></div>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-2 w-full md:w-auto">
+            <label class="cursor-pointer"><input type="radio" name="docType" value="quotation" checked onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600 transition-all">ใบเสนอราคา</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="delivery" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">ใบส่งของ</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="invoice" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-600 transition-all">ใบแจ้งหนี้/วางบิล</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="receipt" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition-all">ใบเสร็จรับเงิน</div></label>
+            <label class="cursor-pointer"><input type="radio" name="docType" value="cashbill" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-slate-700 peer-checked:text-white peer-checked:border-slate-700 transition-all">บิลเงินสด</div></label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">เลขที่เอกสาร</label>
+            <div class="flex gap-1.5">
+              <input type="text" id="docNo" class="flex-1 min-w-0 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
+              <button type="button" onclick="duplicateCurrentAsNew()" title="คัดลอกเอกสารนี้เป็นเลขที่ใหม่ และรีเซ็ตประวัติการรับชำระ"
+                class="px-2.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-[11px] font-bold whitespace-nowrap shadow-sm">
+                + เลขที่ใหม่
+              </button>
+            </div>
+            <div class="flex gap-1.5 mt-1.5">
+              <button type="button" onclick="createNewDocument()"
+                class="flex-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[10px] font-bold">
+                ล้าง / เอกสารใหม่
+              </button>
+              <button type="button" id="delete-current-doc-btn" onclick="deleteCurrentDocument()"
+                class="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-[10px] font-bold">
+                ลบใบนี้
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">อ้างอิงเอกสารเดิม</label>
+            <input type="text" id="refNo" placeholder="อ้างอิงบิลเดิม (ถ้ามี)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
+          </div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">วันที่ออกเอกสาร</label><input type="date" id="docDate" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">กำหนดส่งงาน/ยืนราคา</label><input type="date" id="dueDate" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-medium text-slate-600">ผู้ขาย/ผู้ประสานงาน</label>
+              <button onclick="openGenericModal('salesModal')" class="text-[10px] text-sky-600 hover:underline">จัดการรายชื่อ</button>
+            </div>
+            <input type="text" id="salesName" list="salesList" placeholder="พิมพ์ค้นหา/เพิ่มเซลส์" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500">
+            <datalist id="salesList"></datalist>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
+        <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-2">
+          <h2 class="text-md font-bold text-slate-800 flex items-center gap-2"><i data-lucide="user-check" class="w-5 h-5 text-sky-600"></i> ข้อมูลลูกค้า / โครงการ</h2>
+          <div class="flex gap-2">
+            <button type="button" onclick="saveCustomerInfo()" class="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded text-[11px] font-semibold border border-sky-200 transition">+ บันทึกลูกค้าประจำ</button>
+            <button type="button" onclick="openGenericModal('customerModal')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300 transition">จัดการลูกค้า</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อลูกค้า (พิมพ์เพื่อค้นหา)</label>
+            <input type="text" id="custName" list="customerDatalist" onchange="autoFillCustomer()" placeholder="ค้นหาหรือพิมพ์ใหม่..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500">
+            <datalist id="customerDatalist"></datalist>
+          </div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">เบอร์โทรศัพท์ติดต่อ</label><input type="text" id="custPhone" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">เลขประจำตัวผู้เสียภาษี</label><input type="text" id="custTaxId" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div class="md:col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">ที่อยู่ตามเอกสาร / หน้างานติดตั้ง</label><input type="text" id="custAddress" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block text-xs font-medium text-slate-600 mb-1">ชื่อโครงการ / จุดติดตั้ง</label><input type="text" id="projectName" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500"></div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-sky-950 text-white rounded-2xl p-4 md:p-6 shadow-md border border-slate-700">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+          <div><h3 class="text-base font-bold flex items-center gap-2"><i data-lucide="layout-grid" class="w-5 h-5 text-sky-300"></i> เลือกจากแบบมาตรฐาน</h3></div>
+          <button type="button" id="manage-presets-btn" onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">จัดการพรีเซ็ต</button>
+        </div>
+        <div id="presets-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 pt-2"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list-plus" class="w-5 h-5 text-sky-600"></i> รายการสินค้า และ บริการ</h2>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="addNewItem('alu')" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow">+ อลูมิเนียม (กxส)</button>
+            <button type="button" onclick="addNewItem('general')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow">+ สินค้าทั่วไป/ค่าแรง</button>
+          </div>
+        </div>
+
+        <div class="mb-4 bg-sky-50 border border-sky-200 rounded-lg p-3 flex justify-between items-center">
+          <label class="flex items-center gap-2 text-sm font-bold text-sky-900 cursor-pointer">
+            <input type="checkbox" id="lump-sum-toggle" onchange="toggleLumpSum()" class="rounded border-sky-400 text-sky-600 w-4 h-4"> คิดราคาเหมา (Lump Sum)
+          </label>
+          <div id="lump-sum-box" class="hidden flex items-center gap-2">
+            <span class="text-xs text-sky-700">ระบุราคาเหมาสุทธิ: ฿</span>
+            <input type="number" id="lump-sum-amt" value="0" min="0" oninput="calculateTotals()" class="w-32 p-1.5 text-right font-bold text-sky-800 bg-white border border-sky-300 rounded focus:ring-2 focus:ring-sky-500">
+          </div>
+        </div>
+
+        <div id="items-list" class="space-y-4"></div>
+
+        <div class="mt-6 pt-6 border-t border-slate-200 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-6 space-y-3">
+            <label class="block text-xs font-semibold text-slate-700">เงื่อนไขและหมายเหตุท้ายบิล</label>
+            <textarea id="docNotes" rows="4" class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+            
+            <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 mt-4">
+              <label class="block text-[11px] font-bold text-amber-900 mb-1">ประมาณการต้นทุนรวม (ดูเฉพาะร้าน ไม่โชว์ในบิล)</label>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-amber-700">฿</span>
+                <input type="number" id="total-cost" value="0" min="0" oninput="calculateTotals()" class="w-32 p-1 text-sm bg-white border border-amber-300 rounded text-right focus:ring-1 focus:ring-amber-500">
+                <span class="text-[10px] text-amber-600 ml-2" id="profit-calc-display">กำไรสุทธิ: -</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex justify-between items-center text-sm"><span class="text-slate-600">รวมเป็นเงิน:</span><span id="calc-subtotal" class="font-mono font-semibold text-slate-800">฿0.00</span></div>
+            <div class="flex justify-between items-center text-sm gap-2">
+              <span class="text-slate-600">ส่วนลดพิเศษ:</span>
+              <div class="flex items-center gap-1 w-32">
+                <span class="text-xs text-slate-500">฿</span><input type="number" id="calc-discount" value="0" min="0" oninput="calculateTotals()" class="w-full text-right p-1 text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-sky-500">
+              </div>
+            </div>
+            <div class="flex justify-between items-center text-sm"><span class="text-slate-600">ยอดหลังหักส่วนลด:</span><span id="calc-after-discount" class="font-mono font-semibold text-slate-800">฿0.00</span></div>
+
+            <div class="pt-2 border-t border-slate-200 grid grid-cols-2 gap-4">
+              <div><label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700"><input type="checkbox" id="vat-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> VAT 7%</label><div id="calc-vat" class="text-xs font-mono text-slate-500 mt-1 pl-6">฿0.00</div></div>
+              <div><label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700"><input type="checkbox" id="wht-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> หัก ณ ที่จ่าย 3%</label><div id="calc-wht" class="text-xs font-mono text-rose-500 mt-1 pl-6">-฿0.00</div></div>
+            </div>
+
+            <div class="pt-3 border-t-2 border-slate-300 flex justify-between items-baseline"><span class="text-sm font-bold text-slate-900 block">ยอดสุทธิรวมทั้งสิ้น:</span><span id="calc-grandtotal" class="text-2xl font-black font-mono text-sky-700">฿0.00</span></div>
+            
+            <div class="bg-sky-100/50 rounded-lg p-3 border border-sky-200 mt-2">
+              <label class="text-[11px] font-bold text-sky-900 flex items-center gap-1.5 mb-2 cursor-pointer">
+                <input type="checkbox" id="payment-toggle" onchange="togglePaymentBox()" class="rounded border-sky-300 text-sky-600 w-3.5 h-3.5"> ระบบแบ่งจ่าย / บันทึกรับชำระเงิน
+              </label>
+              <div id="payment-box" class="hidden space-y-2 pt-2 border-t border-sky-200">
+                <div class="border-b border-sky-200 pb-2">
+                  <label class="flex items-center gap-2 font-medium text-slate-700 cursor-pointer text-[11px]">
+                    <input type="checkbox" id="deposit-toggle" onchange="toggleDepositBox()" class="rounded border-sky-300 text-sky-600 w-3.5 h-3.5">
+                    <span>กำหนดมัดจำเป็นเปอร์เซ็นต์</span>
+                  </label>
+                  <div id="deposit-percent-box" class="hidden mt-2 items-center gap-2">
+                    <span class="text-slate-600 font-medium whitespace-nowrap text-[11px]">เปอร์เซ็นต์มัดจำ</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="deposit-percent" value="0" min="0" max="100" step="0.01" inputmode="decimal" oninput="updateDepositPercent()" class="w-24 text-right p-1.5 bg-white border-2 border-sky-400 rounded focus:ring-2 focus:ring-sky-500 font-bold text-sky-700" aria-label="เปอร์เซ็นต์มัดจำ">
+                      <span class="font-bold text-sky-700">%</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500">เช่น 30 = มัดจำ 30%</span>
+                  </div>
+                </div>
+                <div id="deposit-amount-row" class="hidden justify-between items-center text-[11px] bg-white/70 rounded px-2 py-1 border border-sky-100">
+                  <div>
+                    <span class="text-slate-600">มัดจำที่ต้องชำระ:</span>
+                    <span id="calc-deposit-amt" class="font-mono font-bold text-sky-700 ml-1">฿0.00</span>
+                    <div class="text-[9px] text-slate-400 mt-0.5">เป็นยอดที่ต้องแจ้งลูกค้า ไม่ถือว่าได้รับเงินจนกว่าจะบันทึกรับชำระ</div>
+                  </div>
+                  <button type="button" onclick="applyDepositToPayment()" class="px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-[10px] font-bold">รับมัดจำจำนวนนี้</button>
+                </div>
+                <div class="flex justify-between items-center text-[11px]"><span class="text-slate-600">ยอดที่ชำระแล้วสะสม:</span><span id="calc-total-paid" class="font-mono font-bold text-emerald-700">฿0.00</span></div>
+                <div class="flex justify-between items-center text-[11px]"><span class="font-bold text-sky-800">รับชำระครั้งนี้:</span><div class="flex items-center gap-1"><span class="text-sky-600 font-bold">฿</span><input type="number" id="current-payment" value="0" min="0" oninput="calculateTotals()" class="w-24 text-right p-1 bg-white border border-sky-400 rounded focus:ring-1 focus:ring-sky-500 font-bold text-sky-700"></div></div>
+                <div id="payment-history-box" class="hidden bg-white/70 rounded px-2 py-1 border border-sky-100 text-[10px]">
+                  <div class="font-bold text-slate-600 mb-1">ประวัติรับชำระ</div>
+                  <div id="payment-history-list" class="space-y-0.5"></div>
+                </div>
+                <div class="flex justify-between items-center text-[11px] mt-1 pt-1 border-t border-dashed border-sky-300"><span class="font-bold text-rose-700">ยอดค้างชำระ (คงเหลือ):</span><span id="calc-remaining-amt" class="font-mono font-bold text-rose-700">฿0.00</span></div>
+              </div>
+            </div>
+
+            <div class="pt-3 grid grid-cols-2 gap-2">
+              <button type="button" onclick="saveCurrentDoc()" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition"><i data-lucide="save" class="w-4 h-4"></i> บันทึกข้อมูล</button>
+              <button type="button" onclick="switchTab('preview')" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition"><i data-lucide="printer" class="w-4 h-4"></i> ดูบิล & พิมพ์</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: PREVIEW & PRINT -->
+    <div id="tab-preview" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 no-print">
+        <button onclick="switchTab('editor')" class="px-3.5 py-1.5 text-xs font-medium border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"><i data-lucide="arrow-left" class="w-4 h-4"></i> กลับไปแก้ไข</button>
+        <div class="flex flex-wrap gap-2 justify-end">
+          <button onclick="downloadPdf()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="download" class="w-4 h-4"></i> บันทึก / ดาวน์โหลด PDF</button>
+          <button onclick="printDocument()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ผ่านเครื่องพิมพ์</button>
+        </div>
+      </div>
+
+      <div id="print-area" class="a4-page font-doc text-slate-900 border border-slate-200 sm:rounded-lg text-sm print-a4-document">
+        <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-4">
+          <div class="flex gap-4 max-w-[62%] items-start">
+            <img id="p-shop-logo" src="" alt="Logo" class="max-h-[70px] max-w-[100px] object-contain hidden border-none rounded p-1">
+            <div class="space-y-1">
+              <h2 id="p-shop-name" class="text-xl font-bold tracking-tight text-slate-900 leading-tight">อลูมิเนียม แอนด์ กลาส</h2>
+              <p id="p-shop-subtitle" class="text-xs text-slate-600"></p>
+              <p id="p-shop-address" class="text-xs text-slate-600 pt-1"></p>
+              <div class="flex flex-wrap gap-x-4 text-[10px] text-slate-600 mt-1">
+                <span>โทร: <strong id="p-shop-phone"></strong></span><span>Line: <strong id="p-shop-line"></strong></span><span>เลขผู้เสียภาษี: <strong id="p-shop-taxid"></strong></span>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="p-doc-title-badge" class="inline-block bg-slate-800 text-white px-4 py-1.5 rounded font-bold text-lg mb-2 uppercase tracking-wide">ใบเสนอราคา</div>
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest" id="p-doc-title-en">QUOTATION</div>
+            <div class="mt-2 text-[11px] space-y-0.5 text-slate-700 text-right w-full flex flex-col items-end">
+              <div>เลขที่: <strong id="p-doc-no" class="font-mono text-slate-900"></strong></div>
+              <div id="p-ref-no-container" class="hidden text-[10px] text-slate-500">อ้างอิง: <span id="p-ref-no"></span></div>
+              <div>วันที่: <span id="p-doc-date"></span></div>
+              <div class="pt-1 text-[9px] text-slate-400">พิมพ์เมื่อ: <span id="p-printed-at"></span></div>
+              <div id="p-due-date-container">กำหนด: <span id="p-due-date"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200 text-[11px] mb-4">
+          <div>
+            <span class="font-bold text-slate-700 block mb-1">ลูกค้า / ผู้รับ:</span>
+            <div class="font-bold text-[13px] text-slate-900" id="p-cust-name">-</div>
+            <div id="p-cust-address" class="text-slate-600 mt-0.5">-</div>
+            <div class="mt-1 text-slate-600">โทร: <strong id="p-cust-phone" class="text-slate-800">-</strong> | TAX ID: <span id="p-cust-taxid">-</span></div>
+          </div>
+          <div class="border-l border-slate-200 pl-4">
+            <span class="font-bold text-slate-700 block mb-1">รายละเอียดหน้างาน:</span>
+            <div>โครงการ: <strong id="p-project-name" class="text-slate-900">-</strong></div>
+            <div>ผู้รับผิดชอบ/ช่าง: <span id="p-sales-name" class="text-slate-800">-</span></div>
+            <div class="mt-2 text-[10px] text-slate-500 bg-white p-1.5 rounded border border-slate-200 italic leading-relaxed" id="p-standard-spec"></div>
+          </div>
+        </div>
+
+        <div class="mb-4 min-h-[150px]">
+          <table id="p-items-table" class="w-full text-[11px] text-left border-collapse table-fixed">
+            <colgroup>
+              <col style="width:5%"><col style="width:42%"><col style="width:11%">
+              <col style="width:9%"><col style="width:8%"><col style="width:12%"><col style="width:13%">
+            </colgroup>
+            <thead>
+              <tr class="print-repeat-doc-head">
+                <th colspan="7" class="px-2 py-1 text-left border border-slate-200 bg-white text-slate-500 font-semibold">
+                  <span id="p-repeat-doc-title">เอกสาร</span>
+                  <span class="mx-2">|</span>
+                  เลขที่ <strong id="p-repeat-doc-no"></strong>
+                  <span class="mx-2">|</span>
+                  ลูกค้า <span id="p-repeat-cust"></span>
+                  <span class="mx-2">|</span>
+                  หน้าเอกสารต่อเนื่อง
+                </th>
+              </tr>
+              <tr class="bg-slate-800 text-white font-semibold">
+                <th class="py-1.5 px-2 text-center border border-slate-700">#</th>
+                <th class="py-1.5 px-3 border border-slate-700">รายการสินค้า / รายละเอียด</th>
+                <th class="py-1.5 px-2 text-center border border-slate-700 whitespace-nowrap">กxส(ม.)</th>
+                <th class="py-1.5 px-2 text-center border border-slate-700 whitespace-nowrap">ตร.ม.</th>
+                <th class="py-1.5 px-2 text-center border border-slate-700 whitespace-nowrap">จำนวน</th>
+                <th class="py-1.5 px-2 text-right border border-slate-700 whitespace-nowrap">ราคา/หน่วย</th>
+                <th class="py-1.5 px-2 text-right border border-slate-700 whitespace-nowrap">จำนวนเงิน</th>
+              </tr>
+            </thead>
+            <tbody id="p-items-tbody" class="align-top"></tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-cols-12 gap-4 text-[11px] mb-6">
+          <div class="col-span-7 flex flex-col">
+            <div class="bg-slate-50 p-2.5 rounded border border-slate-200 h-full">
+              <span class="font-bold block text-slate-800 mb-1">หมายเหตุ/เงื่อนไข:</span>
+              <p id="p-notes" class="text-[10px] text-slate-600 whitespace-pre-line leading-relaxed"></p>
+            </div>
+          </div>
+          
+          <div class="col-span-5 space-y-1">
+            <div class="flex justify-between py-0.5"><span>รวมเป็นเงิน:</span><span id="p-calc-subtotal" class="font-mono">฿0.00</span></div>
+            <div class="flex justify-between py-0.5 text-rose-600" id="p-discount-row"><span>หักส่วนลด:</span><span id="p-calc-discount" class="font-mono">-฿0.00</span></div>
+            <div class="flex justify-between py-0.5" id="p-vat-row"><span>VAT 7%:</span><span id="p-calc-vat" class="font-mono">฿0.00</span></div>
+            <div class="flex justify-between py-0.5 text-rose-600" id="p-wht-row"><span>หัก ณ ที่จ่าย 3%:</span><span id="p-calc-wht" class="font-mono">-฿0.00</span></div>
+            <div class="flex justify-between py-1.5 border-t-2 border-b-2 border-slate-800 font-bold text-[13px] bg-slate-100 px-2 rounded mt-1"><span>ยอดสุทธิทั้งสิ้น:</span><span id="p-calc-grandtotal" class="font-mono text-slate-900">฿0.00</span></div>
+            <div class="text-right text-[10px] text-slate-500 italic pb-2" id="p-baht-text">(ศูนย์บาทถ้วน)</div>
+            
+            <div id="p-deposit-box" class="mt-2 pt-2 border-t border-dashed border-slate-300 hidden">
+              <div id="p-required-deposit-row" class="flex justify-between py-0.5 font-bold text-sky-800"><span>มัดจำที่ต้องชำระ:</span><span id="p-required-deposit-amt" class="font-mono">฿0.00</span></div>
+              <div id="p-prev-paid-row" class="flex justify-between py-0.5 font-bold text-emerald-700"><span>ยอดที่รับชำระแล้วสะสม:</span><span id="p-prev-paid-amt" class="font-mono">฿0.00</span></div>
+              <div id="p-current-paid-row" class="flex justify-between py-0.5 font-bold text-sky-800 text-[12px] border-b border-slate-200 pb-1 mb-1"><span id="p-deposit-label">รับชำระครั้งนี้:</span><span id="p-deposit-amt" class="font-mono">฿0.00</span></div>
+              <div class="flex justify-between py-0.5 font-bold text-rose-700"><span>ยอดคงเหลือค้างชำระ:</span><span id="p-remaining-amt" class="font-mono">฿0.00</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border border-sky-200 bg-sky-50 text-[10px] text-sky-900 p-2 rounded mb-6"><strong>การชำระเงิน:</strong> <span id="p-bank-info">-</span></div>
+
+        <div class="grid grid-cols-3 gap-4 text-center text-[11px] pt-4">
+          <div>
+            <div class="h-12 flex items-end justify-center"><div class="w-32 border-b border-dashed border-slate-400"></div></div>
+            <p class="mt-1 text-slate-800">(..........................................)</p>
+            <p class="text-slate-600 font-bold mt-0.5" id="sig1-title">ผู้เสนอราคา</p>
+            <p class="text-slate-400 text-[9px] mt-0.5">วันที่ ......./......./...........</p>
+          </div>
+          <div>
+            <div class="h-12 flex items-end justify-center"><div class="w-32 border-b border-dashed border-slate-400"></div></div>
+            <p class="mt-1 text-slate-800">(..........................................)</p>
+            <p class="text-slate-600 font-bold mt-0.5" id="sig2-title">ผู้อนุมัติสั่งซื้อ</p>
+            <p class="text-slate-400 text-[9px] mt-0.5">วันที่ ......./......./...........</p>
+          </div>
+          <div>
+            <div class="h-12 flex items-end justify-center"><div class="w-32 border-b border-dashed border-slate-400"></div></div>
+            <p class="mt-1 text-slate-800">(..........................................)</p>
+            <p class="text-slate-600 font-bold mt-0.5" id="sig3-title">ผู้มีอำนาจลงนาม</p>
+            <p class="text-slate-400 text-[9px] mt-0.5">วันที่ ......./......./...........</p>
+          </div>
+        </div>
+        <div class="print-document-footer mt-5 pt-2 border-t border-slate-200 text-[9px] text-slate-400 flex justify-between items-center">
+          <span>เอกสารจัดทำจากระบบ Sumran Aluminum</span>
+          <span>sumranaluminume.vercel.app</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: HISTORY -->
+    <div id="tab-history" class="hidden space-y-4">
+      
+      <!-- Dashboard Summary -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div class="text-[11px] font-bold text-slate-500 mb-1">ยอดขายรวม (ทั้งหมด)</div>
+          <div class="text-xl font-black font-mono text-slate-800" id="dash-total-sales">฿0.00</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200 bg-emerald-50/30">
+          <div class="text-[11px] font-bold text-emerald-600 mb-1">กำไรสุทธิโดยประมาณ</div>
+          <div class="text-xl font-black font-mono text-emerald-700" id="dash-total-profit">฿0.00</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-200 bg-rose-50/30">
+          <div class="text-[11px] font-bold text-rose-600 mb-1">หนี้คงค้าง (รอรับชำระ)</div>
+          <div class="text-xl font-black font-mono text-rose-700" id="dash-total-debt">฿0.00</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="archive" class="w-5 h-5 text-sky-600"></i> ประวัติงานและบิลทั้งหมด</h2>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <div class="relative flex-1 sm:w-64">
+              <input type="text" id="search-history" placeholder="ค้นหาเลขที่เอกสาร / อ้างอิง / ลูกค้า / โครงการ..." oninput="renderHistory()" class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500 bg-slate-50">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2"></i>
+            </div>
+            <button onclick="createNewDocument()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-semibold whitespace-nowrap">+ สร้างบิลใหม่</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-[11px] text-left">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600">
+              <tr>
+                <th class="py-2 px-2">เลขที่ / อ้างอิง</th>
+                <th class="py-2 px-2">ประเภท</th>
+                <th class="py-2 px-2">ลูกค้า/โครงการ</th>
+                <th class="py-2 px-2">ผู้จัดทำ</th>
+                <th class="py-2 px-2">วันที่</th>
+                <th class="py-2 px-2 text-right">ยอดสุทธิ (ค้างชำระ)</th>
+                <th class="py-2 px-2 text-center w-32">สถานะงาน</th>
+                <th class="py-2 px-2 text-center w-40">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6">
+        <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+          <div>
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i data-lucide="printer-check" class="w-4 h-4 text-sky-600"></i> ประวัติการพิมพ์ / PDF</h3>
+            <span class="text-[10px] text-slate-400">ระบบบันทึกเลขที่เอกสารและเวลาที่สั่งพิมพ์ เพื่อเรียกเอกสารกลับมาพิมพ์ซ้ำได้</span>
+          </div>
+          <button type="button" onclick="clearPrintArchive()" class="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 inline-block mr-1"></i> ลบประวัติการพิมพ์ทั้งหมด
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-[11px] text-left">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600"><tr><th class="py-2 px-2">เลขที่</th><th class="py-2 px-2">ประเภท</th><th class="py-2 px-2">ลูกค้า</th><th class="py-2 px-2">พิมพ์เมื่อ</th><th class="py-2 px-2 text-center">จัดการ</th></tr></thead>
+            <tbody id="print-archive-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: SETTINGS -->
+    <div id="tab-settings" class="hidden space-y-4">
+      <div id="store-settings-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 max-w-3xl mx-auto hidden">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3"><i data-lucide="store" class="w-5 h-5 text-sky-600"></i> ข้อมูลร้านค้าและสเปกมาตรฐาน</h2>
+        <div class="space-y-4 text-xs">
+          <div class="flex flex-col sm:flex-row gap-4 mb-4 items-start border-b border-slate-100 pb-4">
+            <div class="w-32 h-32 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center overflow-hidden relative group">
+              <img id="setting-logo-preview" src="" class="w-full h-full object-contain hidden bg-white">
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:bg-slate-900/10 transition cursor-pointer" onclick="document.getElementById('setting-shop-logo').click()"><i data-lucide="image-plus" class="w-6 h-6 mb-1"></i><span class="text-[10px]">เพิ่มโลโก้</span></div>
+              <input type="file" id="setting-shop-logo" accept="image/*" class="hidden" onchange="handleLogoUpload(this)">
+            </div>
+            <div class="flex-1 space-y-4 w-full">
+              <div><label class="block font-medium mb-1">ชื่อร้าน / บริษัท</label><input type="text" id="setting-shop-name" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
+              <div><label class="block font-medium mb-1">สโลแกน / บริการ</label><input type="text" id="setting-shop-subtitle" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
+            </div>
+          </div>
+          <div><label class="block font-medium mb-1">ที่อยู่ร้าน</label><textarea id="setting-shop-address" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></textarea></div>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="block font-medium mb-1">เบอร์โทร</label><input type="text" id="setting-shop-phone" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
+            <div><label class="block font-medium mb-1">Line ID</label><input type="text" id="setting-shop-line" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
+            <div><label class="block font-medium mb-1">เลขผู้เสียภาษี</label><input type="text" id="setting-shop-taxid" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
+          </div>
+          <div><label class="block font-medium mb-1">บัญชีรับชำระเงิน (แสดงท้ายบิล)</label><input type="text" id="setting-bank-info" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block font-medium mb-1">ข้อความสเปกมาตรฐาน (แสดงใต้ชื่อลูกค้าเวลาพิมพ์)</label><textarea id="setting-standard-spec" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500 bg-slate-50"></textarea></div>
+          <div class="pt-4 flex justify-end"><button onclick="saveStoreSettings()" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold">บันทึกตั้งค่าร้าน</button></div>
+        </div>
+      </div>
+      <div id="staff-management-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 max-w-3xl mx-auto hidden">
+        <div class="flex items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-sky-600"></i> จัดการสมาชิกและพนักงาน</h2>
+            <p class="text-[10px] text-slate-500 mt-1">เจ้าของร้านเพิ่มพนักงานด้วยอีเมลได้ พนักงานจะเห็นเอกสารทั้งหมดของร้าน แต่แก้ไข/ลบได้เฉพาะเอกสารที่ตัวเองเป็นผู้จัดทำ</p>
+          </div>
+          <span class="text-[9px] px-2 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-bold">OWNER</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+          <input id="staff-invite-email" type="email" placeholder="อีเมล Google ของพนักงาน" class="sm:col-span-2 w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-sky-500">
+          <button type="button" onclick="inviteStaffByEmail()" class="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold">+ เชิญพนักงาน</button>
+        </div>
+        <div class="text-[10px] text-slate-400 mb-3">พนักงานต้องล็อกอิน Google ด้วยอีเมลที่เชิญไว้ แล้วระบบจะเพิ่มสิทธิ์เป็น STAFF ให้อัตโนมัติ</div>
+        <div id="staff-members-list" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- Generic List Modal (For Customers, Sales, Presets) -->
+    <div id="generic-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+      <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-5 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="flex justify-between items-center border-b pb-3 mb-3 gap-2">
+          <h3 id="gmodal-title" class="text-base font-bold text-slate-800">จัดการข้อมูล</h3>
+          <div class="flex items-center gap-2">
+            <button id="gmodal-add-btn" type="button" onclick="openPresetEditor()" class="hidden px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold items-center gap-1">
+              <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มแบบมาตรฐาน
+            </button>
+            <button onclick="closeGenericModal()" class="text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto pr-2 space-y-2" id="gmodal-list"></div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium">
+      <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i><span id="toast-msg"></span>
+    </div>
+
+  </main>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Firebase config ของโปรเจกต์จริง: sumranaluminum
+    // ฝังไว้ในไฟล์เพื่อให้เปิด HTML โดยตรงแล้วเชื่อม Firebase ได้ทันที
+    const firebaseConfig = {
+      apiKey: "AIzaSyCNhOzXxGi3-kKOqkfwjnyMpRnA-OIIiOY",
+      authDomain: "sumranaluminum.firebaseapp.com",
+      databaseURL: "https://sumranaluminum-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "sumranaluminum",
+      storageBucket: "sumranaluminum.firebasestorage.app",
+      messagingSenderId: "854418055955",
+      appId: "1:854418055955:web:de3961d14f6cc0a248b0e6",
+      measurementId: "G-7GYQ2XJYVM"
+    };
+
+    // ใช้ appId คงที่ของระบบ ไม่เปลี่ยนตาม environment เพื่อให้ path ใน Firestore คงเดิม
+    const appId = 'sumran-aluminum-billing';
+    const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let db, auth, userId, firebaseReady = false;
+    if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        firebaseReady = true;
+    }
+
+    const LEGACY_LOCAL_KEY = 'sumran_aluminum_app_state_v2';
+    const LOCAL_USER_KEY = 'sumran_aluminum_local_user';
+    const COMPANY_ID = 'sumran-aluminum-shop';
+    const PENDING_MIGRATION_KEY = `${LEGACY_LOCAL_KEY}:pending-company-migration:${COMPANY_ID}`;
+    let unsubscribeFns = [];
+    let authInitialized = false;
+    let authActionBusy = false;
+    let authGateVisible = false;
+    let anonymousMigrationUid = null;
+    let currentMember = null;
+    let currentRole = null;
+    let pendingLegacyData = null;
+    let companyAccessReady = false;
+
+    function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+    function activeLocalKey() { return userId ? `${LEGACY_LOCAL_KEY}:company:${COMPANY_ID}:uid:${userId}` : LEGACY_LOCAL_KEY; }
+    function saveLocalState() {
+      try { localStorage.setItem(activeLocalKey(), JSON.stringify(clone(state))); }
+      catch(e) { console.warn('Local save failed:', e); }
+    }
+    function loadLocalState(key = LEGACY_LOCAL_KEY) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        Object.assign(state, saved || {});
+        state.shop = { ...state.shop, ...(saved.shop || {}) };
+        state.customer = { ...state.customer, ...(saved.customer || {}) };
+        state.items = Array.isArray(saved.items) ? saved.items : state.items;
+        state.presets = Array.isArray(saved.presets) ? saved.presets : state.presets;
+        state.savedCustomers = Array.isArray(saved.savedCustomers) ? saved.savedCustomers : [];
+        state.savedSales = Array.isArray(saved.savedSales) ? saved.savedSales : [];
+        state.history = Array.isArray(saved.history) ? saved.history : [];
+        state.printArchive = Array.isArray(saved.printArchive) ? saved.printArchive : [];
+        state.history.forEach(h => { if(h.payload && !Array.isArray(h.payload.payments)) h.payload.payments = []; });
+        return true;
+      } catch(e) { console.warn('Local load failed:', e); return false; }
+    }
+    function clearCurrentCloudView() {
+      clearTimeout(state.liveSyncTimer); state.history=[]; state.printArchive=[]; state.savedCustomers=[]; state.savedSales=[]; state.presets=[];
+      state.currentHistoryId=null; state.liveSyncBusy=false; renderHistory(); renderPrintArchive(); renderDatalists(); renderPresets();
+    }
+    const DEFAULT_PRESET_COLORS=['อบขาว','ดำ','ชา','เงิน','บรอนซ์'];
+    const DEFAULT_UNIT_OPTIONS=['ชุด','ชิ้น','บาน','ตู้','เมตร','ตร.ม.','งาน','จุด'];
+    function normalizePresetOptions(){
+      state.presetColors=[...new Set([...(state.presetColors||[]),...DEFAULT_PRESET_COLORS].map(v=>String(v||'').trim()).filter(Boolean))];
+      state.unitOptions=[...new Set([...(state.unitOptions||[]),...DEFAULT_UNIT_OPTIONS].map(v=>String(v||'').trim()).filter(Boolean))];
+      state.presets=(state.presets||[]).map(p=>({...p,showQty:p.showQty!==false,showUnit:p.showUnit!==false,priceTypeLabel:p.priceTypeLabel||''}));
+    }
+    function renderPresetEditorOptions(){
+      normalizePresetOptions();
+      const c=document.getElementById('preset-alu-color');
+      if(c){const old=c.value;c.innerHTML=state.presetColors.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');if(state.presetColors.includes(old))c.value=old;}
+      const u=document.getElementById('preset-unit-select');
+      if(u){const old=u.value;u.innerHTML=state.unitOptions.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')+'<option value="__custom__">พิมพ์หน่วยเอง...</option>';if(state.unitOptions.includes(old)||old==='__custom__')u.value=old;}
+    }
+    function handlePresetUnitMode(){const u=document.getElementById('preset-unit-select'),i=document.getElementById('preset-new-unit');if(!u||!i)return;const x=u.value==='__custom__';i.classList.toggle('hidden',!x);i.style.display=x?'':'none';}
+    function getPresetUnitValue(){const u=document.getElementById('preset-unit-select');return u?.value==='__custom__'?(document.getElementById('preset-new-unit')?.value.trim()||'ชุด'):(u?.value||'ชุด');}
+    function addPresetColor(){if(!requireOwner('การเพิ่มสี'))return;const i=document.getElementById('preset-new-color'),v=String(i?.value||'').trim();if(!v)return showToast('กรุณาพิมพ์ชื่อสี');if(!state.presetColors.includes(v))state.presetColors.push(v);persist();renderPresetEditorOptions();document.getElementById('preset-alu-color').value=v;if(i)i.value='';if(userId&&db)setDoc(cloudPath('presetColors','color-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(e=>cloudError('Save color',e));showToast('เพิ่มสีแล้ว');}
+    function addPresetUnit(){if(!requireOwner('การเพิ่มหน่วย'))return;const i=document.getElementById('preset-new-unit'),v=String(i?.value||'').trim();if(!v)return showToast('กรุณาพิมพ์หน่วย');if(!state.unitOptions.includes(v))state.unitOptions.push(v);persist();renderPresetEditorOptions();document.getElementById('preset-unit-select').value=v;if(i)i.value='';if(userId&&db)setDoc(cloudPath('presetUnits','unit-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(e=>cloudError('Save unit',e));showToast('เพิ่มหน่วยแล้ว');}
+
+    function canEditHistoryDocument(h) {
+      if(!currentMember || currentMember.active !== true) return false;
+      if(currentMember.role === 'owner') return true;
+      return currentMember.role === 'staff' &&
+        String(h?.createdByUid || '') === String(userId || '');
+    }
+
+    function canChangeHistoryStatus(h) {
+      return !!currentMember && currentMember.active === true &&
+        (currentMember.role === 'owner' || currentMember.role === 'staff');
+    }
+
+    async function updateDocumentStatus(historyId, newStatus) {
+      if(!isMemberRole()) return showToast('บัญชีนี้ยังไม่ได้รับสิทธิ์ใช้งาน');
+      const doc = (state.history || []).find(h => String(h.id) === String(historyId));
+      if(!doc) return showToast('ไม่พบเอกสาร');
+      const status = String(newStatus || '').trim();
+      if(!status) return;
+
+      // Owner and Staff may update workflow status. This writes only status metadata,
+      // not totals/items/customer/creator fields.
+      const patch = {
+        status,
+        statusUpdatedAt: new Date().toISOString(),
+        statusUpdatedByUid: userId || '',
+        statusUpdatedByEmail: auth.currentUser?.email || '',
+        statusUpdatedByName: auth.currentUser?.displayName || ''
+      };
+
+      try {
+        if(userId && db) {
+          await setDoc(cloudPath('history', doc.id), patch, {merge:true});
+        }
+        Object.assign(doc, patch);
+        persist();
+        renderHistory();
+        showToast('อัปเดตสถานะเอกสารแล้ว');
+      } catch(e) {
+        cloudError('Update document status', e);
+      }
+    }
+
+    function isMemberRole() {
+      return !!currentMember && currentMember.active === true &&
+        (currentMember.role === 'owner' || currentMember.role === 'staff');
+    }
+
+    function persist() { saveLocalState(); }
+    function cloudPath(name, id) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, name, id); }
+    function cloudCollection(name) { return collection(db, 'artifacts', appId, 'companies', COMPANY_ID, name); }
+    function cloudSettings() { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, 'settings', 'shopData'); }
+    function memberPath(uid=userId) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, 'members', uid); }
+    function memberCollection() { return collection(db, 'artifacts', appId, 'companies', COMPANY_ID, 'members'); }
+    function invitationPath(email) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, 'invitations', String(email||'').trim().toLowerCase()); }
+    function requireOwner(action='การทำรายการนี้') { if(currentRole !== 'owner') { showToast(`${action}เฉพาะเจ้าของร้าน`); return false; } return true; }
+    function isOwner() { return currentRole === 'owner'; }
+    function canEditHistoryItem(h) { return isOwner() || (h && h.createdByUid && h.createdByUid === userId); }
+    function cloudError(action, e) { console.error(action, e); showToast('Cloud บันทึกไม่ได้ — ตรวจสอบสิทธิ์/อินเทอร์เน็ตแล้วลองใหม่'); }
+
+    const state = {
+      currentTab: 'editor', docType: 'quotation',
+      docNo: '', refNo: '',
+      docDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+      salesName: 'พนักงานขาย 1',
+      customer: { name: '', phone: '', taxId: '', address: '', project: '' },
+      shop: {
+        name: 'Sumran Aluminum (สำราญ อลูมิเนียม)', subtitle: 'รับติดตั้ง กระจก บานเลื่อน บานสวิง บานกระทุ้ง',
+        address: '45/8 ถ.รัตนาธิเบศร์ จ.นนทบุรี 11000', phone: '089-555-8899', line: '@sumran_alu', taxId: '0125565001234',
+        bank: 'ธ.กสิกรไทย 045-8-91234-5 ชื่อบัญชี บจก. สำราญ อลูมิเนียม',
+        standardSpec: '* สเปกมาตรฐาน: อลูมิเนียมหนา 1.2 มม. กระจกหนา 6 มม. พร้อมซีลยางกันน้ำ', logo: null
+      },
+      items: [
+        { id: 'item-1', type: 'alu', name: 'ชุดหน้าต่างบานเลื่อนสลับ (2 บาน)', aluColor: 'อบขาว', glassType: 'เขียวตัดแสง 6 มม.', width: 1.6, height: 1.2, area: 1.92, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 2200, total: 4224 }
+      ],
+      presets: [
+        { id: 'p1', type: 'alu', name: 'บานเลื่อน 2 บาน', icon: 'columns-2', aluColor: 'อบขาว', glassType: 'เขียว 6mm', width: 1.6, height: 1.2, unit: 'ชุด', price: 2100, priceType: 'per_sqm' },
+        { id: 'p2', type: 'general', name: 'ตู้กระจกสำเร็จรูป', icon: 'package', aluColor: '-', glassType: '-', width: 0, height: 0, unit: 'ตู้', price: 4500, priceType: 'per_unit' }
+      ],
+      presetColors: ['อบขาว', 'ดำ', 'ชา', 'เงิน', 'บรอนซ์'],
+      unitOptions: ['ชุด', 'ชิ้น', 'บาน', 'ตู้', 'เมตร', 'ตร.ม.', 'งาน', 'จุด'],
+      savedCustomers: [], savedSales: [],
+      notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
+      discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
+      isLumpSum: false, lumpSumAmt: 0,
+      paymentEnabled: false, depositEnabled: false, depositPercent: 0, depositAmount: 0, prevPaid: 0, currentPayment: 0, remainingAmt: 0, payments: [], printArchive: [], history: [],
+      currentHistoryId: null, liveSyncTimer: null, liveSyncBusy: false, isReadOnlyDocument: false, currentActor: null
+    };
+
+    function safeSetValue(id, val) { const el = document.getElementById(id); if(el) el.value = val !== undefined ? val : ''; }
+    function safeSetText(id, text) { const el = document.getElementById(id); if(el) el.innerText = text || '-'; }
+    function safeSetChecked(id, is) { const el = document.getElementById(id); if(el) el.checked = !!is; }
+    function escapeHtml(str) { return String(str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function showToast(msg) { safeSetText('toast-msg', msg); const t = document.getElementById('toast'); if(t) { t.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500); } }
+    function formatDateThai(dStr) { if(!dStr) return '-'; const p=dStr.split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${parseInt(p[0])+543}` : dStr; }
+
+    function resetEditorForSession() {
+      clearTimeout(state.liveSyncTimer);
+      state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo='';
+      state.docDate=new Date().toISOString().split('T')[0]; state.dueDate=new Date(Date.now()+14*86400000).toISOString().split('T')[0];
+      state.customer={name:'',phone:'',taxId:'',address:'',project:''}; state.salesName=state.salesName||'พนักงานขาย 1';
+      state.items=[{id:'item-'+Date.now(),type:'alu',name:'ชุดหน้าต่าง/ประตู',aluColor:'อบขาว',glassType:'เขียว 6 มม.',width:1,height:1,area:1,qty:1,unit:'ชุด',pricingType:'per_sqm',unitPrice:1000,total:1000}];
+      state.notes='1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี'; state.discount=0; state.vatEnabled=false; state.whtEnabled=false; state.totalCost=0;
+      state.isLumpSum=false; state.lumpSumAmt=0; state.paymentEnabled=false; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0; state.payments=[];
+      ['docNo','refNo','docDate','dueDate','docNotes','custName','custPhone','custTaxId','custAddress','projectName','calc-discount','total-cost','current-payment','deposit-percent'].forEach(id=>safeSetValue(id,''));
+      safeSetChecked('payment-toggle',false); safeSetChecked('deposit-toggle',false); safeSetChecked('vat-toggle',false); safeSetChecked('wht-toggle',false); safeSetChecked('lump-sum-toggle',false);
+      togglePaymentBox(); toggleDepositBox(); renderItems(); calculateTotals(); setCurrentDocUiState(false);
+    }
+
+    function setCurrentDocUiState(isSaved) {
+      const btn = document.getElementById('delete-current-doc-btn');
+      if(btn) {
+        btn.disabled = !isSaved;
+        btn.style.opacity = isSaved ? '1' : '0.45';
+        btn.style.cursor = isSaved ? 'pointer' : 'not-allowed';
+      }
+      const docNoInput = document.getElementById('docNo');
+      if(docNoInput) docNoInput.readOnly = !!isSaved;
+    }
+
+    function syncEditorFieldsToState() {
+      ['docNo','refNo','docDate','dueDate','salesName','docNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        if(id === 'docNotes') state.notes = el.value;
+        else state[id] = el.value;
+      });
+
+      state.customer = {
+        name: document.getElementById('custName')?.value || '',
+        phone: document.getElementById('custPhone')?.value || '',
+        taxId: document.getElementById('custTaxId')?.value || '',
+        address: document.getElementById('custAddress')?.value || '',
+        project: document.getElementById('projectName')?.value || ''
+      };
+    }
+
+    function scheduleLiveDocumentSync() {
+      // ซิงก์เฉพาะเอกสารที่มีอยู่แล้วในประวัติ เพื่อไม่สร้างเอกสารใหม่ทุกครั้งที่พิมพ์
+      // และไม่แตะ "รับชำระครั้งนี้" ระหว่างผู้ใช้กำลังกรอกยอดเงินจริง
+      if(!state.currentHistoryId || !userId || !db || Number(state.currentPayment || 0) > 0) return;
+      clearTimeout(state.liveSyncTimer);
+      state.liveSyncTimer = setTimeout(async () => {
+        if(state.liveSyncBusy || !state.currentHistoryId) return;
+        state.liveSyncBusy = true;
+        try {
+          await saveCurrentDoc({ recordPayment: false, silent: true });
+        } finally {
+          state.liveSyncBusy = false;
+        }
+      }, 800);
+    }
+
+    async function duplicateCurrentAsNew() {
+      calculateTotals();
+      syncEditorFieldsToState();
+
+      const oldDocNo = state.docNo;
+      const copied = clone(state);
+
+      state.currentHistoryId = null;
+      state.isReadOnlyDocument = false;
+      state.docNo = '';
+      state.refNo = oldDocNo || '';
+      state.docDate = new Date().toISOString().split('T')[0];
+      state.dueDate = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+      state.payments = [];
+      state.prevPaid = 0;
+      state.currentPayment = 0;
+      state.remainingAmt = Number(state.grandTotal || 0);
+      state.depositAmount = state.depositEnabled ? +(Number(state.grandTotal || 0) * Number(state.depositPercent || 0) / 100).toFixed(2) : 0;
+      state.paymentEnabled = false;
+      state.depositEnabled = false;
+      state.depositPercent = 0;
+      state.depositAmount = 0;
+
+      state.items = Array.isArray(copied.items) && copied.items.length ? copied.items : [{
+        id: 'item-'+Date.now(), type: 'alu', name: 'ชุดหน้าต่าง/ประตู', aluColor: 'อบขาว', glassType: 'เขียว 6 มม.',
+        width: 1, height: 1, area: 1, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 1000, total: 1000
+      }];
+
+      generateAutoDocNo(state.docType);
+      ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
+      safeSetValue('docNotes', state.notes || '');
+      safeSetValue('current-payment', 0);
+      safeSetValue('deposit-percent', 0);
+      safeSetChecked('payment-toggle', false);
+      safeSetChecked('deposit-toggle', false);
+      togglePaymentBox();
+      toggleDepositBox();
+      renderItems();
+      calculateTotals();
+      setCurrentDocUiState(false);
+      switchTab('editor');
+      showToast(`คัดลอก ${oldDocNo || 'เอกสารเดิม'} เป็นเลขที่ใหม่แล้ว — ประวัติรับชำระถูกรีเซ็ต`);
+    }
+
+    async function deleteCurrentDocument() {
+      if(!requireOwner('การลบเอกสาร')) return;
+      const id = state.currentHistoryId;
+      if(!id) return showToast('เอกสารนี้ยังไม่ได้บันทึก');
+      const h = state.history.find(x => x.id === id);
+      if(!h) return showToast('ไม่พบเอกสารที่กำลังแก้ไข');
+      if(!confirm(`ลบเอกสาร ${h.docNo || ''} ใช่หรือไม่?\nการลบครั้งนี้จะลบเอกสารนี้ออกจากประวัติและ Cloud ด้วย`)) return;
+
+      clearTimeout(state.liveSyncTimer);
+      state.history = state.history.filter(x => x.id !== id);
+      persist();
+      renderHistory();
+
+      if(userId && db) {
+        try {
+          await deleteDoc(cloudPath('history', id));
+          showToast('ลบเอกสารออกจาก Cloud แล้ว');
+        } catch(e) {
+          cloudError('Delete current document', e);
+          return;
+        }
+      } else {
+        showToast('ลบเอกสารแล้ว (ในเครื่อง)');
+      }
+
+      createNewDocument();
+    }
+    
+    function thaiBahtConversion(num) {
+      if (isNaN(num) || num === 0) return 'ศูนย์บาทถ้วน';
+      const tNum = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+      const tUnit = ['','สิบ','ร้อย','พัน','หมื่น','แสน','ล้าน'];
+      let [intP, decP] = Math.round(num * 100).toString().padStart(3, '0').match(/(.*)(..)$/).slice(1);
+      const cvt = (str) => {
+        let res = '';
+        for (let i = 0; i < str.length; i++) {
+          let d = parseInt(str[i]), u = str.length - i - 1;
+          if (d !== 0) {
+            if (u === 0 && d === 1 && str.length > 1 && str[str.length-2] !== '0') res += 'เอ็ด';
+            else if (u === 1 && d === 2) res += 'ยี่สิบ';
+            else if (u === 1 && d === 1) res += 'สิบ';
+            else res += tNum[d] + tUnit[u];
+          }
+        }
+        return res;
+      };
+      let res = intP.length > 6 ? cvt(intP.slice(0, -6)) + 'ล้าน' + cvt(intP.slice(-6)) + 'บาท' : cvt(intP) + 'บาท';
+      return res + (decP === '00' ? 'ถ้วน' : cvt(decP) + 'สตางค์');
+    }
+
+    function roleLabel(role) { return role === 'owner' ? 'เจ้าของร้าน' : role === 'staff' ? 'พนักงาน' : '-'; }
+    function sanitizeMemberData(data, uid) {
+      const role = data?.role === 'owner' ? 'owner' : 'staff';
+      return { uid, role, email:String(data?.email||''), displayName:String(data?.displayName||''), active:data?.active !== false };
+    }
+    function updateRoleUi() {
+      const roleEl=document.getElementById('auth-user-role'); if(roleEl) roleEl.textContent=roleLabel(currentRole);
+      const staffCard=document.getElementById('staff-management-card'); if(staffCard) staffCard.classList.toggle('hidden',!isOwner());
+      const storeCard=document.getElementById('store-settings-card'); if(storeCard) storeCard.classList.toggle('hidden',!isOwner());
+      const presetBtn=document.getElementById('manage-presets-btn'); if(presetBtn) presetBtn.classList.toggle('hidden',!isOwner());
+      if(window.lucide) window.lucide.createIcons();
+    }
+    async function loadMembershipForUser(user) {
+      if(!user||!db) return null;
+      const snap=await getDoc(memberPath(user.uid));
+      if(snap.exists()) { const m=sanitizeMemberData(snap.data(),user.uid); return m.active?m:null; }
+      if(user.email) {
+        const invSnap=await getDoc(invitationPath(user.email));
+        if(invSnap.exists()) {
+          const inv=invSnap.data()||{};
+          if(inv.active!==false && String(inv.email||'').trim().toLowerCase()===String(user.email||'').trim().toLowerCase()) {
+            const m={uid:user.uid,role:inv.role==='owner'?'owner':'staff',email:user.email||'',displayName:user.displayName||inv.displayName||'',active:true,joinedAt:new Date().toISOString(),invitedBy:inv.invitedBy||null};
+            await setDoc(memberPath(user.uid),m,{merge:true});
+            return m;
+          }
+        }
+      }
+      return null;
+    }
+    async function migrateLegacyDataToCompany(data, sourceUid) {
+      if(!data||!db||!companyAccessReady) return;
+      const groups=['history','customers','sales','presets','printArchive'];
+      for(const name of groups){
+        const rows=Array.isArray(data[name])?data[name]:[];
+        for(const row of rows){
+          if(!row?.id) continue;
+          const next=clone(row);
+          if(name==='history'){
+            next.createdByUid=next.createdByUid||next.payload?.createdByUid||sourceUid||'legacy-anonymous';
+            next.createdByEmail=next.createdByEmail||next.payload?.createdByEmail||'';
+            next.createdByName=next.createdByName||next.payload?.createdByName||'';
+            next.migratedFromUid=next.migratedFromUid||sourceUid||null;
+            if(next.payload&&typeof next.payload==='object'){next.payload.createdByUid=next.payload.createdByUid||next.createdByUid;next.payload.createdByEmail=next.payload.createdByEmail||next.createdByEmail;next.payload.createdByName=next.payload.createdByName||next.createdByName;}
+          }
+          await setDoc(cloudPath(name,next.id),next,{merge:true});
+        }
+      }
+      if(data.shop) await setDoc(cloudSettings(),data.shop,{merge:true});
+      try{localStorage.removeItem(LEGACY_LOCAL_KEY);}catch(_){}
+    }
+    async function maybeMigrateLegacyDataForOwner() {
+      if(!isOwner()) return;
+      if(!pendingLegacyData){ try { const raw=localStorage.getItem(PENDING_MIGRATION_KEY); if(raw) pendingLegacyData=JSON.parse(raw); } catch(_) {} }
+      if(!pendingLegacyData) return;
+      const d=pendingLegacyData;
+      const hasLegacy=d.history?.length||d.customers?.length||d.sales?.length||d.presets?.length||d.printArchive?.length||d.shop;
+      if(!hasLegacy){ pendingLegacyData=null; try{localStorage.removeItem(PENDING_MIGRATION_KEY);}catch(_){} return; }
+      await migrateLegacyDataToCompany(d,anonymousMigrationUid);
+      pendingLegacyData=null; anonymousMigrationUid=null;
+      try{localStorage.removeItem(PENDING_MIGRATION_KEY);}catch(_){}
+      showToast('ย้ายข้อมูลเดิมเข้า Cloud กลางของร้านแล้ว');
+    }
+    async function renderMembers() {
+      const box=document.getElementById('staff-members-list'); if(!box||!isOwner()||!db) return;
+      try{
+        const snap=await getDocs(memberCollection()); const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+        rows.sort((a,b)=>String(a.email||'').localeCompare(String(b.email||'')));
+        box.innerHTML=rows.length?rows.map(m=>`<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-slate-50 border rounded-lg text-xs"><div class="min-w-0"><div class="font-bold text-slate-800 truncate">${escapeHtml(m.displayName||m.email||m.uid)}</div><div class="text-slate-500 truncate">${escapeHtml(m.email||'-')} · UID: ${escapeHtml(m.uid||m.id)}</div></div><div class="flex items-center gap-1.5"><select ${m.uid===userId?'disabled':''} onchange="changeMemberRole('${escapeHtml(m.uid||m.id)}',this.value)" class="text-[10px] p-1 border rounded bg-white ${m.uid===userId?'opacity-60':''}"><option value="owner" ${m.role==='owner'?'selected':''}>Owner</option><option value="staff" ${m.role==='staff'?'selected':''}>Staff</option></select>${m.uid!==userId?`<button type="button" onclick="removeMember('${escapeHtml(m.uid||m.id)}')" class="px-2 py-1 rounded bg-rose-50 text-rose-600 border border-rose-200 font-bold">ลบ</button>`:'<span class="text-[9px] text-sky-600 font-bold px-1">บัญชีปัจจุบัน</span>'}</div></div>`).join(''):'<div class="p-3 text-center text-xs text-slate-400 border border-dashed rounded-xl">ยังไม่มีสมาชิก</div>';
+      }catch(e){console.error('Render members error',e);}
+    }
+    async function inviteStaffByEmail(){
+      if(!requireOwner('การเชิญพนักงาน')) return;
+      const el=document.getElementById('staff-invite-email'); const email=String(el?.value||'').trim().toLowerCase();
+      if(!email||!email.includes('@')) return showToast('กรุณากรอกอีเมล Google ของพนักงาน');
+      try{await setDoc(invitationPath(email),{email,role:'staff',active:true,invitedBy:userId,invitedAt:new Date().toISOString()},{merge:true});if(el)el.value='';showToast('สร้างคำเชิญพนักงานแล้ว');}catch(e){cloudError('Invite staff',e);}
+    }
+    async function changeMemberRole(uid,role){
+      if(!requireOwner('การเปลี่ยนสิทธิ์')) return; if(!uid||uid===userId) return;
+      try{await updateDoc(memberPath(uid),{role:role==='owner'?'owner':'staff'});await renderMembers();showToast('เปลี่ยนสิทธิ์สมาชิกแล้ว');}catch(e){cloudError('Change member role',e);}
+    }
+    async function removeMember(uid){
+      if(!requireOwner('การลบพนักงาน')) return; if(!uid||uid===userId) return;
+      const snap=await getDoc(memberPath(uid)); const email=snap.exists()?snap.data()?.email||uid:uid;
+      if(!confirm(`ลบสิทธิ์ ${email} ออกจากร้านใช่หรือไม่?`)) return;
+      try{await deleteDoc(memberPath(uid));await renderMembers();showToast('ลบสมาชิกแล้ว');}catch(e){cloudError('Remove member',e);}
+    }
+
+    function setAuthGate(visible, message='') {
+      authGateVisible=!!visible;
+      const gate=document.getElementById('auth-gate'), box=document.getElementById('auth-user-box'), status=document.getElementById('auth-gate-status'), btn=document.getElementById('google-login-btn');
+      if(gate){gate.classList.toggle('hidden',!visible);gate.classList.toggle('flex',visible);}
+      if(status && message) status.innerHTML=escapeHtml(message).replace(/\n/g,'<br>');
+      if(btn) btn.disabled=authActionBusy || !firebaseReady;
+      if(box){const g=!!auth?.currentUser&&!auth.currentUser.isAnonymous;box.classList.toggle('hidden',!g);box.classList.toggle('flex',g);}
+      updateRoleUi(); if(window.lucide) window.lucide.createIcons();
+    }
+
+    function updateAuthUserUi(user) {
+      const box=document.getElementById('auth-user-box'), name=document.getElementById('auth-user-name'), email=document.getElementById('auth-user-email'), photo=document.getElementById('auth-user-photo'), icon=document.getElementById('auth-user-icon'), role=document.getElementById('auth-user-role');
+      const signed=!!user&&!user.isAnonymous;
+      if(box){box.classList.toggle('hidden',!signed);box.classList.toggle('flex',signed);}
+      if(name) name.textContent=user?.displayName||'บัญชี Google';
+      if(email) email.textContent=user?.email||'-';
+      if(role) role.textContent=roleLabel(currentRole);
+      if(photo){if(user?.photoURL){photo.src=user.photoURL;photo.classList.remove('hidden');if(icon)icon.classList.add('hidden');}else{photo.src='';photo.classList.add('hidden');if(icon)icon.classList.remove('hidden');}}
+    }
+
+    async function readCloudUserData(uid) {
+      if(!uid || !db) return { history:[], customers:[], sales:[], presets:[], printArchive:[], shop:null };
+      const result = { history:[], customers:[], sales:[], presets:[], printArchive:[], shop:null };
+      const names = ['history','customers','sales','presets','printArchive'];
+      for(const name of names) {
+        const snap = await getDocs(collection(db, 'artifacts', appId, 'users', uid, name));
+        snap.forEach(d => result[name].push(d.data()));
+      }
+      const shopSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid, 'settings', 'shopData'));
+      if(shopSnap.exists()) result.shop = shopSnap.data();
+      return result;
+    }
+
+    async function writeCloudUserData(uid, data) { await migrateLegacyDataToCompany(data, uid); }
+
+    async function attachCloudListenersForCurrentUser() {
+      if(!userId || !db || !companyAccessReady) return;
+      unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
+
+      unsubscribeFns.push(onSnapshot(cloudSettings(), snap=>{
+        if(snap.exists()){
+          state.shop={...state.shop,...snap.data()};
+          ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k=>safeSetValue('setting-shop-'+k,state.shop[k]));
+          const logoPrev=document.getElementById('setting-logo-preview');
+          if(state.shop.logo&&logoPrev){logoPrev.src=state.shop.logo;logoPrev.classList.remove('hidden');}
+          persist();
+        }
+      },e=>cloudError('Load shop settings',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('presets'), snap=>{
+        state.presets=[]; snap.forEach(d=>state.presets.push(d.data())); renderPresets(); persist();
+      },e=>cloudError('Load presets',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('history'), snap=>{
+        const incoming=[]; snap.forEach(d=>incoming.push(d.data()));
+        state.history=incoming.sort((a,b)=>String(b.savedAt||b.id||'').localeCompare(String(a.savedAt||a.id||'')));
+        if(!state.currentHistoryId && !state.docNo) generateAutoDocNo(state.docType);
+        renderHistory();
+        if(state.currentHistoryId){
+          const current=state.history.find(h=>h.id===state.currentHistoryId);
+          if(current&&!state.liveSyncBusy&&!authGateVisible){
+            const liveGrand=Number(current.grandTotal||0), livePaid=Number(current.paidTotal||0);
+            state.remainingAmt=Number(current.remainingAmt||Math.max(0,liveGrand-livePaid));
+            safeSetText('calc-total-paid','฿'+livePaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
+            safeSetText('calc-remaining-amt','฿'+Number(state.remainingAmt).toLocaleString('th-TH',{minimumFractionDigits:2}));
+          }
+        }
+        persist();
+      },e=>cloudError('Load history',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('customers'), snap=>{
+        state.savedCustomers=[]; snap.forEach(d=>state.savedCustomers.push(d.data())); renderDatalists(); persist();
+      },e=>cloudError('Load customers',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('sales'), snap=>{
+        state.savedSales=[]; snap.forEach(d=>state.savedSales.push(d.data())); renderDatalists(); persist();
+      },e=>cloudError('Load sales',e)));
+
+      unsubscribeFns.push(onSnapshot(cloudCollection('printArchive'), snap=>{
+        state.printArchive=[]; snap.forEach(d=>state.printArchive.push(d.data())); state.printArchive.sort((a,b)=>String(b.printedAt||'').localeCompare(String(a.printedAt||''))); renderPrintArchive(); persist();
+      },e=>cloudError('Load print archive',e)));
+
+      if(isOwner()) renderMembers();
+    }
+
+    async function loginWithGoogle() {
+      if(!auth) return showToast('Firebase ยังไม่พร้อมใช้งาน');
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      const isMobileOrTablet =
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        window.matchMedia('(max-width: 1024px)').matches;
+
+      try {
+        setAuthUiBusy(true);
+        if(isMobileOrTablet) {
+          // Mobile/iPad: redirect avoids popup blockers and in-app browser popup restrictions.
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        // Desktop: keep popup for faster login.
+        await signInWithPopup(auth, provider);
+      } catch(e) {
+        console.error('Google login failed:', e);
+        const code = String(e?.code || '');
+        if(code.includes('popup-blocked') || code.includes('popup-closed-by-user') || code.includes('cancelled-popup-request')) {
+          // Automatic fallback: if desktop browser blocks popup, switch to redirect.
+          showToast('Popup ถูกบล็อก กำลังเปลี่ยนไปเข้าสู่ระบบแบบ Redirect...');
+          try {
+            await signInWithRedirect(auth, provider);
+            return;
+          } catch(re) {
+            console.error('Google redirect failed:', re);
+          }
+        }
+        setAuthUiBusy(false);
+        showAuthError(e);
+      }
+    }
+
+
+    async function logoutGoogle() {
+      if(!auth) return;
+      try {
+        clearTimeout(state.liveSyncTimer); unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
+        companyAccessReady=false; currentMember=null; currentRole=null; pendingLegacyData=null; clearCurrentCloudView();
+        await signOut(auth); userId=null; updateAuthUserUi(null); setAuthGate(true,'ออกจากระบบแล้ว กรุณาเข้าสู่ระบบด้วย Google'); showToast('ออกจากระบบแล้ว');
+      } catch(e){console.error('Logout error',e);showToast('ออกจากระบบไม่สำเร็จ');}
+    }
+
+    async function handleGoogleUserReady(user) {
+      if(!user||user.isAnonymous){setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว กรุณากดเข้าสู่ระบบด้วย Google');return;}
+      userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
+      if(authActionBusy) return;
+      try {
+        currentMember=await loadMembershipForUser(user);
+        if(!currentMember){
+          companyAccessReady=false; currentRole=null;
+          setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์
+หากเป็นเจ้าของครั้งแรก ให้สร้างสมาชิกใน Firestore: companies/sumran-aluminum-shop/members/<UID>`);
+          return;
+        }
+        currentRole=currentMember.role; companyAccessReady=true; state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
+        if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
+        resetEditorForSession();
+        updateRoleUi(); setAuthGate(false); await attachCloudListenersForCurrentUser();
+      } catch(e){console.error(e);setAuthGate(true,'ตรวจสอบสิทธิ์ร้านไม่สำเร็จ — ตรวจสอบ Firestore Rules');}
+    }
+
+    function handleAuthStateChange(user) {
+      if(!user){userId=null;currentMember=null;currentRole=null;companyAccessReady=false;updateAuthUserUi(null);setAuthGate(true,'ยังไม่ได้เข้าสู่ระบบ');return;}
+      userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
+      if(user.isAnonymous){anonymousMigrationUid=user.uid;setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว เมื่อกด Google Login ระบบจะย้ายข้อมูลเดิมเข้า Cloud กลางของร้าน');}
+      else handleGoogleUserReady(user);
+    }
+
+    async function initFirebase() {
+      if(!firebaseReady||!auth||!db){setAuthGate(true,'Firebase config ไม่พร้อมใช้งาน');return;}
+      try {
+        await setPersistence(auth,browserLocalPersistence);
+      getRedirectResult(auth).catch(e => {
+        console.error('Google redirect result failed:', e);
+        showAuthError(e);
+      });
+
+        if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
+        if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
+        const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
+        if(current&&!current.isAnonymous&&!authActionBusy) await handleGoogleUserReady(current);
+        if(window.lucide) window.lucide.createIcons();
+      } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
+    }
+
+    window.getFirebaseStatus = () => ({ ready: firebaseReady, projectId: firebaseConfig?.projectId || null, userId });
+    window.setFirebaseConfig = (config) => {
+      try {
+        const parsed = typeof config === 'string' ? JSON.parse(config) : config;
+        if(!parsed?.apiKey || !parsed?.projectId) throw new Error('Firebase config ไม่ครบ');
+        localStorage.setItem('sumran_firebase_config', JSON.stringify(parsed));
+        showToast('บันทึก Firebase config แล้ว กรุณารีโหลดหน้า');
+      } catch(e) { showToast('Firebase config ไม่ถูกต้อง'); console.error(e); }
+    };
+
+
+    function bindLiveSyncEvents() {
+      const editor = document.getElementById('tab-editor');
+      if(!editor || editor.dataset.liveSyncBound === '1') return;
+      editor.dataset.liveSyncBound = '1';
+
+      editor.addEventListener('input', (e) => {
+        if(e.target?.id === 'current-payment') return;
+        if(e.target?.id === 'deposit-percent') return;
+        scheduleLiveDocumentSync();
+      });
+      editor.addEventListener('change', (e) => {
+        if(e.target?.id === 'current-payment' || e.target?.id === 'deposit-percent') return;
+        scheduleLiveDocumentSync();
+      });
+    }
+
+    window.addEventListener('beforeunload', persist);
+    setInterval(persist, 30000);
+
+    window.onload = async function() {
+      try {
+        const hadLocal = loadLocalState();
+        if (!state.docNo) generateAutoDocNo('quotation');
+        bindLiveSyncEvents();
+        const historySearch = document.getElementById('search-history');
+        if(historySearch) historySearch.addEventListener('input', renderHistory);
+        await initFirebase();
+        
+        safeSetValue('docNo', state.docNo); safeSetValue('docDate', state.docDate); safeSetValue('dueDate', state.dueDate);
+        safeSetValue('salesName', state.salesName); safeSetValue('docNotes', state.notes);
+        
+        ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
+        
+        renderPresets(); renderItems(); renderPrintArchive();
+        setCurrentDocUiState(!!state.currentHistoryId);
+        safeSetChecked('payment-toggle', !!state.paymentEnabled);
+        safeSetChecked('deposit-toggle', !!state.depositEnabled);
+        safeSetValue('deposit-percent', state.depositPercent || 0);
+        togglePaymentBox();
+        toggleDepositBox();
+        calculateTotals();
+        if(window.lucide) window.lucide.createIcons();
+      } catch (e) { console.error("Init error:", e); }
+    };
+
+    function switchTab(tab) {
+      state.currentTab = tab;
+      document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('is-active'));
+      const activeMobile = document.querySelector(
+        tab === 'history' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(2)' :
+        tab === 'preview' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(4)' :
+        tab === 'settings' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(5)' :
+        '#mobile-bottom-nav .mobile-nav-item:nth-child(1)'
+      );
+      if(activeMobile) activeMobile.classList.add('is-active');
+      ['editor', 'preview', 'history', 'settings'].forEach(t => {
+        const tabEl = document.getElementById(`tab-${t}`);
+        const btnEl = document.getElementById(`tab-btn-${t}`);
+        if(tabEl) tabEl.classList.toggle('hidden', t !== tab);
+        if(btnEl) {
+          btnEl.className = t === tab ? "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow" : "px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white";
+        }
+      });
+      if (tab === 'preview') renderPreview();
+      else if (tab === 'history') renderHistory();
+      if(window.lucide) window.lucide.createIcons();
+      window.scrollTo(0, 0);
+    }
+
+    function generateAutoDocNo(type) {
+      const pfx = { quotation: 'QT', delivery: 'DO', invoice: 'IV', receipt: 'RE', cashbill: 'CS' }[type] || 'QT';
+      const d = new Date(); const ym = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0');
+      let last = 0;
+      state.history.filter(h => String(h?.docNo || '').startsWith(pfx + '-' + ym)).forEach(h => {
+        const n = parseInt(String(h?.docNo || '').split('-')[2], 10);
+        if(Number.isFinite(n) && n > last) last = n;
+      });
+      state.docNo = `${pfx}-${ym}-${String(last + 1).padStart(3, '0')}`;
+      safeSetValue('docNo', state.docNo);
+    }
+
+    function updateDocType(val) {
+      state.docType = val;
+      generateAutoDocNo(val);
+      showToast('เปลี่ยนประเภทบิลเป็น ' + val);
+    }
+
+    function renderPresets() {
+      const container = document.getElementById('presets-container');
+      if(!container) return;
+      container.innerHTML = '';
+      state.presets.forEach(p => {
+        const cl = p.type === 'general' ? 'bg-amber-500/20 text-amber-300 hover:border-amber-400/40' : 'bg-sky-500/20 text-sky-300 hover:border-sky-400/40';
+        container.innerHTML += `<button type="button" onclick="applyPreset('${p.id}')" class="group p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition text-left flex flex-col justify-between"><div class="w-8 h-8 rounded-lg ${cl} flex items-center justify-center mb-2 group-hover:scale-110 transition"><i data-lucide="${p.icon || 'box'}" class="w-4 h-4"></i></div><div><div class="text-[11px] font-bold text-white leading-tight">${escapeHtml(p.name)}</div><div class="text-[10px] text-slate-400 mt-1">${p.type === 'general' ? 'ทั่วไป' : 'งานกระจก'}</div></div></button>`;
+      });
+      if(window.lucide) window.lucide.createIcons();
+    }
+
+    function applyPreset(pid) {
+      const p = state.presets.find(x => x.id === pid); if(!p) return;
+      const i = { id: 'item-'+Date.now(), type: p.type, name: p.name, aluColor: p.aluColor, glassType: p.glassType, width: p.width, height: p.height, area: +(p.width*p.height).toFixed(2), qty: 1, unit: p.unit||'ชุด', pricingType: p.priceType, priceTypeLabel: p.priceTypeLabel||'', showQty: p.showQty!==false, showUnit: p.showUnit!==false, unitPrice: p.price, total: 0 };
+      i.total = i.pricingType === 'per_sqm' ? (i.area>0?i.area*i.unitPrice:i.unitPrice) : i.unitPrice;
+      state.items.push(i); renderItems(); calculateTotals(); showToast(`เพิ่ม "${p.name}" แล้ว`);
+    }
+
+    function addNewItem(type) {
+      state.items.push({ id: 'item-'+Date.now(), type: type, name: type==='alu'?'ชุดหน้าต่าง/ประตู':'สินค้าทั่วไป', aluColor: type==='alu'?'อบขาว':'-', glassType: type==='alu'?'เขียว 6 มม.':'-', width: type==='alu'?1:0, height: type==='alu'?1:0, area: type==='alu'?1:0, qty: 1, unit: type==='alu'?'ชุด':'ชิ้น', pricingType: type==='alu'?'per_sqm':'per_unit', priceTypeLabel:'', showQty:true, showUnit:true, unitPrice: 1000, total: 1000 });
+      renderItems(); calculateTotals();
+    }
+
+    function removeItem(id) {
+      if(state.items.length <= 1) return showToast('ต้องมี 1 รายการ');
+      state.items = state.items.filter(i => i.id !== id); renderItems(); calculateTotals();
+    }
+    
+    // คำนวณยอดของรายการเดียวจากค่าปัจจุบันเสมอ
+    // ไม่พึ่งค่า item.total เดิม เพราะค่าเดิมอาจเป็นยอดจากก่อนแก้ไขรายการ
+    function recalculateItem(item) {
+      if(!item) return 0;
+      const width = Number(item.width) || 0;
+      const height = Number(item.height) || 0;
+      const qty = Math.max(0, Number(item.qty) || 0);
+      const unitPrice = Math.max(0, Number(item.unitPrice) || 0);
+      item.area = +(width * height).toFixed(2);
+
+      let baseQty = 1;
+      if(item.pricingType === 'per_sqm' && item.type === 'alu') {
+        baseQty = item.area;
+      }
+      item.total = +(baseQty * qty * unitPrice).toFixed(2);
+      return item.total;
+    }
+
+    function updateItem(id, field, val) {
+      const item = state.items.find(i => i.id === id); if(!item) return;
+      if(['width', 'height', 'qty', 'unitPrice'].includes(field)) {
+        item[field] = parseFloat(val) || 0;
+      } else {
+        item[field] = val;
+      }
+
+      // เปลี่ยนการคิดราคา/ขนาด/จำนวน/ราคาต่อหน่วย ต้องคำนวณยอดรายการใหม่ทันที
+      recalculateItem(item);
+      if(document.getElementById(`area-${id}`)) document.getElementById(`area-${id}`).innerText = Number(item.area || 0).toFixed(2);
+      if(document.getElementById(`total-${id}`)) document.getElementById(`total-${id}`).innerText = '฿' + Number(item.total || 0).toLocaleString('th-TH', {minimumFractionDigits: 2});
+
+      calculateTotals();
+      // ถ้ากำลังอยู่หน้า Preview ให้ยอดในใบเสนอราคาเปลี่ยนทันทีด้วย
+      if(state.currentTab === 'preview') renderPreview();
+      persist();
+      scheduleLiveDocumentSync();
+    }
+
+    function renderItems() {
+      const c = document.getElementById('items-list'); if(!c) return; c.innerHTML = '';
+      state.items.forEach((item, idx) => {
+        let isAlu = item.type === 'alu';
+        let bdg = isAlu ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 ml-2">กxส</span>` : `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 ml-2">ทั่วไป</span>`;
+        let dis = state.isLumpSum ? 'disabled class="w-full p-1.5 border rounded text-right bg-slate-100 text-slate-400"' : `class="w-full p-1.5 border rounded text-right text-sky-700 font-bold"`;
+        
+        c.innerHTML += `
+          <div class="p-3 bg-slate-50/70 border border-slate-200 rounded-xl space-y-2">
+            <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <div class="flex items-center gap-2 flex-1"><span class="w-5 h-5 rounded-full bg-slate-700 text-white text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span><input type="text" value="${escapeHtml(item.name)}" oninput="updateItem('${item.id}', 'name', this.value)" class="font-semibold text-slate-800 text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-sky-500 px-1 py-0.5 w-full md:w-80">${bdg}</div>
+              <button onclick="removeItem('${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[10px] ${!isAlu ? 'hidden' : ''}">
+              <div><label class="text-slate-500 block">สีอลูมิเนียม</label><input type="text" value="${escapeHtml(item.aluColor)}" oninput="updateItem('${item.id}', 'aluColor', this.value)" class="w-full px-2 py-1 border rounded"></div>
+              <div><label class="text-slate-500 block">กระจก</label><input type="text" value="${escapeHtml(item.glassType)}" oninput="updateItem('${item.id}', 'glassType', this.value)" class="w-full px-2 py-1 border rounded"></div>
+              <div><label class="text-slate-500 block">การคิดราคา</label><select onchange="updateItem('${item.id}', 'pricingType', this.value)" class="w-full px-2 py-1 border rounded"><option value="per_sqm" ${item.pricingType==='per_sqm'?'selected':''}>ต่อ ตร.ม.</option><option value="per_unit" ${item.pricingType==='per_unit'?'selected':''}>ต่อชิ้น</option></select></div>
+            </div>
+            ${!isAlu ? `<div class="flex flex-wrap items-center gap-3 pt-1 text-[10px] border-t border-slate-200"><span class="font-semibold">แสดง:</span><label><input type="checkbox" ${item.showQty!==false?'checked':''} onchange="updateItem('${item.id}','showQty',this.checked);renderItems()"> จำนวน</label><label><input type="checkbox" ${item.showUnit!==false?'checked':''} onchange="updateItem('${item.id}','showUnit',this.checked);renderItems()"> หน่วย</label><button type="button" onclick="updateItem('${item.id}','showQty',false);updateItem('${item.id}','showUnit',false);renderItems()" class="px-2 py-1 border bg-white rounded">ราคาอย่างเดียว</button></div>` : ''}
+            <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 pt-1 text-[10px] items-end">
+              ${isAlu ? `<div><label class="text-slate-500 block">กว้าง(ม.)</label><input type="number" step="0.01" value="${item.width}" oninput="updateItem('${item.id}', 'width', this.value)" class="w-full p-1.5 border rounded text-center"></div><div><label class="text-slate-500 block">สูง(ม.)</label><input type="number" step="0.01" value="${item.height}" oninput="updateItem('${item.id}', 'height', this.value)" class="w-full p-1.5 border rounded text-center"></div><div><label class="text-slate-500 block">ตร.ม.</label><div class="p-1.5 bg-slate-100 rounded text-center font-bold" id="area-${item.id}">${item.area.toFixed(2)}</div></div>` : `<div class="col-span-3"></div>`}
+              <div><label class="text-slate-500 block">จำนวน</label><input type="number" value="${item.qty}" oninput="updateItem('${item.id}', 'qty', this.value)" class="w-full p-1.5 border rounded text-center font-bold"></div>
+              <div><label class="text-slate-500 block">หน่วย</label><input type="text" value="${escapeHtml(item.unit)}" oninput="updateItem('${item.id}', 'unit', this.value)" class="w-full p-1.5 border rounded text-center"></div>
+              <div><label class="text-slate-500 block">ราคา/หน่วย</label><input type="number" value="${item.unitPrice}" oninput="updateItem('${item.id}', 'unitPrice', this.value)" ${dis}></div>
+            </div>
+          </div>
+        `;
+      });
+      if(window.lucide) window.lucide.createIcons();
+    }
+
+    function toggleLumpSum() {
+      const lumpSumToggle = document.getElementById('lump-sum-toggle');
+      const lumpSumBox = document.getElementById('lump-sum-box');
+      if(lumpSumToggle) state.isLumpSum = lumpSumToggle.checked;
+      if(lumpSumBox) lumpSumBox.style.display = state.isLumpSum ? 'flex' : 'none';
+      renderItems(); calculateTotals();
+    }
+
+    function getPaymentRecords() {
+      if(!Array.isArray(state.payments)) state.payments = [];
+      // ล้างรายการรับเงินที่ไม่ใช่ตัวเลข/ติดลบ เพื่อไม่ให้ยอดรวมค้างหรือเพี้ยน
+      state.payments = state.payments.filter(p => p && Number.isFinite(Number(p.amount)) && Number(p.amount) > 0);
+      return state.payments;
+    }
+
+    function getTotalPaid() {
+      const payments = getPaymentRecords();
+      if(payments.length) {
+        return +payments.reduce((sum,p) => sum + Math.max(0, Number(p.amount)||0), 0).toFixed(2);
+      }
+      // รองรับเอกสารรุ่นเก่าที่มีเพียง prevPaid แต่ยังไม่มี payment records
+      return +Math.max(0, Number(state.prevPaid)||0).toFixed(2);
+    }
+
+    function normalizeMoney(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? +Math.max(0, n).toFixed(2) : 0;
+    }
+
+    function renderPaymentHistory() {
+      const box = document.getElementById('payment-history-box');
+      const list = document.getElementById('payment-history-list');
+      if(!box || !list) return;
+      const payments = getPaymentRecords();
+      if(!payments.length) { box.style.display = 'none'; list.innerHTML = ''; return; }
+      box.style.display = 'block';
+      list.innerHTML = payments.map((p,i) => {
+        const d = p.date ? formatDateThai(String(p.date).slice(0,10)) : '-';
+        return `<div class="flex justify-between gap-2"><span>${i+1}. ${d}</span><strong class="font-mono text-emerald-700">฿${Number(p.amount||0).toLocaleString('th-TH',{minimumFractionDigits:2})}</strong></div>`;
+      }).join('');
+    }
+
+    function toggleDepositBox() {
+      const toggle = document.getElementById('deposit-toggle');
+      const percentBox = document.getElementById('deposit-percent-box');
+      const amountRow = document.getElementById('deposit-amount-row');
+      state.depositEnabled = !!toggle?.checked;
+
+      // ใช้ทั้ง classList และ inline style เพื่อไม่ให้ Tailwind .hidden ค้างบังช่องกรอก
+      if(percentBox) {
+        percentBox.classList.toggle('hidden', !state.depositEnabled);
+        percentBox.classList.toggle('flex', state.depositEnabled);
+        percentBox.style.display = state.depositEnabled ? 'flex' : 'none';
+      }
+      if(amountRow) {
+        amountRow.classList.toggle('hidden', !state.depositEnabled);
+        amountRow.classList.toggle('flex', state.depositEnabled);
+        amountRow.style.display = state.depositEnabled ? 'flex' : 'none';
+      }
+
+      if(!state.depositEnabled) {
+        state.depositPercent = 0;
+        state.depositAmount = 0;
+        safeSetValue('deposit-percent', 0);
+        safeSetText('calc-deposit-amt', '฿0.00');
+      }
+      updateDepositPercent();
+    }
+
+    function updateDepositPercent() {
+      const input = document.getElementById('deposit-percent');
+      let percent = input ? Number(input.value) : Number(state.depositPercent || 0);
+      if(!Number.isFinite(percent)) percent = 0;
+      percent = Math.min(100, Math.max(0, percent));
+      state.depositEnabled = !!document.getElementById('deposit-toggle')?.checked;
+      state.depositPercent = state.depositEnabled ? +percent.toFixed(2) : 0;
+      if(input) input.value = state.depositPercent;
+
+      // คำนวณยอดเอกสารใหม่ก่อนคำนวณมัดจำเสมอ ป้องกันใช้ยอดเก่าที่ค้างอยู่
+      calculateTotals(true);
+    }
+
+    function applyDepositToPayment() {
+      if(!state.depositEnabled) return;
+      const alreadyPaid = getTotalPaid();
+      const amountToReceive = Math.max(0, Math.min(state.depositAmount - alreadyPaid, state.grandTotal - alreadyPaid));
+      state.currentPayment = +amountToReceive.toFixed(2);
+      safeSetValue('current-payment', state.currentPayment);
+      calculateTotals();
+      showToast('ใส่ยอดมัดจำเป็นยอดรับชำระครั้งนี้แล้ว — กดบันทึกเมื่อได้รับเงินจริง');
+    }
+
+    function togglePaymentBox() {
+      const paymentToggle = document.getElementById('payment-toggle');
+      const paymentBox = document.getElementById('payment-box');
+      if(paymentToggle) state.paymentEnabled = paymentToggle.checked;
+      if(paymentBox) {
+        paymentBox.classList.toggle('hidden', !state.paymentEnabled);
+        paymentBox.style.display = state.paymentEnabled ? 'block' : 'none';
+      }
+      calculateTotals();
+      // ให้สถานะของช่องมัดจำสัมพันธ์กับระบบแบ่งจ่ายทุกครั้ง
+      if(state.paymentEnabled) toggleDepositBox();
+    }
+
+    function calculateTotals(skipPaymentSync = false) {
+      let sub = 0;
+      if (state.isLumpSum) {
+        const lumpSumInput = document.getElementById('lump-sum-amt');
+        state.lumpSumAmt = lumpSumInput ? (parseFloat(lumpSumInput.value) || 0) : 0;
+        sub = state.lumpSumAmt;
+      } else {
+        // สำคัญ: คำนวณทุก item ใหม่ทุกครั้งก่อนรวมยอด
+        // ป้องกันยอดเก่าค้างใน state.items จากเอกสาร/พรีเซ็ตที่โหลดมา
+        sub = state.items.reduce((sum, item) => sum + recalculateItem(item), 0);
+        sub = +sub.toFixed(2);
+      }
+
+      const discInput = document.getElementById('calc-discount');
+      let disc = discInput ? (parseFloat(discInput.value) || 0) : 0;
+      let after = Math.max(0, sub - disc);
+      let vatEl = document.getElementById('vat-toggle'), whtEl = document.getElementById('wht-toggle');
+      let vat = vatEl?.checked ? +(after * 0.07).toFixed(2) : 0;
+      let wht = whtEl?.checked ? +(after * 0.03).toFixed(2) : 0;
+      let grand = +(after + vat - wht).toFixed(2);
+
+      const depositToggle = document.getElementById('deposit-toggle');
+      const depositPercentInput = document.getElementById('deposit-percent');
+      state.depositEnabled = depositToggle ? !!depositToggle.checked : !!state.depositEnabled;
+      if(state.depositEnabled) {
+        state.depositPercent = Math.min(100, Math.max(0, depositPercentInput ? (parseFloat(depositPercentInput.value) || 0) : (state.depositPercent || 0)));
+        state.depositAmount = +(grand * state.depositPercent / 100).toFixed(2);
+        safeSetText('calc-deposit-amt', '฿' + state.depositAmount.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      } else {
+        state.depositPercent = 0; state.depositAmount = 0;
+      }
+
+      const currentPaymentInput = document.getElementById('current-payment');
+      let currentPayment = currentPaymentInput ? normalizeMoney(currentPaymentInput.value) : normalizeMoney(state.currentPayment);
+      const totalPaidBeforeCurrent = Math.min(grand, getTotalPaid());
+      // ห้ามรับชำระเกินยอดคงเหลือของเอกสาร
+      currentPayment = Math.min(currentPayment, Math.max(0, +(grand - totalPaidBeforeCurrent).toFixed(2)));
+      state.currentPayment = currentPayment;
+      if(currentPaymentInput && Number(currentPaymentInput.value) !== currentPayment) currentPaymentInput.value = currentPayment;
+      const remAmt = Math.max(0, +(grand - totalPaidBeforeCurrent - currentPayment).toFixed(2));
+
+      safeSetText('calc-subtotal', '฿' + sub.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('calc-after-discount', '฿' + after.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('calc-vat', '฿' + vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('calc-wht', '-฿' + wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('calc-grandtotal', '฿' + grand.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('calc-total-paid', '฿' + (totalPaidBeforeCurrent + state.currentPayment).toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('calc-remaining-amt', '฿' + remAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
+
+      const totalCostInput = document.getElementById('total-cost');
+      state.totalCost = totalCostInput ? (parseFloat(totalCostInput.value) || 0) : 0;
+      let profit = after - state.totalCost;
+      safeSetText('profit-calc-display', `กำไรสุทธิ: ฿${profit.toLocaleString('th-TH',{minimumFractionDigits:2})}`);
+
+      state.subtotal = sub; state.discount = disc; state.afterDiscount = after;
+      state.vat = vat; state.vatEnabled = !!vatEl?.checked; state.wht = wht; state.whtEnabled = !!whtEl?.checked;
+      state.grandTotal = grand;
+      state.remainingAmt = remAmt;
+      state.profit = profit;
+      state.prevPaid = totalPaidBeforeCurrent;
+      state.bahtText = thaiBahtConversion(grand);
+      // เก็บค่าที่คำนวณแล้วให้ตรงกับหน้าจอทุกครั้ง
+      state.depositAmount = state.depositEnabled ? +(grand * state.depositPercent / 100).toFixed(2) : 0;
+      safeSetText('calc-deposit-amt', '฿' + state.depositAmount.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      renderPaymentHistory();
+
+      // ถ้าผู้ใช้อยู่หน้าใบเสนอราคา/Preview ให้เอกสารด้านหน้าอัปเดตตามยอดล่าสุดทันที
+      if(state.currentTab === 'preview') renderPreview();
+
+      // เอกสารที่เคยบันทึกแล้วจะซิงก์การเปลี่ยนแปลงของราคา/ยอดไป Firestore แบบหน่วงเล็กน้อย
+      // โดยจะไม่ auto-save ระหว่างกำลังกรอก "รับชำระครั้งนี้"
+      if(!skipPaymentSync) scheduleLiveDocumentSync();
+    }
+
+    function renderPreview() {
+      // Sync Basic fields
+      ['docNo','refNo','docDate','dueDate','salesName','docNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) state[id] = el.value;
+      });
+      ['custName','custPhone','custTaxId','custAddress','projectName'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+          let k = id==='custName'?'name':id.replace('cust','').toLowerCase();
+          if(id==='projectName') k='project'; if(id==='custTaxId') k='taxId';
+          state.customer[k] = el.value;
+        }
+      });
+
+      const types = {
+        quotation: { th: 'ใบเสนอราคา', en: 'QUOTATION', s1: 'ผู้เสนอราคา', s2: 'ผู้อนุมัติสั่งซื้อ', s3: 'ผู้มีอำนาจลงนาม' },
+        delivery: { th: 'ใบส่งของ', en: 'DELIVERY ORDER', s1: 'ผู้ส่งสินค้า', s2: 'ผู้รับสินค้าสมบูรณ์', s3: 'พยาน' },
+        invoice: { th: 'ใบแจ้งหนี้ / วางบิล', en: 'INVOICE', s1: 'ผู้วางบิล', s2: 'ผู้รับเอกสาร', s3: 'ผู้มีอำนาจลงนาม' },
+        receipt: { th: 'ใบเสร็จรับเงิน', en: 'RECEIPT', s1: 'ผู้รับเงิน', s2: 'ผู้จ่ายเงิน', s3: 'ผู้มีอำนาจลงนาม' },
+        cashbill: { th: 'บิลเงินสด', en: 'CASH BILL', s1: 'ผู้รับเงิน', s2: 'ผู้จ่ายเงิน', s3: '-' }
+      };
+      const m = types[state.docType] || types.quotation;
+
+      safeSetText('p-doc-title-badge', m.th); safeSetText('p-doc-title-en', m.en);
+      safeSetText('sig1-title', m.s1); safeSetText('sig2-title', m.s2); safeSetText('sig3-title', m.s3);
+      
+      const dueDateContainer = document.getElementById('p-due-date-container');
+      if(dueDateContainer) dueDateContainer.style.display = ['delivery','receipt','cashbill'].includes(state.docType) ? 'none' : 'block';
+      
+      const refNoContainer = document.getElementById('p-ref-no-container');
+      if(state.refNo) { 
+        if(refNoContainer) refNoContainer.style.display = 'block'; 
+        safeSetText('p-ref-no', state.refNo); 
+      } else if(refNoContainer) {
+        refNoContainer.style.display = 'none';
+      }
+
+      safeSetText('p-doc-no', state.docNo); safeSetText('p-doc-date', formatDateThai(state.docDate)); safeSetText('p-due-date', formatDateThai(state.dueDate));
+      safeSetText('p-printed-at', new Date().toLocaleString('th-TH', { dateStyle:'short', timeStyle:'short' }));
+      safeSetText('p-repeat-doc-title', m.th);
+      safeSetText('p-repeat-doc-no', state.docNo || '-');
+      safeSetText('p-repeat-cust', state.customer.name || '-');
+      safeSetText('p-sales-name', state.salesName);
+      safeSetText('p-cust-name', state.customer.name); safeSetText('p-cust-phone', state.customer.phone); safeSetText('p-cust-taxid', state.customer.taxId);
+      safeSetText('p-cust-address', state.customer.address); safeSetText('p-project-name', state.customer.project);
+      
+      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetText('p-shop-'+k, state.shop[k]));
+
+      // แสดงโลโก้ร้านในเอกสารพิมพ์
+      const printLogo = document.getElementById('p-shop-logo');
+      if(printLogo) {
+        if(state.shop.logo) {
+          printLogo.src = state.shop.logo;
+          printLogo.classList.remove('hidden');
+        } else {
+          printLogo.src = '';
+          printLogo.classList.add('hidden');
+        }
+      }
+
+      safeSetText('p-notes', state.docNotes);
+      // Preview ใช้ค่าที่บันทึกไว้ ไม่คำนวณยอดใหม่เอง
+      state.discount = Number(state.discount || 0);
+      state.subtotal = Number(state.subtotal || 0);
+      state.afterDiscount = Number(state.afterDiscount ?? Math.max(0, state.subtotal - state.discount));
+      state.vat = Number(state.vat || 0);
+      state.wht = Number(state.wht || 0);
+      state.grandTotal = Number(state.grandTotal || 0);
+      state.remainingAmt = Number(state.remainingAmt || 0);
+      state.prevPaid = Number(state.prevPaid || 0);
+      state.profit = Number(state.profit || 0);
+
+      const tb = document.getElementById('p-items-tbody'); 
+      if(tb) {
+        tb.innerHTML = '';
+        state.items.forEach((item, idx) => {
+          let sub = item.type==='alu' ? `สี: ${item.aluColor} | กระจก: ${item.glassType}` : '-';
+          let dim = item.type==='alu' ? `${Number(item.width||0).toFixed(2)}x${Number(item.height||0).toFixed(2)}` : '-';
+          let area = item.type==='alu' ? Number(item.area||0).toFixed(2) : '-';
+          let up = state.isLumpSum ? '-' : '฿'+Number(item.unitPrice||0).toLocaleString('th-TH');
+          let tot = state.isLumpSum ? (idx===0 ? '฿'+Number(state.lumpSumAmt||0).toLocaleString('th-TH',{minimumFractionDigits:2}) : '-') : '฿'+Number(item.total||0).toLocaleString('th-TH',{minimumFractionDigits:2});
+          
+          tb.innerHTML += `<tr class="border-b border-slate-100 ${idx%2===0?'bg-white':'bg-slate-50/50'}"><td class="py-1.5 px-2 text-center">${idx+1}</td><td class="py-1.5 px-3"><div class="font-bold text-slate-900">${escapeHtml(item.name)}</div><div class="text-[9px] text-slate-500">${sub}</div></td><td class="py-1.5 px-2 text-center font-mono">${dim}</td><td class="py-1.5 px-2 text-center font-mono">${area}</td><td class="py-1.5 px-2 text-center font-mono">${(item.type==='general'&&item.showQty===false)?'-':item.qty} <span class="text-[9px]">${(item.type==='general'&&item.showUnit===false)?'':escapeHtml(item.unit)}</span></td><td class="py-1.5 px-2 text-right font-mono">${up}</td><td class="py-1.5 px-2 text-right font-mono font-bold">${tot}</td></tr>`;
+        });
+      }
+
+      safeSetText('p-calc-subtotal', '฿' + state.subtotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      const discountRow = document.getElementById('p-discount-row');
+      if(discountRow) discountRow.style.display = state.discount > 0 ? 'flex' : 'none'; 
+      safeSetText('p-calc-discount', '-฿' + state.discount.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      
+      const vatRow = document.getElementById('p-vat-row');
+      if(vatRow) vatRow.style.display = state.vatEnabled ? 'flex' : 'none'; 
+      safeSetText('p-calc-vat', '฿' + state.vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      
+      const whtRow = document.getElementById('p-wht-row');
+      if(whtRow) whtRow.style.display = state.whtEnabled ? 'flex' : 'none'; 
+      safeSetText('p-calc-wht', '-฿' + state.wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      
+      safeSetText('p-calc-grandtotal', '฿' + state.grandTotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      safeSetText('p-baht-text', `(${state.bahtText})`);
+
+      let depBox = document.getElementById('p-deposit-box');
+      if (depBox) {
+        const totalPaid = getTotalPaid() + (Number(state.currentPayment)||0);
+        const showPaymentInfo = state.paymentEnabled && (state.depositEnabled || totalPaid > 0 || state.remainingAmt > 0);
+        if (showPaymentInfo) {
+          depBox.style.display = 'block';
+          const reqRow = document.getElementById('p-required-deposit-row');
+          if(reqRow) reqRow.style.display = state.depositEnabled ? 'flex' : 'none';
+          safeSetText('p-required-deposit-amt', '฿' + Number(state.depositAmount||0).toLocaleString('th-TH',{minimumFractionDigits:2}));
+          safeSetText('p-prev-paid-amt', '฿' + totalPaid.toLocaleString('th-TH',{minimumFractionDigits:2}));
+          const curRow = document.getElementById('p-current-paid-row');
+          if(curRow) curRow.style.display = state.currentPayment > 0 ? 'flex' : 'none';
+          safeSetText('p-deposit-label', ['receipt','cashbill'].includes(state.docType) ? 'รับชำระเงินครั้งนี้:' : 'รับชำระครั้งนี้:');
+          safeSetText('p-deposit-amt', '฿' + Number(state.currentPayment||0).toLocaleString('th-TH',{minimumFractionDigits:2}));
+          safeSetText('p-remaining-amt', '฿' + Number(state.remainingAmt||0).toLocaleString('th-TH',{minimumFractionDigits:2}));
+        } else {
+          depBox.style.display = 'none';
+        }
+      }
+    }
+
+    function getInitialStatus(type) {
+      return { quotation: 'quoting', invoice: 'pending', delivery: 'pending_delivery' }[type] || 'paid';
+    }
+
+    async function saveCurrentDoc(options = {}) {
+      const recordPayment = options.recordPayment !== false;
+      const silent = !!options.silent;
+      if(!companyAccessReady || !currentMember || !userId) return showToast('กรุณาเข้าสู่ระบบและได้รับสิทธิ์ร้านก่อนบันทึก');
+      const existingBeforeSave = state.currentHistoryId ? state.history.find(h=>h.id===state.currentHistoryId) : null;
+      if(existingBeforeSave && !canEditHistoryItem(existingBeforeSave)) return showToast('พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองเป็นผู้จัดทำ');
+      calculateTotals(true);
+      state.customer = {
+        name: document.getElementById('custName')?.value || '',
+        phone: document.getElementById('custPhone')?.value || '',
+        taxId: document.getElementById('custTaxId')?.value || '',
+        address: document.getElementById('custAddress')?.value || '',
+        project: document.getElementById('projectName')?.value || ''
+      };
+      state.docNo = document.getElementById('docNo')?.value || state.docNo;
+      state.refNo = document.getElementById('refNo')?.value || '';
+      state.docDate = document.getElementById('docDate')?.value || state.docDate;
+      state.dueDate = document.getElementById('dueDate')?.value || state.dueDate;
+      state.salesName = document.getElementById('salesName')?.value || state.salesName;
+      state.notes = document.getElementById('docNotes')?.value || '';
+      if(!Array.isArray(state.payments)) state.payments = [];
+
+      // คำนวณยอดจากข้อมูลล่าสุดอีกครั้งก่อนบันทึกเสมอ
+      // เพื่อป้องกัน payload เก็บ grandTotal / remaining / deposit เป็นค่าเก่า
+      // true = ไม่ตั้ง timer live-sync ซ้ำจากภายใน saveCurrentDoc
+      calculateTotals(true);
+
+      // currentPayment = เงินที่ได้รับจริงในครั้งนี้เท่านั้น
+      const receiveNow = Math.max(0, Number(state.currentPayment)||0);
+      if(recordPayment && receiveNow > 0) {
+        const totalBefore = getTotalPaid();
+        const allowed = Math.max(0, Number(state.grandTotal||0) - totalBefore);
+        const amount = Math.min(receiveNow, allowed);
+        if(amount > 0) {
+          state.payments.push({ id:'pay-'+Date.now(), amount:+amount.toFixed(2), date:new Date().toISOString(), docNo:state.docNo });
+          showToast('บันทึกรับชำระเงินจำนวน ฿' + amount.toLocaleString('th-TH',{minimumFractionDigits:2}) + ' แล้ว');
+        }
+        state.currentPayment = 0;
+        safeSetValue('current-payment', 0);
+      }
+      state.prevPaid = getTotalPaid();
+      state.remainingAmt = Math.max(0, +(Number(state.grandTotal||0) - state.prevPaid).toFixed(2));
+
+      const existing = state.history.find(h => h.docNo === state.docNo);
+      let status = existing?.status || getInitialStatus(state.docType);
+      if(state.docType === 'invoice') status = state.remainingAmt <= 0 ? 'paid' : state.prevPaid > 0 ? 'partial' : 'pending';
+      if(['receipt','cashbill'].includes(state.docType) && state.remainingAmt > 0) status = 'partial';
+      const payload = clone(state);
+      // ไม่ฝังประวัติทั้งหมด/ประวัติการพิมพ์ไว้ในเอกสารแต่ละใบ เพื่อไม่ให้ Firestore โตซ้ำซ้อน
+      delete payload.history; delete payload.printArchive; delete payload.presets; delete payload.savedCustomers; delete payload.savedSales;
+      payload.createdByUid = existing?.createdByUid || userId;
+      payload.createdByEmail = existing?.createdByEmail || (auth.currentUser?.email || '');
+      payload.createdByName = existing?.createdByName || (auth.currentUser?.displayName || '');
+      payload.updatedByUid = userId; payload.updatedByEmail = auth.currentUser?.email || ''; payload.updatedByName = auth.currentUser?.displayName || '';
+      const rec = {
+        id: existing?.id || ('doc-' + Date.now()),
+        docNo: state.docNo, docType: state.docType, refNo: state.refNo,
+        rootDocNo: getRootDocNo({docNo: state.docNo, refNo: state.refNo}, state.history),
+        customerName: state.customer.name || 'ไม่ระบุ', project: state.customer.project || '-',
+        totalCost: Number(state.totalCost || 0),
+        date: state.docDate, grandTotal: Number(state.grandTotal || 0), remainingAmt: Number(state.remainingAmt || 0),
+        paidTotal: Number(state.prevPaid || 0), requiredDeposit: state.depositEnabled ? Number(state.depositAmount||0) : 0,
+        depositPercent: state.depositEnabled ? Number(state.depositPercent||0) : 0, profit: Number(state.profit || 0),
+        createdByUid: existing?.createdByUid || userId,
+        createdByEmail: existing?.createdByEmail || (auth.currentUser?.email || ''),
+        createdByName: existing?.createdByName || (auth.currentUser?.displayName || ''),
+        updatedByUid: userId, updatedByEmail: auth.currentUser?.email || '', updatedByName: auth.currentUser?.displayName || '',
+        status, payload, savedAt: new Date().toISOString()
+      };
+      const idx = state.history.findIndex(h => h.id === rec.id);
+      if (idx >= 0) state.history[idx] = rec; else state.history.unshift(rec);
+      state.currentHistoryId = rec.id;
+      persist(); renderHistory(); renderPreview();
+      setCurrentDocUiState(true);
+      if (userId && db) {
+        try {
+          await setDoc(cloudPath('history', rec.id), rec, { merge: true });
+          if(!silent) showToast('บันทึกเอกสารขึ้น Cloud แล้ว');
+        }
+        catch(e) { cloudError('Save document', e); }
+      } else if(!silent) {
+        showToast('บันทึกเอกสารแล้ว (ในเครื่อง)');
+      }
+    }
+
+    function renderPrintArchive() {
+      const tb = document.getElementById('print-archive-tbody');
+      if(!tb) return;
+      const rows = Array.isArray(state.printArchive) ? state.printArchive : [];
+      if(!rows.length) { tb.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-400">ยังไม่มีประวัติการพิมพ์</td></tr>'; return; }
+      tb.innerHTML = rows.slice(0,100).map(r => `
+        <tr class="hover:bg-slate-50 border-b border-slate-100">
+          <td class="py-2 px-2 font-mono font-bold text-sky-700">${escapeHtml(r.docNo||'-')}</td>
+          <td class="py-2 px-2">${escapeHtml((r.docType||'').toUpperCase())}</td>
+          <td class="py-2 px-2">${escapeHtml(r.customerName||'-')}</td>
+          <td class="py-2 px-2 text-[10px]">${r.printedAt ? new Date(r.printedAt).toLocaleString('th-TH') : '-'}</td>
+          <td class="py-2 px-2 text-center whitespace-nowrap">
+            <button onclick="reprintArchivedDoc('${r.historyId||''}')" class="px-2 py-1 bg-sky-50 text-sky-700 rounded border border-sky-200 font-bold mr-1">พิมพ์ซ้ำ</button>
+            <button onclick="deletePrintArchive('${r.id||''}')" class="px-2 py-1 bg-red-50 text-red-600 rounded border border-red-200 font-bold">ลบ</button>
+          </td>
+        </tr>`).join('');
+      if(window.lucide) window.lucide.createIcons();
+    }
+
+    async function deletePrintArchive(id) {
+      if(!id) return showToast('ไม่พบรายการประวัติการพิมพ์');
+      if(!requireOwner('การลบประวัติการพิมพ์')) return;
+      if(!confirm('ต้องการลบประวัติการพิมพ์รายการนี้ใช่หรือไม่?')) return;
+      state.printArchive=(state.printArchive||[]).filter(x=>String(x.id)!==String(id));
+      persist(); renderPrintArchive();
+      if(userId&&db){
+        try { await deleteDoc(cloudPath('printArchive',id)); showToast('ลบประวัติการพิมพ์แล้ว'); }
+        catch(e){ cloudError('Delete print archive',e); }
+      } else showToast('ลบประวัติการพิมพ์แล้ว (ในเครื่อง)');
+    }
+
+    async function clearPrintArchive() {
+      if(!requireOwner('การล้างประวัติการพิมพ์')) return;
+      const rows=[...(state.printArchive||[])];
+      if(!rows.length) return showToast('ยังไม่มีประวัติการพิมพ์');
+      if(!confirm(`ต้องการลบประวัติการพิมพ์ทั้งหมด ${rows.length} รายการใช่หรือไม่?`)) return;
+      state.printArchive=[]; persist(); renderPrintArchive();
+      if(userId&&db){
+        const results=await Promise.allSettled(rows.filter(x=>x.id).map(x=>deleteDoc(cloudPath('printArchive',x.id))));
+        const failed=results.filter(x=>x.status==='rejected').length;
+        if(failed) showToast(`ลบแล้วบางส่วน แต่มี ${failed} รายการที่ Cloud ลบไม่สำเร็จ`);
+        else showToast('ลบประวัติการพิมพ์ทั้งหมดแล้ว');
+      } else showToast('ลบประวัติการพิมพ์ทั้งหมดแล้ว (ในเครื่อง)');
+    }
+
+    function buildDocumentSnapshot(sourceState = state) {
+      const snap = clone(sourceState || {});
+      delete snap.history; delete snap.printArchive; delete snap.presets; delete snap.savedCustomers; delete snap.savedSales;
+      return snap;
+    }
+
+    function restoreCalculatedValuesToUI() {
+      const money = n => '฿' + Number(n || 0).toLocaleString('th-TH',{minimumFractionDigits:2});
+      safeSetText('calc-subtotal', money(state.subtotal));
+      safeSetText('calc-after-discount', money(state.afterDiscount));
+      safeSetText('calc-vat', money(state.vat));
+      safeSetText('calc-wht', '-'+money(state.wht));
+      safeSetText('calc-grandtotal', money(state.grandTotal));
+      safeSetText('calc-total-paid', money(state.prevPaid));
+      safeSetText('calc-remaining-amt', money(state.remainingAmt));
+      safeSetText('profit-calc-display', `กำไรสุทธิ: ${money(state.profit)}`);
+      safeSetText('calc-deposit-amt', money(state.depositAmount));
+      renderPaymentHistory();
+    }
+
+    async function archiveOutputAction(action) {
+      const existing=state.history.find(h=>h.docNo===state.docNo);
+      if(!existing) return;
+      const archive={id:action+'-'+Date.now(),historyId:existing.id,docNo:existing.docNo,docType:existing.docType,
+        customerName:existing.customerName,printedAt:new Date().toISOString(),createdByUid:userId,
+        createdByEmail:auth.currentUser?.email||'',createdByName:auth.currentUser?.displayName||'',
+        grandTotal:existing.grandTotal,paidTotal:existing.paidTotal||0,action,snapshot:buildDocumentSnapshot(state)};
+      if(userId&&db)setDoc(cloudPath('printArchive',archive.id),archive,{merge:true}).catch(e=>cloudError('Archive output',e));
+    }
+
+    function prepareDocumentForOutput() {
+      if(!companyAccessReady||!currentMember){showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');return false;}
+      calculateTotals(); renderPreview();
+      const existing=state.history.find(h=>h.docNo===state.docNo);
+      if(!existing){showToast('กรุณากดบันทึกข้อมูลก่อนพิมพ์หรือบันทึก PDF');return false;}
+      return true;
+    }
+
+    function printDocument() {
+      if(!prepareDocumentForOutput()) return;
+      archiveOutputAction('print');
+      /* Native browser print preserves the real HTML/CSS, Thai fonts, tables and
+         multi-page layout much more faithfully than screenshot-to-PDF conversion. */
+      requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
+    }
+
+    async function downloadPdf() {
+      if(!prepareDocumentForOutput()) return;
+
+      const btn = document.querySelector('button[onclick="downloadPdf()"]');
+      const oldHtml = btn?.innerHTML;
+      try {
+        if(btn){
+          btn.disabled = true;
+          btn.innerHTML = '<span class="animate-pulse">กำลังสร้าง PDF...</span>';
+        }
+        showToast('กำลังสร้างไฟล์ PDF...');
+
+        // Wait until browser fonts are fully loaded before capturing the document HTML.
+        if(document.fonts?.ready) await document.fonts.ready;
+
+        const printArea = document.getElementById('print-area');
+        if(!printArea) throw new Error('ไม่พบพื้นที่เอกสารสำหรับสร้าง PDF');
+
+        // Send the real rendered document markup to the Vercel PDF endpoint.
+        // The server uses Chromium print-to-PDF, not html2canvas, so Thai text,
+        // tables and multi-page print CSS remain browser-rendered/vector text.
+        const styles = Array.from(document.querySelectorAll('style'))
+          .map(el => el.textContent || '')
+          .join('\n');
+
+        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+          .map(el => `<link rel="stylesheet" href="${el.href}">`)
+          .join('\n');
+
+        const payload = {
+          title: String(state.docNo || 'Sumran-Aluminum'),
+          html: printArea.outerHTML,
+          styles,
+          links
+        };
+
+        const res = await fetch('/api/pdf', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+
+        if(!res.ok){
+          let msg='สร้าง PDF ไม่สำเร็จ';
+          try {
+            const data=await res.json();
+            if(data?.error) msg=data.error;
+          } catch(_){}
+          throw new Error(msg);
+        }
+
+        const blob = await res.blob();
+        if(!blob.size) throw new Error('ไฟล์ PDF ว่างเปล่า');
+
+        const safe = String(state.docNo || 'Sumran-Aluminum')
+          .replace(/[\\/:*?"<>|]+/g,'-')
+          .trim() || 'Sumran-Aluminum';
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = safe + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 30000);
+
+        archiveOutputAction('save_pdf');
+        showToast('ดาวน์โหลด PDF แล้ว');
+      } catch(e) {
+        console.error('Direct PDF failed:', e);
+        showToast('สร้าง PDF ไม่สำเร็จ: ' + (e?.message || 'กรุณาลองใหม่'));
+      } finally {
+        if(btn){
+          btn.disabled = false;
+          if(oldHtml) btn.innerHTML = oldHtml;
+          if(window.lucide) window.lucide.createIcons();
+        }
+      }
+    }
+
+    function reprintArchivedDoc(historyId) {
+      const archive = (state.printArchive || []).find(x => x.historyId === historyId && x.snapshot);
+      const h = state.history.find(x => x.id === historyId);
+      if(!h && !archive) return showToast('ไม่พบเอกสารต้นฉบับ');
+      const source = archive?.snapshot || h?.payload || {};
+      Object.assign(state, clone(source));
+      state.currentHistoryId = historyId;
+      state.payments = Array.isArray(state.payments) ? state.payments : [];
+      state.currentPayment = 0;
+      state.prevPaid = Number(source.prevPaid ?? h?.paidTotal ?? getTotalPaid() ?? 0);
+      const radioEl = document.querySelector(`input[name="docType"][value="${state.docType}"]`);
+      if(radioEl) radioEl.checked = true;
+      ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
+      const c = state.customer || {};
+      [['custName','name'],['custPhone','phone'],['custTaxId','taxId'],['custAddress','address'],['projectName','project']].forEach(([id,k]) => safeSetValue(id,c[k]));
+      safeSetValue('docNotes', state.notes || '');
+      safeSetValue('calc-discount', state.discount ?? 0);
+      safeSetValue('total-cost', state.totalCost ?? 0);
+      safeSetChecked('vat-toggle', !!state.vatEnabled);
+      safeSetChecked('wht-toggle', !!state.whtEnabled);
+      safeSetChecked('payment-toggle', !!state.paymentEnabled);
+      safeSetValue('prev-paid', state.prevPaid ?? 0);
+      safeSetValue('current-payment', 0);
+      safeSetChecked('deposit-toggle', !!state.depositEnabled);
+      safeSetValue('deposit-percent', state.depositPercent || 0);
+      renderItems();
+      togglePaymentBox();
+      toggleDepositBox();
+      restoreCalculatedValuesToUI();
+      setCurrentDocUiState(true);
+      switchTab('preview');
+    }
+
+    // ---- Transaction / document linking helpers ----
+    // ใบเสนอราคา -> ใบแจ้งหนี้ -> ใบเสร็จ ต้องนับเป็น "งานเดียว" ใน Dashboard
+    function getRootDocNo(historyItem, allHistory = state.history) {
+      if(!historyItem) return '';
+      const byDocNo = new Map(allHistory.map(x => [String(x.docNo || ''), x]));
+      let current = historyItem;
+      const seen = new Set();
+      for(let i=0; i<30; i++) {
+        const no = String(current?.docNo || '');
+        if(!no || seen.has(no)) break;
+        seen.add(no);
+        const ref = String(current?.refNo || '').trim();
+        if(!ref) break;
+        const parent = byDocNo.get(ref);
+        if(!parent) break;
+        current = parent;
+      }
+      return String(current?.docNo || historyItem.docNo || '');
+    }
+
+    function getTransactionSummary(rootDocNo, allHistory = state.history) {
+      const docs = allHistory.filter(h => getRootDocNo(h, allHistory) === rootDocNo);
+      if(!docs.length) return null;
+      const quotation = docs.find(h => h.docType === 'quotation');
+      const financial = docs.filter(h => ['quotation','invoice','receipt','cashbill'].includes(h.docType));
+      const master = quotation || financial[0] || docs[0];
+      const total = Number((quotation || financial[0] || master).grandTotal || 0);
+      let cost = 0;
+      docs.forEach(h => {
+        const c = Number(h.payload?.totalCost ?? h.totalCost ?? 0);
+        if(c > cost) cost = c;
+      });
+
+      // รวมเงินที่รับจริงจากทุกเอกสารในงานเดียวกัน แต่ไม่ซ้ำ payment id
+      const seenPayments = new Set();
+      let paid = 0;
+      let hasPaymentRecords = false;
+      docs.forEach(h => {
+        const payments = Array.isArray(h.payload?.payments) ? h.payload.payments : [];
+        payments.forEach(p => {
+          hasPaymentRecords = true;
+          const pid = String(p.id || `${h.docNo}-${p.date || ''}-${p.amount || 0}`);
+          if(seenPayments.has(pid)) return;
+          seenPayments.add(pid);
+          paid += Number(p.amount || 0);
+        });
+      });
+      if(!hasPaymentRecords) paid = Math.max(...docs.map(h => Number(h.paidTotal || 0)), 0);
+      paid = Math.min(total, +paid.toFixed(2));
+      const remaining = Math.max(0, +(total - paid).toFixed(2));
+      const profit = +(total - cost).toFixed(2);
+      const accepted = !!quotation && quotation.status === 'accepted';
+      const hasSaleDoc = docs.some(h => ['invoice','receipt','cashbill'].includes(h.docType));
+      const active = accepted || hasSaleDoc;
+      return { rootDocNo, docs, master, total, cost, paid, remaining, profit, accepted, hasSaleDoc, active };
+    }
+
+    function getTransactionMap(allHistory = state.history) {
+      const map = new Map();
+      allHistory.forEach(h => {
+        const root = getRootDocNo(h, allHistory);
+        if(root && !map.has(root)) map.set(root, getTransactionSummary(root, allHistory));
+      });
+      return map;
+    }
+
+    function renderHistory() {
+      const tb=document.getElementById('history-tbody'); if(!tb)return;
+      tb.innerHTML='';
+      const q=String(document.getElementById('search-history')?.value||'').trim().toLowerCase();
+      const filtered=(state.history||[]).filter(h=>{
+        const hay=[h?.docNo,h?.customerName,h?.refNo,h?.project,h?.status,h?.docType]
+          .map(v=>String(v||'').toLowerCase()).join(' ');
+        return !q || hay.includes(q);
+      });
+
+      filtered.forEach(h=>{
+        const editable=canEditHistoryDocument(h);
+        const statusEditable=canChangeHistoryStatus(h);
+        const statuses=['รอการยืนยันการทำงาน','ยืนยันการทำงาน','กำลังดำเนินงาน','รอชำระเงิน','ชำระบางส่วน','ชำระครบแล้ว','เสร็จสิ้น','ยกเลิก'];
+        const statusHtml=statusEditable
+          ? `<select onchange="updateDocumentStatus('${h.id}',this.value)" class="px-2 py-1 border rounded-lg text-[10px] bg-white max-w-[150px]">
+              ${statuses.map(v=>`<option value="${v}" ${String(h.status||'')===v?'selected':''}>${v}</option>`).join('')}
+            </select>`
+          : `<span class="text-[10px]">${escapeHtml(h.status||'-')}</span>`;
+
+        const action=editable
+          ? `<button onclick="loadHistory('${h.id}')" title="แก้ไขเอกสาร" class="p-1.5 text-sky-600 hover:bg-sky-50 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button>`
+          : `<button onclick="loadHistory('${h.id}')" title="ดูเอกสาร" class="p-1.5 text-slate-500 hover:bg-slate-100 rounded"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
+
+        tb.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-slate-50">
+          <td class="px-3 py-2 font-semibold text-sky-700">${escapeHtml(h.docNo||'-')}</td>
+          <td class="px-3 py-2">${escapeHtml(h.docType||'-')}</td>
+          <td class="px-3 py-2">${escapeHtml(h.customerName||'-')}</td>
+          <td class="px-3 py-2">${statusHtml}</td>
+          <td class="px-3 py-2 text-right whitespace-nowrap">${action}</td>
+        </tr>`;
+      });
+      if(!filtered.length) tb.innerHTML='<tr><td colspan="5" class="px-3 py-8 text-center text-slate-400">ไม่พบเอกสาร</td></tr>';
+      if(window.lucide)window.lucide.createIcons();
+    }
+
+    function updateDocStatus(id, stat) {
+      if(!requireOwner('การเปลี่ยนสถานะเอกสาร')) return;
+      const h = state.history.find(x => x.id === id); if(h) h.status = stat; persist(); renderHistory();
+      if(userId && db) updateDoc(cloudPath('history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
+    }
+
+    function generateFlowDoc(oldId, newType) {
+      const h = state.history.find(x => x.id === oldId); if(!h) return;
+      if(!canEditHistoryItem(h)) return showToast('พนักงานต่อยอดเอกสารของผู้อื่นไม่ได้ — สร้างเอกสารใหม่แทนได้');
+      Object.assign(state, clone(h.payload || {}));
+      state.currentHistoryId = null;
+      state.refNo = h.docNo;
+      safeSetValue('refNo', state.refNo);
+      const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
+      if(radioEl) radioEl.checked = true;
+      // เปลี่ยนชนิดเอกสารอย่างเดียว ไม่คำนวณยอดใหม่ เพื่อรักษาส่วนลด/VAT/WHT/ยอดสุทธิของเอกสารต้นฉบับ
+      state.docType = newType;
+      generateAutoDocNo(newType);
+      state.payments = Array.isArray(state.payments) ? clone(state.payments) : [];
+      state.prevPaid = getTotalPaid();
+      state.currentPayment = 0;
+      state.paymentEnabled = true;
+      safeSetChecked('payment-toggle', true);
+      safeSetChecked('deposit-toggle', !!state.depositEnabled);
+      safeSetValue('deposit-percent', state.depositPercent || 0);
+      safeSetValue('calc-discount', state.discount || 0);
+      safeSetValue('total-cost', state.totalCost || 0);
+      safeSetChecked('vat-toggle', !!state.vatEnabled);
+      safeSetChecked('wht-toggle', !!state.whtEnabled);
+      safeSetValue('prev-paid', state.prevPaid || 0);
+      safeSetValue('current-payment', 0);
+      renderItems();
+      togglePaymentBox();
+      toggleDepositBox();
+      restoreCalculatedValuesToUI();
+      setCurrentDocUiState(false);
+      switchTab('editor');
+      showToast(`สร้าง ${newType} อ้างอิง ${h.docNo} — ยอดและส่วนลดเดิมถูกคงไว้ รอกดบันทึก`);
+    }
+
+    function loadHistory(id) {
+      const h = state.history.find(x => x.id === id); if(!h) return;
+      state.isReadOnlyDocument = !canEditHistoryItem(h);
+      Object.assign(state, clone(h.payload || {}));
+      // รองรับเอกสารเก่าที่เก็บค่าคำนวณไว้ที่ record ด้านนอก payload
+      ['subtotal','discount','afterDiscount','vat','wht','grandTotal','remainingAmt','paidTotal','profit','bahtText','depositAmount','depositPercent'].forEach(k => {
+        if(state[k] === undefined && h[k] !== undefined) state[k] = h[k];
+      });
+      state.currentHistoryId = id;
+      const radioEl = document.querySelector(`input[name="docType"][value="${state.docType}"]`);
+      if(radioEl) radioEl.checked = true;
+      ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k]));
+      const c = state.customer || {};
+      [['custName','name'],['custPhone','phone'],['custTaxId','taxId'],['custAddress','address'],['projectName','project']].forEach(([id,k]) => safeSetValue(id,c[k]));
+      safeSetValue('docNotes', state.notes || '');
+      safeSetValue('calc-discount', state.discount ?? 0);
+      safeSetValue('total-cost', state.totalCost ?? 0);
+      safeSetChecked('vat-toggle', !!state.vatEnabled);
+      safeSetChecked('wht-toggle', !!state.whtEnabled);
+      safeSetChecked('lump-sum-toggle', !!state.isLumpSum);
+      safeSetValue('lump-sum-amt', state.lumpSumAmt ?? 0);
+      state.payments = Array.isArray(state.payments) ? state.payments : [];
+      state.currentPayment = 0;
+      state.prevPaid = Number(state.paidTotal ?? getTotalPaid() ?? 0);
+      safeSetChecked('payment-toggle', !!state.paymentEnabled);
+      safeSetValue('prev-paid', state.prevPaid);
+      safeSetValue('current-payment', 0);
+      safeSetChecked('deposit-toggle', !!state.depositEnabled);
+      safeSetValue('deposit-percent', state.depositPercent || 0);
+      renderItems();
+      togglePaymentBox();
+      toggleDepositBox();
+      restoreCalculatedValuesToUI();
+      setCurrentDocUiState(true);
+      switchTab('editor');
+      showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล — พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองจัดทำ' : 'โหลดเอกสารแล้ว โดยคงยอดที่บันทึกไว้เดิม');
+    }
+
+    function delHistory(id) {
+      if(!requireOwner('การลบเอกสาร')) return;
+      if(!confirm('ยืนยันลบเอกสารนี้หรือไม่?')) return;
+      if(state.currentHistoryId === id) {
+        state.currentHistoryId = null;
+        setCurrentDocUiState(false);
+      }
+      state.history = state.history.filter(x => x.id !== id); persist(); renderHistory();
+      if(userId&&db) deleteDoc(cloudPath('history', id)).then(()=>showToast('ลบเอกสารแล้ว')).catch(e=>cloudError('Delete history',e)); else showToast('ลบเอกสารแล้ว (ในเครื่อง)');
+    }
+
+    function createNewDocument() {
+      clearTimeout(state.liveSyncTimer);
+      state.currentHistoryId = null;
+      state.isReadOnlyDocument = false;
+      state.items = [{
+        id: 'item-'+Date.now(), type: 'alu', name: 'ชุดหน้าต่าง/ประตู', aluColor: 'อบขาว', glassType: 'เขียว 6 มม.',
+        width: 1, height: 1, area: 1, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 1000, total: 1000
+      }];
+      ['custName','custPhone','custTaxId','custAddress','projectName','refNo','total-cost'].forEach(id => safeSetValue(id, ''));
+      state.customer = { name:'', phone:'', taxId:'', address:'', project:'' };
+      state.payments=[]; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0;
+      state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0;
+      state.paymentEnabled=false;
+      safeSetValue('prev-paid',0); safeSetValue('current-payment',0); safeSetValue('deposit-percent',0);
+      safeSetChecked('payment-toggle', false); safeSetChecked('deposit-toggle', false);
+      togglePaymentBox(); toggleDepositBox();
+      generateAutoDocNo(state.docType);
+      renderItems(); calculateTotals();
+      setCurrentDocUiState(false);
+      switchTab('editor'); showToast('สร้างเอกสารใหม่และรีเซ็ตประวัติการรับชำระแล้ว');
+    }
+
+    function saveStoreSettings() {
+      if(!requireOwner('การตั้งค่าร้าน')) return;
+      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => {
+        const el = document.getElementById('setting-shop-'+k);
+        if(el) state.shop[k] = el.value;
+      });
+      persist();
+      if(userId&&db) setDoc(cloudSettings(), state.shop, {merge:true}).then(()=>showToast('บันทึกตั้งค่าขึ้น Cloud แล้ว')).catch(e=>cloudError('Save shop settings',e));
+      else showToast('บันทึกตั้งค่าแล้ว (ในเครื่อง)');
+    }
+    
+    function handleLogoUpload(input) {
+      if(!requireOwner('การเปลี่ยนโลโก้')) return;
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          state.shop.logo = e.target.result;
+          const logoPreview = document.getElementById('setting-logo-preview');
+          if(logoPreview) {
+            logoPreview.src = state.shop.logo;
+            logoPreview.classList.remove('hidden');
+          }
+          persist();
+          if(userId && db) setDoc(cloudSettings(), state.shop, {merge:true}).catch(e=>cloudError('Save logo',e));
+          showToast('เพิ่มโลโก้สำเร็จ');
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    let currentModalType = '';
+    function openGenericModal(type) {
+      currentModalType = type;
+      const modal = document.getElementById('generic-modal');
+      if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+      const title = document.getElementById('gmodal-title');
+      const list = document.getElementById('gmodal-list'); 
+      if(list) list.innerHTML = '';
+      
+      const addBtn = document.getElementById('gmodal-add-btn');
+      if(addBtn) {
+        addBtn.classList.toggle('hidden', type !== 'presetModal');
+        addBtn.classList.toggle('flex', type === 'presetModal');
+      }
+      if(type === 'presetModal') {
+        if(title) title.innerText = 'จัดการแบบมาตรฐาน / พรีเซ็ตสินค้า';
+        if(list) {
+          if(!state.presets.length) {
+            list.innerHTML = `<div class="p-4 text-center text-xs text-slate-400 border border-dashed rounded-xl mb-2">ยังไม่มีแบบมาตรฐาน — กด “เพิ่มแบบมาตรฐาน” เพื่อสร้างรายการแรก</div>`;
+          }
+          state.presets.forEach((p, idx) => {
+            list.innerHTML += `<div class="flex justify-between items-center p-2.5 bg-slate-50 border rounded-lg text-xs gap-2"><div class="min-w-0"><div class="font-bold text-slate-800 truncate">${escapeHtml(p.name)}</div><div class="text-slate-500 mt-0.5">${p.type==='alu'?'อลูมิเนียม / งานกระจก':'สินค้าทั่วไป'} · ${p.priceType==='per_sqm'?'คิดต่อตร.ม.':'คิดต่อหน่วย'} · ฿${Number(p.price||0).toLocaleString('th-TH')}</div></div><button onclick="deleteData('preset', '${p.id}', ${idx})" class="shrink-0 text-rose-500 hover:bg-rose-100 p-1.5 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+          });
+        }
+      } else if(type === 'customerModal') {
+        if(title) title.innerText = 'จัดการรายชื่อลูกค้า';
+        state.savedCustomers.forEach((c, idx) => {
+          if(list) list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><div><div class="font-bold">${escapeHtml(c.name)}</div><div class="text-slate-500">${escapeHtml(c.phone)}</div></div><button onclick="deleteData('customer', '${c.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+        });
+      } else if(type === 'salesModal') {
+        if(title) title.innerText = 'จัดการรายชื่อผู้ขาย';
+        if(list) {
+          list.innerHTML = `<div class="flex gap-2 mb-3"><input type="text" id="new-sales-name" placeholder="ชื่อเซลส์/ผู้ประสานงาน" class="flex-1 p-2 text-xs border rounded"><button onclick="saveSalesInfo()" class="px-3 py-2 bg-sky-600 text-white text-xs rounded font-bold">เพิ่ม</button></div>`;
+          state.savedSales.forEach((s, idx) => {
+            list.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 border rounded text-xs"><span>${escapeHtml(s.name)}</span><button onclick="deleteData('sales', '${s.id}', ${idx})" class="text-rose-500 hover:bg-rose-100 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+          });
+        }
+      }
+      if(window.lucide) window.lucide.createIcons();
+    }
+
+    function openPresetEditor() {
+      const list=document.getElementById('gmodal-list'); if(!list)return; normalizePresetOptions();
+      list.innerHTML=`<div class="border border-sky-200 bg-sky-50 rounded-xl p-3 space-y-3">
+      <div class="text-xs font-bold text-sky-900">เพิ่มแบบมาตรฐานใหม่</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div class="sm:col-span-2"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชื่อแบบมาตรฐาน *</label><input id="preset-name" class="w-full p-2 text-xs border rounded-lg bg-white" placeholder="เช่น ประตูบานเลื่อน"></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ประเภท</label><select id="preset-type" onchange="togglePresetFields()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="alu">อลูมิเนียม / งานกระจก</option><option value="general">สินค้าทั่วไป / ค่าแรง</option></select></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">วิธีคิดราคา</label><select id="preset-price-type" onchange="togglePresetPriceLabel()" class="w-full p-2 text-xs border rounded-lg bg-white"><option value="per_sqm">ต่อตารางเมตร</option><option value="per_unit">ต่อหน่วย</option><option value="custom">พิมพ์วิธีคิดเอง</option></select><input id="preset-price-type-label" class="hidden w-full p-2 text-xs border rounded-lg bg-white mt-1" placeholder="เช่น ต่อเมตร / ต่อบาน / ต่อจุด"></div>
+      <div id="preset-width-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">กว้าง (ม.)</label><input id="preset-width" type="number" step=".01" value="1.6" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div id="preset-height-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สูง (ม.)</label><input id="preset-height" type="number" step=".01" value="1.2" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">หน่วย</label><select id="preset-unit-select" onchange="handlePresetUnitMode()" class="w-full p-2 text-xs border rounded-lg bg-white"></select><input id="preset-new-unit" class="hidden w-full p-2 text-xs border rounded-lg bg-white mt-1" placeholder="พิมพ์หน่วยใหม่"><button type="button" onclick="addPresetUnit()" class="mt-1 px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มหน่วยไว้ใช้</button></div>
+      <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ราคา</label><input id="preset-price" type="number" value="0" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div id="preset-color-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สีอลูมิเนียม</label><select id="preset-alu-color" class="w-full p-2 text-xs border rounded-lg bg-white"></select><div class="flex gap-1 mt-1"><input id="preset-new-color" class="flex-1 p-2 text-xs border rounded-lg bg-white" placeholder="เพิ่มสีใหม่"><button type="button" onclick="addPresetColor()" class="px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มสี</button></div></div>
+      <div id="preset-glass-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชนิดกระจก</label><input id="preset-glass" value="เขียวตัดแสง 6 มม." class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div class="sm:col-span-2 border-t pt-2"><div class="text-[10px] font-medium text-slate-600 mb-1">สินค้าทั่วไปจะแสดงอะไร</div><label class="flex gap-2 text-xs"><input id="preset-show-qty" type="checkbox" checked> แสดงจำนวน</label><label class="flex gap-2 text-xs mt-1"><input id="preset-show-unit" type="checkbox" checked> แสดงหน่วย</label><div class="text-[10px] text-slate-500 mt-1">เอาออกทั้งสองช่อง = แสดงราคาอย่างเดียว</div></div>
+      </div><div class="flex justify-end gap-2"><button onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white border rounded-lg text-xs">ยกเลิก</button><button onclick="savePreset()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-bold">บันทึกแบบมาตรฐาน</button></div></div>`;
+      renderPresetEditorOptions(); const c=document.getElementById('preset-alu-color');if(c)c.value=state.presetColors.includes('อบขาว')?'อบขาว':state.presetColors[0];togglePresetFields();
+    }
+    function togglePresetFields(){const alu=document.getElementById('preset-type')?.value==='alu';['preset-width-wrap','preset-height-wrap','preset-color-wrap','preset-glass-wrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=alu?'':'none'});const p=document.getElementById('preset-price-type');if(p&&!alu&&p.value==='per_sqm')p.value='per_unit';togglePresetPriceLabel();}
+    function togglePresetPriceLabel(){const e=document.getElementById('preset-price-type-label');if(!e)return;const x=document.getElementById('preset-price-type')?.value==='custom';e.classList.toggle('hidden',!x);e.style.display=x?'':'none';}
+    async function savePreset(){if(!requireOwner('การเพิ่มแบบมาตรฐาน'))return;normalizePresetOptions();const name=document.getElementById('preset-name')?.value.trim();if(!name)return showToast('กรุณากรอกชื่อแบบมาตรฐาน');const type=document.getElementById('preset-type')?.value||'alu',pt=document.getElementById('preset-price-type')?.value||'per_unit',unit=getPresetUnitValue();if(!state.unitOptions.includes(unit))state.unitOptions.push(unit);const p={id:'preset-'+Date.now(),type,name,icon:type==='alu'?'columns-2':'package',aluColor:type==='alu'?(document.getElementById('preset-alu-color')?.value||'-'):'-',glassType:type==='alu'?(document.getElementById('preset-glass')?.value||'-'):'-',width:type==='alu'?(+document.getElementById('preset-width')?.value||0):0,height:type==='alu'?(+document.getElementById('preset-height')?.value||0):0,unit,price:+document.getElementById('preset-price')?.value||0,priceType:pt==='custom'?'per_unit':pt,priceTypeLabel:pt==='custom'?(document.getElementById('preset-price-type-label')?.value.trim()||'ต่อหน่วย'):'',showQty:type==='general'?document.getElementById('preset-show-qty').checked:true,showUnit:type==='general'?document.getElementById('preset-show-unit').checked:true};state.presets.push(p);persist();renderPresets();if(userId&&db)try{await setDoc(cloudPath('presets',p.id),p,{merge:true})}catch(e){cloudError('Save preset',e)}showToast('บันทึกแบบมาตรฐานแล้ว');openGenericModal('presetModal');}
+
+    function closeGenericModal() { 
+      const modal = document.getElementById('generic-modal');
+      if(modal) {
+        modal.classList.add('hidden'); 
+        modal.classList.remove('flex'); 
+      }
+    }
+
+    function deleteData(type, id, idx) {
+      if(type === 'preset' && !requireOwner('การลบแบบมาตรฐาน')) return;
+      const paths = { preset: 'presets', customer: 'customers', sales: 'sales' };
+      if(type==='preset') state.presets.splice(idx, 1);
+      if(type==='customer') state.savedCustomers.splice(idx, 1);
+      if(type==='sales') state.savedSales.splice(idx, 1);
+      persist(); renderDatalists(); openGenericModal(currentModalType);
+      if(userId && db && id) deleteDoc(cloudPath(paths[type], id)).catch(e=>cloudError('Delete data',e));
+    }
+
+    function saveCustomerInfo() {
+      if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนบันทึกลูกค้า');
+      const nameEl = document.getElementById('custName');
+      const phoneEl = document.getElementById('custPhone');
+      const taxEl = document.getElementById('custTaxId');
+      const addrEl = document.getElementById('custAddress');
+      const c = { 
+        id: 'cust-'+Date.now(), 
+        name: nameEl ? nameEl.value : '', 
+        phone: phoneEl ? phoneEl.value : '', 
+        taxId: taxEl ? taxEl.value : '', 
+        address: addrEl ? addrEl.value : '' 
+      };
+      if(!c.name) return showToast('กรุณากรอกชื่อลูกค้า');
+      state.savedCustomers = state.savedCustomers.filter(x => x.name !== c.name || x.phone !== c.phone); state.savedCustomers.push(c); persist(); renderDatalists();
+      if(userId&&db) setDoc(cloudPath('customers',c.id), c, {merge:true}).then(()=>showToast('บันทึกลูกค้าขึ้น Cloud แล้ว')).catch(e=>cloudError('Save customer',e));
+      else showToast('บันทึกลูกค้าแล้ว (ในเครื่อง)');
+    }
+
+    function saveSalesInfo() {
+      if(!companyAccessReady || !currentMember) return showToast('กรุณาเข้าสู่ระบบก่อนบันทึกพนักงานขาย');
+      const newSalesEl = document.getElementById('new-sales-name');
+      const s = { id: 'sale-'+Date.now(), name: newSalesEl ? newSalesEl.value : '' };
+      if(!s.name) return;
+      state.savedSales = state.savedSales.filter(x => x.name !== s.name); state.savedSales.push(s); persist(); renderDatalists(); openGenericModal('salesModal');
+      if(userId&&db) setDoc(cloudPath('sales',s.id), s, {merge:true}).then(()=>showToast('บันทึกพนักงานขายขึ้น Cloud แล้ว')).catch(e=>cloudError('Save sales',e)); else showToast('บันทึกพนักงานขายแล้ว (ในเครื่อง)');
+    }
+
+    function renderDatalists() {
+      const cList = document.getElementById('customerDatalist'); 
+      if(cList) {
+        cList.innerHTML = '';
+        state.savedCustomers.forEach(c => cList.innerHTML += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.phone)}</option>`);
+      }
+      const sList = document.getElementById('salesList'); 
+      if(sList) {
+        sList.innerHTML = '';
+        state.savedSales.forEach(s => sList.innerHTML += `<option value="${escapeHtml(s.name)}"></option>`);
+      }
+      // ไม่เปิด Modal อัตโนมัติที่นี่ เพราะ renderDatalists() ถูกเรียกจากหลายจุด
+      // หากเปิด Modal เดิมซ้ำ จะทำให้การบันทึกลูกค้าจากหน้า Editor เด้งกลับไปยัง Modal พนักงานขายได้
+    }
+
+    function autoFillCustomer() {
+      const nameEl = document.getElementById('custName');
+      const name = nameEl ? nameEl.value : '';
+      const c = state.savedCustomers.find(x => x.name === name);
+      if(c) { 
+        safeSetValue('custPhone', c.phone); 
+        safeSetValue('custTaxId', c.taxId); 
+        safeSetValue('custAddress', c.address); 
+        showToast('ดึงข้อมูลลูกค้าประจำ'); 
+      }
+    }
+
+    // Expose all globals
+    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.canEditHistoryDocument = canEditHistoryDocument; window.canChangeHistoryStatus = canChangeHistoryStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+  </script>
+
+<!--
+FIRESTORE RULES REQUIRED FOR STAFF STATUS UPDATE
+Replace the existing HISTORY update rule with:
+
+allow update: if isMember()
+  && (
+    isOwner()
+    ||
+    (
+      resource.data.createdByUid == request.auth.uid
+      && request.resource.data.createdByUid == resource.data.createdByUid
+    )
+    ||
+    (
+      request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'status',
+        'statusUpdatedAt',
+        'statusUpdatedByUid',
+        'statusUpdatedByEmail',
+        'statusUpdatedByName'
+      ])
+      && request.resource.data.statusUpdatedByUid == request.auth.uid
+    )
+  );
+
+This permits Staff to change workflow status on another member's document
+without granting permission to edit prices, items, customers, totals, or creator identity.
+-->
+
+
+<!-- DIRECT PDF V1:
+     /api/pdf uses headless Chromium on Vercel.
+     Physical printing continues to use window.print() unchanged. -->
+</body>
+</html>

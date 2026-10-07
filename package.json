@@ -1,0 +1,9 @@
+{
+  "name": "sumran-aluminum-billing",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@sparticuz/chromium": "latest",
+    "puppeteer-core": "latest"
+  }
+}
