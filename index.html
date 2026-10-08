@@ -1018,7 +1018,7 @@
             <div><label class="block font-medium mb-1">Line ID</label><input type="text" id="setting-shop-line" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
             <div><label class="block font-medium mb-1">เลขผู้เสียภาษี</label><input type="text" id="setting-shop-taxid" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
           </div>
-          <div><label class="block font-medium mb-1">บัญชีรับชำระเงิน (แสดงท้ายบิล)</label><input type="text" id="setting-bank-info" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
+          <div><label class="block font-medium mb-1">บัญชีรับชำระเงิน (แสดงท้ายบิล)</label><input type="text" id="setting-shop-bank" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
           <div><label class="block font-medium mb-1">ข้อความสเปกมาตรฐาน (แสดงใต้ชื่อลูกค้าเวลาพิมพ์)</label><textarea id="setting-standard-spec" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500 bg-slate-50"></textarea></div>
           <div class="pt-4 flex justify-end"><button onclick="saveStoreSettings()" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold">บันทึกตั้งค่าร้าน</button></div>
         </div>
@@ -1099,8 +1099,6 @@
     let unsubscribeFns = [];
     let authInitialized = false;
     let authActionBusy = false;
-    let authReadyPromise = null;
-    let authReadyUid = null;
     let authGateVisible = false;
     let anonymousMigrationUid = null;
     let currentMember = null;
@@ -1632,49 +1630,24 @@
       if(isOwner()) renderMembers();
     }
 
-    function setAuthUiBusy(busy, message='') {
-      authActionBusy=!!busy;
-      const btn=document.getElementById('google-login-btn');
-      if(btn) btn.disabled=authActionBusy || !firebaseReady;
-      if(message){
-        const status=document.getElementById('auth-gate-status');
-        if(status) status.textContent=message;
-      }
-    }
-
-    async function loadCompanyInitialData() {
-      if(!userId || !db || !companyAccessReady) return;
-      const [shopSnap,presetsSnap,historySnap,customersSnap,salesSnap,archiveSnap] = await Promise.all([
-        getDoc(cloudSettings()),
-        getDocs(cloudCollection('presets')),
-        getDocs(cloudCollection('history')),
-        getDocs(cloudCollection('customers')),
-        getDocs(cloudCollection('sales')),
-        getDocs(cloudCollection('printArchive'))
-      ]);
-      if(shopSnap.exists()) state.shop={...state.shop,...shopSnap.data()};
-      state.presets=[]; presetsSnap.forEach(d=>state.presets.push(d.data()));
-      state.history=[]; historySnap.forEach(d=>state.history.push(d.data()));
-      state.history.sort((a,b)=>String(b.savedAt||b.id||'').localeCompare(String(a.savedAt||a.id||'')));
-      state.savedCustomers=[]; customersSnap.forEach(d=>state.savedCustomers.push(d.data()));
-      state.savedSales=[]; salesSnap.forEach(d=>state.savedSales.push(d.data()));
-      state.printArchive=[]; archiveSnap.forEach(d=>state.printArchive.push(d.data()));
-      state.printArchive.sort((a,b)=>String(b.printedAt||'').localeCompare(String(a.printedAt||'')));
-      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k=>safeSetValue('setting-shop-'+k,state.shop[k]));
-      const logoPrev=document.getElementById('setting-logo-preview');
-      if(state.shop.logo&&logoPrev){logoPrev.src=state.shop.logo;logoPrev.classList.remove('hidden');}
-      renderPresets(); renderHistory(); renderDatalists(); renderPrintArchive(); persist();
-    }
-
     async function loginWithGoogle() {
       if(!auth) return showToast('Firebase ยังไม่พร้อมใช้งาน');
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
+      const isMobileOrTablet =
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        window.matchMedia('(max-width: 1024px)').matches;
+
       try {
-        // ใช้ Popup จากการกดปุ่มโดยตรงทั้งมือถือและคอมพิวเตอร์
-        // เพื่อไม่ให้ iPhone/Safari กลับจาก Redirect แล้วค้างอยู่ที่ Anonymous session เดิม
-        setAuthUiBusy(true,'กำลังเปิด Google Login...');
+        setAuthUiBusy(true);
+        if(isMobileOrTablet) {
+          // Mobile/iPad: redirect avoids popup blockers and in-app browser popup restrictions.
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        // Desktop: keep popup for faster login.
         await signInWithPopup(auth, provider);
       } catch(e) {
         console.error('Google login failed:', e);
@@ -1699,7 +1672,7 @@
       if(!auth) return;
       try {
         clearTimeout(state.liveSyncTimer); unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
-        companyAccessReady=false; currentMember=null; currentRole=null; pendingLegacyData=null; authReadyPromise=null; authReadyUid=null; clearCurrentCloudView();
+        companyAccessReady=false; currentMember=null; currentRole=null; pendingLegacyData=null; clearCurrentCloudView();
         await signOut(auth); userId=null; updateAuthUserUi(null); setAuthGate(true,'ออกจากระบบแล้ว กรุณาเข้าสู่ระบบด้วย Google'); showToast('ออกจากระบบแล้ว');
       } catch(e){console.error('Logout error',e);showToast('ออกจากระบบไม่สำเร็จ');}
     }
@@ -1707,39 +1680,20 @@
     async function handleGoogleUserReady(user) {
       if(!user||user.isAnonymous){setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว กรุณากดเข้าสู่ระบบด้วย Google');return;}
       userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
-
-      // ป้องกัน onAuthStateChanged / redirect / init เรียกโหลดบัญชีเดียวกันซ้ำพร้อมกัน
-      if(authReadyPromise && authReadyUid===user.uid) return authReadyPromise;
-      authReadyUid=user.uid;
-      authReadyPromise=(async()=>{
-        try {
-          setAuthUiBusy(true,'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลร้าน...');
-          setAuthGate(true,'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลร้าน...');
-          currentMember=await loadMembershipForUser(user);
-          if(!currentMember){
-            companyAccessReady=false; currentRole=null;
-            setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์\nหากเป็นเจ้าของครั้งแรก ให้สร้างสมาชิกใน Firestore: companies/sumran-aluminum-shop/members/<UID>`);
-            return;
-          }
-          currentRole=currentMember.role; companyAccessReady=true;
-          state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
-          if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
-          resetEditorForSession(); updateRoleUi();
-
-          // โหลดข้อมูลส่วนกลางให้ครบก่อนเปิดหน้า ลดอาการเข้าแล้วข้อมูลว่าง โดยโหลดพร้อมกันทุก collection
-          await loadCompanyInitialData();
-          await attachCloudListenersForCurrentUser();
-          setAuthGate(false);
-        } catch(e){
-          console.error('Prepare signed-in user failed:',e);
-          companyAccessReady=false;
-          setAuthGate(true,`โหลดข้อมูลร้านไม่สำเร็จ (${e?.code||'unknown'})\nกรุณาลองใหม่อีกครั้ง`);
-        } finally {
-          setAuthUiBusy(false);
-          authReadyPromise=null; authReadyUid=null;
+      if(authActionBusy) return;
+      try {
+        currentMember=await loadMembershipForUser(user);
+        if(!currentMember){
+          companyAccessReady=false; currentRole=null;
+          setAuthGate(true,`บัญชี Google นี้ยังไม่ได้รับสิทธิ์เข้าร้าน\nอีเมล: ${user.email||'-'}\nUID: ${user.uid}\nติดต่อเจ้าของร้านเพื่อเพิ่มสิทธิ์
+หากเป็นเจ้าของครั้งแรก ให้สร้างสมาชิกใน Firestore: companies/sumran-aluminum-shop/members/<UID>`);
+          return;
         }
-      })();
-      return authReadyPromise;
+        currentRole=currentMember.role; companyAccessReady=true; state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
+        if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
+        resetEditorForSession();
+        updateRoleUi(); setAuthGate(false); await attachCloudListenersForCurrentUser();
+      } catch(e){console.error(e);setAuthGate(true,'ตรวจสอบสิทธิ์ร้านไม่สำเร็จ — ตรวจสอบ Firestore Rules');}
     }
 
     function handleAuthStateChange(user) {
@@ -1753,24 +1707,15 @@
       if(!firebaseReady||!auth||!db){setAuthGate(true,'Firebase config ไม่พร้อมใช้งาน');return;}
       try {
         await setPersistence(auth,browserLocalPersistence);
-
-        // ต้องรอผล Redirect ให้จบก่อน ห้ามสร้าง Anonymous session แข่งกับ Google redirect
-        let redirectResult=null;
-        try {
-          redirectResult=await getRedirectResult(auth);
-        } catch(e) {
-          console.error('Google redirect result failed:', e);
-          showAuthError(e);
-        }
+      getRedirectResult(auth).catch(e => {
+        console.error('Google redirect result failed:', e);
+        showAuthError(e);
+      });
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
-        if(redirectResult?.user && !redirectResult.user.isAnonymous){
-          await handleGoogleUserReady(redirectResult.user);
-        } else if(!auth.currentUser){
-          if(initialToken) await signInWithCustomToken(auth,initialToken);
-          else await signInAnonymously(auth);
-        }
+        if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
         const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
+        if(current&&!current.isAnonymous&&!authActionBusy) await handleGoogleUserReady(current);
         if(window.lucide) window.lucide.createIcons();
       } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
     }
@@ -2214,7 +2159,8 @@
       safeSetText('p-cust-name', state.customer.name); safeSetText('p-cust-phone', state.customer.phone); safeSetText('p-cust-taxid', state.customer.taxId);
       safeSetText('p-cust-address', state.customer.address); safeSetText('p-project-name', state.customer.project);
       
-      ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetText('p-shop-'+k, state.shop[k]));
+      ['name','subtitle','address','phone','line','taxid','standardSpec'].forEach(k => safeSetText('p-shop-'+k, state.shop[k]));
+      safeSetText('p-bank-info', state.shop.bank || '-');
 
       // แสดงโลโก้ร้านในเอกสารพิมพ์
       const printLogo = document.getElementById('p-shop-logo');
