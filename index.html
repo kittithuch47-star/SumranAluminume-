@@ -1669,43 +1669,54 @@
       if(isOwner()) renderMembers();
     }
 
+    function isInstalledPwa() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+    }
+
+    function showPwaLoginHelp() {
+      setAuthUiBusy(false);
+      const status = document.getElementById('auth-gate-status');
+      if(status) status.textContent = 'โหมดแอปบนหน้าจอหลักไม่สามารถเปิด Google Login ได้ในอุปกรณ์นี้ กรุณาเปิดเว็บไซต์ https://sumranaluminume.vercel.app ใน Safari หรือ Chrome โดยตรง แล้วเข้าสู่ระบบที่นั่น (ข้อมูลร้านอยู่บน Firebase เดิม)';
+      showToast('Google Login ใน PWA ถูกจำกัด กรุณาเปิดเว็บไซต์ผ่าน Safari/Chrome');
+    }
+
     async function loginWithGoogle() {
       if(!auth) return showToast('Firebase ยังไม่พร้อมใช้งาน');
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-
-      const isMobileOrTablet =
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      const standalone = isInstalledPwa();
+      const isMobileOrTablet = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
         window.matchMedia('(max-width: 1024px)').matches;
-
       try {
         setAuthUiBusy(true);
-        if(isMobileOrTablet) {
-          // Mobile/iPad: redirect avoids popup blockers and in-app browser popup restrictions.
+        // Standalone PWA: a redirect may return to an isolated browser context,
+        // losing the OAuth result. Try a user-initiated popup instead.
+        if(standalone) {
+          await signInWithPopup(auth, provider);
+        } else if(isMobileOrTablet) {
           await signInWithRedirect(auth, provider);
           return;
+        } else {
+          await signInWithPopup(auth, provider);
         }
-
-        // Desktop: keep popup for faster login.
-        await signInWithPopup(auth, provider);
       } catch(e) {
         console.error('Google login failed:', e);
+        if(standalone) {
+          // Do not redirect in standalone mode: it can loop back to the login gate.
+          showPwaLoginHelp();
+          return;
+        }
         const code = String(e?.code || '');
         if(code.includes('popup-blocked') || code.includes('popup-closed-by-user') || code.includes('cancelled-popup-request')) {
-          // Automatic fallback: if desktop browser blocks popup, switch to redirect.
           showToast('Popup ถูกบล็อก กำลังเปลี่ยนไปเข้าสู่ระบบแบบ Redirect...');
-          try {
-            await signInWithRedirect(auth, provider);
-            return;
-          } catch(re) {
-            console.error('Google redirect failed:', re);
-          }
+          try { await signInWithRedirect(auth, provider); return; }
+          catch(re) { console.error('Google redirect failed:', re); }
         }
         setAuthUiBusy(false);
         showAuthError(e);
       }
     }
-
 
     async function logoutGoogle() {
       if(!auth) return;
@@ -1746,10 +1757,10 @@
       if(!firebaseReady||!auth||!db){setAuthGate(true,'Firebase config ไม่พร้อมใช้งาน');return;}
       try {
         await setPersistence(auth,browserLocalPersistence);
-      getRedirectResult(auth).catch(e => {
-        console.error('Google redirect result failed:', e);
-        showAuthError(e);
-      });
+        // Resolve the redirect before creating an anonymous session. Otherwise the
+        // temporary anonymous user can interfere with OAuth redirect completion.
+        try { await getRedirectResult(auth); }
+        catch(e) { console.error('Google redirect result failed:', e); showAuthError(e); }
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
         if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
