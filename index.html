@@ -912,7 +912,12 @@
           </div>
         </div>
 
-        <div class="mb-4 min-h-[150px]">
+        <div id="p-receipt-original-items" class="hidden mb-4 border border-slate-200 rounded-lg overflow-hidden text-[11px]">
+          <div class="px-3 py-2 font-bold text-slate-800 bg-slate-100">รายการสินค้าและรายละเอียดงาน</div>
+          <table class="w-full text-left border-collapse"><thead class="bg-slate-50"><tr><th class="p-2">รายการ</th><th class="p-2 text-center">จำนวน</th><th class="p-2 text-right">ราคา/หน่วย</th><th class="p-2 text-right">มูลค่ารายการ</th></tr></thead><tbody id="p-receipt-original-items-body"></tbody></table>
+        </div>
+
+        <div id="p-normal-items-wrapper" class="mb-4 min-h-[150px]">
           <table id="p-items-table" class="w-full text-[11px] text-left border-collapse table-fixed">
             <colgroup>
               <col style="width:5%"><col style="width:42%"><col style="width:11%">
@@ -969,10 +974,6 @@
           </div>
         </div>
 
-        <div id="p-receipt-original-items" class="hidden mb-4 border border-slate-200 rounded-lg overflow-hidden text-[11px]">
-          <div class="px-3 py-2 font-bold text-slate-800 bg-slate-100">รายละเอียดสินค้าและบริการตามงานต้นฉบับ</div>
-          <table class="w-full text-left border-collapse"><thead class="bg-slate-50"><tr><th class="p-2">รายการ</th><th class="p-2 text-center">จำนวน</th><th class="p-2 text-right">ราคา/หน่วย</th><th class="p-2 text-right">มูลค่ารายการ</th></tr></thead><tbody id="p-receipt-original-items-body"></tbody></table>
-        </div>
         <div id="p-receipt-job-summary" class="hidden border border-sky-200 bg-sky-50 text-[11px] p-3 rounded-lg mb-4">
           <div class="font-bold text-sky-900 mb-2" id="p-receipt-sequence">สรุปการรับชำระเงิน</div>
           <div class="flex justify-between"><span>มูลค่างานทั้งหมด:</span><strong id="p-receipt-job-total">฿0.00</strong></div>
@@ -2365,6 +2366,8 @@
       let vat = vatEl?.checked ? +(after * 0.07).toFixed(2) : 0;
       let wht = whtEl?.checked ? +(after * 0.03).toFixed(2) : 0;
       let grand = +(after + vat - wht).toFixed(2);
+      const linkedJobReceipt = state.docType==='receipt' && Number(state.receiptJobTotal)>0;
+      if(linkedJobReceipt) grand=Number(state.receiptJobTotal);
 
       const depositToggle = document.getElementById('deposit-toggle');
       const depositPercentInput = document.getElementById('deposit-percent');
@@ -2379,7 +2382,8 @@
 
       const currentPaymentInput = document.getElementById('current-payment');
       let currentPayment = currentPaymentInput ? normalizeMoney(currentPaymentInput.value) : normalizeMoney(state.currentPayment);
-      const totalPaidBeforeCurrent = Math.min(grand, getTotalPaid());
+      const linkedExistingJob = !state.currentHistoryId && !!state.jobId && state.history.some(h=>jobKey(h,state.history)===state.jobId);
+      const totalPaidBeforeCurrent = linkedJobReceipt ? Number(state.receiptPriorPaid||0) : (linkedExistingJob && state.docType!=='quotation' ? Math.min(grand,Number(getTransactionMap(state.history).get(state.jobId)?.paid||0)) : Math.min(grand, getTotalPaid()));
       // ห้ามรับชำระเกินยอดคงเหลือของเอกสาร
       currentPayment = Math.min(currentPayment, Math.max(0, +(grand - totalPaidBeforeCurrent).toFixed(2)));
       state.currentPayment = currentPayment;
@@ -2401,10 +2405,10 @@
       let profit = state.totalCost === null ? null : after - state.totalCost;
       safeSetText('profit-calc-display', profit === null ? 'ยังไม่ระบุต้นทุน' : `กำไรสุทธิ: ฿${profit.toLocaleString('th-TH',{minimumFractionDigits:2})}`);
 
-      state.subtotal = sub; state.discount = disc; state.afterDiscount = after;
+      state.subtotal = linkedJobReceipt ? grand : sub; state.discount = disc; state.afterDiscount = linkedJobReceipt ? grand : after;
       state.vat = vat; state.vatEnabled = !!vatEl?.checked; state.wht = wht; state.whtEnabled = !!whtEl?.checked;
       state.grandTotal = grand;
-      state.remainingAmt = remAmt;
+      state.remainingAmt = displayRemaining;
       state.profit = profit;
       state.prevPaid = totalPaidBeforeCurrent;
       state.bahtText = thaiBahtConversion(grand);
@@ -2534,6 +2538,8 @@
       // For linked receipts, show the original items above instead of a confusing
       // synthetic line that says "payment installment" as though it were a product.
       if(receiptTable) receiptTable.style.display=linkedReceipt && Array.isArray(state.sourceJobItems) && state.sourceJobItems.length?'none':'';
+      const normalWrap=document.getElementById('p-normal-items-wrapper');
+      if(normalWrap) normalWrap.style.display=linkedReceipt && Array.isArray(state.sourceJobItems) && state.sourceJobItems.length?'none':'';
 
       safeSetText('p-calc-subtotal', '฿' + state.subtotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
       const discountRow = document.getElementById('p-discount-row');
@@ -2574,7 +2580,8 @@
       let depBox = document.getElementById('p-deposit-box');
       if (depBox) {
         if(state.docType==='receipt' && Number(state.receiptJobTotal)>0) { depBox.style.display='none'; } else {
-        const totalPaid = getTotalPaid() + (Number(state.currentPayment)||0);
+        const linkedPaid = state.jobId && state.docType==='invoice' ? Number(getTransactionMap(state.history).get(state.jobId)?.paid||0) : getTotalPaid();
+        const totalPaid = linkedPaid + (Number(state.currentPayment)||0);
         const showPaymentInfo = state.paymentEnabled && (state.depositEnabled || totalPaid > 0 || state.remainingAmt > 0);
         if (showPaymentInfo) {
           depBox.style.display = 'block';
@@ -2628,7 +2635,7 @@
       // currentPayment = เงินที่ได้รับจริงในครั้งนี้เท่านั้น
       const receiveNow = Math.max(0, Number(state.currentPayment)||0);
       if(recordPayment && receiveNow > 0) {
-        const totalBefore = getTotalPaid();
+        const totalBefore = state.docType==='receipt' && Number(state.receiptJobTotal)>0 ? Number(state.receiptPriorPaid||0) : getTotalPaid();
         const allowed = Math.max(0, Number(state.grandTotal||0) - totalBefore);
         const amount = Math.min(receiveNow, allowed);
         if(amount > 0) {
@@ -2638,7 +2645,7 @@
         state.currentPayment = 0;
         safeSetValue('current-payment', 0);
       }
-      state.prevPaid = getTotalPaid();
+      state.prevPaid = state.docType==='receipt' && Number(state.receiptJobTotal)>0 ? Number(state.receiptPriorPaid||0)+getTotalPaid() : getTotalPaid();
       state.remainingAmt = Math.max(0, +(Number(state.grandTotal||0) - state.prevPaid).toFixed(2));
 
       const existing = state.history.find(h => h.docNo === state.docNo);
@@ -3173,7 +3180,9 @@
       // Keep company-wide shop settings authoritative; old document snapshots
       // may contain an obsolete shop.bank value.
       const currentShopSettings = clone(state.shop || {});
-      Object.assign(state, clone(h.payload || {}));
+      const tx=getTransactionMap(state.history).get(jobKey(h,state.history));
+      const sourceDoc = tx?.master?.payload || h.payload || {};
+      Object.assign(state, clone(sourceDoc));
       state.shop = currentShopSettings;
       state.currentHistoryId = null;
       state.refNo = h.docNo;
@@ -3185,8 +3194,8 @@
       // เปลี่ยนชนิดเอกสารอย่างเดียว ไม่คำนวณยอดใหม่ เพื่อรักษาส่วนลด/VAT/WHT/ยอดสุทธิของเอกสารต้นฉบับ
       state.docType = newType;
       generateAutoDocNo(newType);
-      state.payments = Array.isArray(state.payments) ? clone(state.payments) : [];
-      state.prevPaid = getTotalPaid();
+      state.payments = []; // การรับเงินจริงอยู่ในเอกสารก่อนหน้า ห้ามคัดลอกซ้ำ
+      state.prevPaid = Number(tx?.paid||0);
       state.currentPayment = 0;
       state.paymentEnabled = true;
       safeSetChecked('payment-toggle', true);
