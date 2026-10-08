@@ -1682,6 +1682,7 @@
           const logoPrev=document.getElementById('setting-logo-preview');
           if(state.shop.logo&&logoPrev){logoPrev.src=state.shop.logo;logoPrev.classList.remove('hidden');}
           persist();
+          if(state.currentTab === 'preview') renderPreview();
         }
       },e=>cloudError('Load shop settings',e)));
 
@@ -2853,7 +2854,11 @@
     function generateFlowDoc(oldId, newType) {
       const h = state.history.find(x => x.id === oldId); if(!h) return;
       if(!canEditHistoryItem(h)) return showToast('พนักงานต่อยอดเอกสารของผู้อื่นไม่ได้ — สร้างเอกสารใหม่แทนได้');
+      // Keep company-wide shop settings authoritative; old document snapshots
+      // may contain an obsolete shop.bank value.
+      const currentShopSettings = clone(state.shop || {});
       Object.assign(state, clone(h.payload || {}));
+      state.shop = currentShopSettings;
       state.currentHistoryId = null;
       state.refNo = h.docNo;
       safeSetValue('refNo', state.refNo);
@@ -2887,7 +2892,11 @@
     function loadHistory(id) {
       const h = state.history.find(x => x.id === id); if(!h) return;
       state.isReadOnlyDocument = !canEditHistoryItem(h);
+      // Keep company-wide shop settings authoritative; old document snapshots
+      // may contain an obsolete shop.bank value.
+      const currentShopSettings = clone(state.shop || {});
       Object.assign(state, clone(h.payload || {}));
+      state.shop = currentShopSettings;
       // รองรับเอกสารเก่าที่เก็บค่าคำนวณไว้ที่ record ด้านนอก payload
       ['subtotal','discount','afterDiscount','vat','wht','grandTotal','remainingAmt','paidTotal','profit','bahtText','depositAmount','depositPercent'].forEach(k => {
         if(state[k] === undefined && h[k] !== undefined) state[k] = h[k];
@@ -2962,6 +2971,7 @@
         if(el) state.shop[k] = el.value;
       });
       persist();
+      if(state.currentTab === 'preview') renderPreview();
       if(userId&&db) setDoc(cloudSettings(), state.shop, {merge:true}).then(()=>showToast('บันทึกตั้งค่าขึ้น Cloud แล้ว')).catch(e=>cloudError('Save shop settings',e));
       else showToast('บันทึกตั้งค่าแล้ว (ในเครื่อง)');
     }
