@@ -769,14 +769,7 @@
             <label class="block text-xs font-semibold text-slate-700">เงื่อนไขและหมายเหตุท้ายบิล</label>
             <textarea id="docNotes" rows="4" class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
             
-            <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 mt-4">
-              <label class="block text-[11px] font-bold text-amber-900 mb-1">ประมาณการต้นทุนรวม (ดูเฉพาะร้าน ไม่โชว์ในบิล)</label>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-amber-700">฿</span>
-                <input type="number" id="total-cost" value="0" min="0" oninput="calculateTotals()" class="w-32 p-1 text-sm bg-white border border-amber-300 rounded text-right focus:ring-1 focus:ring-amber-500">
-                <span class="text-[10px] text-amber-600 ml-2" id="profit-calc-display">กำไรสุทธิ: -</span>
-              </div>
-            </div>
+            <input type="hidden" id="total-cost" value="">
           </div>
 
           <div class="lg:col-span-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
@@ -1373,9 +1366,7 @@
         bank: 'ธ.กสิกรไทย 045-8-91234-5 ชื่อบัญชี บจก. สำราญ อลูมิเนียม',
         standardSpec: '* สเปกมาตรฐาน: อลูมิเนียมหนา 1.2 มม. กระจกหนา 6 มม. พร้อมซีลยางกันน้ำ', logo: null
       },
-      items: [
-        { id: 'item-1', type: 'alu', name: 'ชุดหน้าต่างบานเลื่อนสลับ (2 บาน)', aluColor: 'อบขาว', glassType: 'เขียวตัดแสง 6 มม.', width: 1.6, height: 1.2, area: 1.92, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 2200, total: 4224 }
-      ],
+      items: [],
       presets: [
         { id: 'p1', type: 'alu', name: 'บานเลื่อน 2 บาน', icon: 'columns-2', aluColor: 'อบขาว', glassType: 'เขียว 6mm', width: 1.6, height: 1.2, unit: 'ชุด', price: 2100, priceType: 'per_sqm' },
         { id: 'p2', type: 'general', name: 'ตู้กระจกสำเร็จรูป', icon: 'package', aluColor: '-', glassType: '-', width: 0, height: 0, unit: 'ตู้', price: 4500, priceType: 'per_unit' }
@@ -1385,7 +1376,7 @@
       priceMethods: ['ต่อหน่วย','ต่อเมตร','ต่อบาน','ต่อชุด','ต่อจุด'],
       savedCustomers: [], savedSales: [],
       notes: "1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี",
-      discount: 0, vatEnabled: false, whtEnabled: false, totalCost: 0,
+      discount: 0, vatEnabled: false, whtEnabled: false, totalCost: null,
       isLumpSum: false, lumpSumAmt: 0,
       paymentEnabled: false, depositEnabled: false, depositPercent: 0, depositAmount: 0, prevPaid: 0, currentPayment: 0, remainingAmt: 0, payments: [], printArchive: [], history: [],
       currentHistoryId: null, liveSyncTimer: null, liveSyncBusy: false, isReadOnlyDocument: false, currentActor: null
@@ -1403,8 +1394,8 @@
       state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo='';
       state.docDate=new Date().toISOString().split('T')[0]; state.dueDate=new Date(Date.now()+14*86400000).toISOString().split('T')[0];
       state.customer={name:'',phone:'',taxId:'',address:'',project:''}; state.salesName=state.salesName||'พนักงานขาย 1';
-      state.items=[{id:'item-'+Date.now(),type:'alu',name:'ชุดหน้าต่าง/ประตู',aluColor:'อบขาว',glassType:'เขียว 6 มม.',width:1,height:1,area:1,qty:1,unit:'ชุด',pricingType:'per_sqm',unitPrice:1000,total:1000}];
-      state.notes='1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี'; state.discount=0; state.vatEnabled=false; state.whtEnabled=false; state.totalCost=0;
+      state.items=[];
+      state.notes='1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี'; state.discount=0; state.vatEnabled=false; state.whtEnabled=false; state.totalCost=null;
       state.isLumpSum=false; state.lumpSumAmt=0; state.paymentEnabled=false; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0; state.payments=[];
       ['docNo','refNo','docDate','dueDate','docNotes','custName','custPhone','custTaxId','custAddress','projectName','calc-discount','total-cost','current-payment','deposit-percent'].forEach(id=>safeSetValue(id,''));
       safeSetChecked('payment-toggle',false); safeSetChecked('deposit-toggle',false); safeSetChecked('vat-toggle',false); safeSetChecked('wht-toggle',false); safeSetChecked('lump-sum-toggle',false);
@@ -2001,7 +1992,7 @@
     }
 
     function removeItem(id) {
-      if(state.items.length <= 1) return showToast('ต้องมี 1 รายการ');
+
       state.items = state.items.filter(i => i.id !== id); renderItems(); calculateTotals();
     }
 
@@ -2263,9 +2254,9 @@
       safeSetText('calc-remaining-amt', '฿' + remAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
 
       const totalCostInput = document.getElementById('total-cost');
-      state.totalCost = totalCostInput ? (parseFloat(totalCostInput.value) || 0) : 0;
-      let profit = after - state.totalCost;
-      safeSetText('profit-calc-display', `กำไรสุทธิ: ฿${profit.toLocaleString('th-TH',{minimumFractionDigits:2})}`);
+      state.totalCost = totalCostInput && totalCostInput.value.trim() !== '' ? Math.max(0, Number(totalCostInput.value) || 0) : null;
+      let profit = state.totalCost === null ? null : after - state.totalCost;
+      safeSetText('profit-calc-display', profit === null ? 'ยังไม่ระบุต้นทุน' : `กำไรสุทธิ: ฿${profit.toLocaleString('th-TH',{minimumFractionDigits:2})}`);
 
       state.subtotal = sub; state.discount = disc; state.afterDiscount = after;
       state.vat = vat; state.vatEnabled = !!vatEl?.checked; state.wht = wht; state.whtEnabled = !!whtEl?.checked;
@@ -2477,10 +2468,10 @@
         docNo: state.docNo, docType: state.docType, refNo: state.refNo,
         rootDocNo: getRootDocNo({docNo: state.docNo, refNo: state.refNo}, state.history),
         customerName: state.customer.name || 'ไม่ระบุ', project: state.customer.project || '-',
-        totalCost: Number(state.totalCost || 0),
+        totalCost: state.totalCost === null ? null : Number(state.totalCost),
         date: state.docDate, grandTotal: Number(state.grandTotal || 0), remainingAmt: Number(state.remainingAmt || 0),
         paidTotal: Number(state.prevPaid || 0), requiredDeposit: state.depositEnabled ? Number(state.depositAmount||0) : 0,
-        depositPercent: state.depositEnabled ? Number(state.depositPercent||0) : 0, profit: Number(state.profit || 0),
+        depositPercent: state.depositEnabled ? Number(state.depositPercent||0) : 0, profit: state.profit === null ? null : Number(state.profit),
         createdByUid: existing?.createdByUid || userId,
         createdByEmail: existing?.createdByEmail || (auth.currentUser?.email || ''),
         createdByName: existing?.createdByName || (auth.currentUser?.displayName || ''),
@@ -2692,7 +2683,7 @@
       [['custName','name'],['custPhone','phone'],['custTaxId','taxId'],['custAddress','address'],['projectName','project']].forEach(([id,k]) => safeSetValue(id,c[k]));
       safeSetValue('docNotes', state.notes || '');
       safeSetValue('calc-discount', state.discount ?? 0);
-      safeSetValue('total-cost', state.totalCost ?? 0);
+      safeSetValue('total-cost', state.totalCost ?? '');
       safeSetChecked('vat-toggle', !!state.vatEnabled);
       safeSetChecked('wht-toggle', !!state.whtEnabled);
       safeSetChecked('payment-toggle', !!state.paymentEnabled);
@@ -2735,10 +2726,13 @@
       const financial = docs.filter(h => ['quotation','invoice','receipt','cashbill'].includes(h.docType));
       const master = quotation || financial[0] || docs[0];
       const total = Number((quotation || financial[0] || master).grandTotal || 0);
-      let cost = 0;
+      let cost = null;
       docs.forEach(h => {
-        const c = Number(h.payload?.totalCost ?? h.totalCost ?? 0);
-        if(c > cost) cost = c;
+        const raw = h.totalCost ?? h.payload?.totalCost;
+        if(raw !== null && raw !== undefined && raw !== "") {
+          const c = Number(raw);
+          if(Number.isFinite(c) && (cost === null || c > cost)) cost = c;
+        }
       });
 
       // รวมเงินที่รับจริงจากทุกเอกสารในงานเดียวกัน แต่ไม่ซ้ำ payment id
@@ -2758,7 +2752,7 @@
       if(!hasPaymentRecords) paid = Math.max(...docs.map(h => Number(h.paidTotal || 0)), 0);
       paid = Math.min(total, +paid.toFixed(2));
       const remaining = Math.max(0, +(total - paid).toFixed(2));
-      const profit = +(total - cost).toFixed(2);
+      const profit = cost === null ? null : +(total - cost).toFixed(2);
       const accepted = !!quotation && quotation.status === 'accepted';
       const hasSaleDoc = docs.some(h => ['invoice','receipt','cashbill'].includes(h.docType));
       const active = accepted || hasSaleDoc;
@@ -2803,7 +2797,7 @@
         totalDebt += tx.remaining;
       });
       safeSetText('dash-total-sales', '฿' + totalSales.toLocaleString('th-TH'));
-      safeSetText('dash-total-profit', '฿' + totalProfit.toLocaleString('th-TH'));
+      safeSetText('dash-total-profit', [...txMap.values()].some(tx => tx?.active && tx.cost === null) ? 'รอระบุต้นทุนบางงาน · ฿' + totalProfit.toLocaleString('th-TH') : '฿' + totalProfit.toLocaleString('th-TH'));
       safeSetText('dash-total-debt', '฿' + totalDebt.toLocaleString('th-TH'));
 
       if(filtered.length === 0) return tb.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบเอกสาร</td></tr>`;
@@ -2835,6 +2829,7 @@
                 <select ${canEditHistoryItem(h)?'':'disabled'} onchange="if(this.value){ generateFlowDoc('${h.id}', this.value); this.value=''; }" class="text-[10px] p-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-bold ${canEditHistoryItem(h)?'':'opacity-50 cursor-not-allowed'}">
                   <option value="">+ ต่อยอด...</option><option value="invoice">-> ใบแจ้งหนี้</option><option value="receipt">-> ใบเสร็จ</option><option value="delivery">-> ใบส่งของ</option>
                 </select>
+                ${isOwner() ? `<button type="button" onclick="editHistoryCost('${h.id}')" class="px-2 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[10px] font-bold" title="บันทึกต้นทุนภายหลัง">${h.totalCost === null || h.totalCost === undefined ? 'กรอกต้นทุน' : 'ต้นทุน ฿'+Number(h.totalCost).toLocaleString('th-TH')}</button>` : ''}
                 <button onclick="loadHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-sky-100 rounded" title="${canEditHistoryItem(h)?'แก้ไข':'ดูอย่างเดียว'}"><i data-lucide="${canEditHistoryItem(h)?'edit':'eye'}" class="w-3.5 h-3.5"></i></button>
                 ${isOwner() ? `<button onclick="delHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-rose-100 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
               </div>
@@ -2843,6 +2838,29 @@
         `;
       });
       if(window.lucide) window.lucide.createIcons();
+    }
+
+    async function editHistoryCost(id) {
+      if(!requireOwner('การบันทึกต้นทุน')) return;
+      const h=state.history.find(x=>x.id===id);
+      if(!h) return;
+      const previous=h.totalCost;
+      const entered=prompt('ต้นทุนรวมของเอกสาร '+h.docNo+' (บาท)\\nเว้นว่าง = ยังไม่ทราบต้นทุน', previous === null || previous === undefined ? '' : String(previous));
+      if(entered===null) return;
+      const raw=entered.trim().replace(/,/g,'');
+      if(raw && (!Number.isFinite(Number(raw)) || Number(raw)<0)) return showToast('กรุณากรอกต้นทุนเป็นจำนวนเงินตั้งแต่ 0 ขึ้นไป');
+      const cost=raw===''?null:Number(raw);
+      const base=Number(h.payload?.afterDiscount ?? (Number(h.grandTotal)||0));
+      const profit=cost===null?null:+(base-cost).toFixed(2);
+      const updatedPayload={...(h.payload||{}),totalCost:cost,profit};
+      const updates={totalCost:cost,profit,payload:updatedPayload};
+      try {
+        if(userId&&db) await updateDoc(cloudPath('history',id),updates);
+        Object.assign(h,updates);
+        if(state.currentHistoryId===id){state.totalCost=cost;state.profit=profit;safeSetValue('total-cost',cost??'');}
+        persist();renderHistory();
+        showToast(cost===null?'ตั้งสถานะต้นทุนเป็นยังไม่ทราบแล้ว':'บันทึกต้นทุนในประวัติแล้ว');
+      } catch(e){cloudError('Save history cost',e);}
     }
 
     function updateDocStatus(id, stat) {
@@ -2875,7 +2893,7 @@
       safeSetChecked('deposit-toggle', !!state.depositEnabled);
       safeSetValue('deposit-percent', state.depositPercent || 0);
       safeSetValue('calc-discount', state.discount || 0);
-      safeSetValue('total-cost', state.totalCost || 0);
+      safeSetValue('total-cost', state.totalCost ?? '');
       safeSetChecked('vat-toggle', !!state.vatEnabled);
       safeSetChecked('wht-toggle', !!state.whtEnabled);
       safeSetValue('prev-paid', state.prevPaid || 0);
@@ -2909,7 +2927,7 @@
       [['custName','name'],['custPhone','phone'],['custTaxId','taxId'],['custAddress','address'],['projectName','project']].forEach(([id,k]) => safeSetValue(id,c[k]));
       safeSetValue('docNotes', state.notes || '');
       safeSetValue('calc-discount', state.discount ?? 0);
-      safeSetValue('total-cost', state.totalCost ?? 0);
+      safeSetValue('total-cost', state.totalCost ?? '');
       safeSetChecked('vat-toggle', !!state.vatEnabled);
       safeSetChecked('wht-toggle', !!state.whtEnabled);
       safeSetChecked('lump-sum-toggle', !!state.isLumpSum);
@@ -2946,15 +2964,12 @@
       clearTimeout(state.liveSyncTimer);
       state.currentHistoryId = null;
       state.isReadOnlyDocument = false;
-      state.items = [{
-        id: 'item-'+Date.now(), type: 'alu', name: 'ชุดหน้าต่าง/ประตู', aluColor: 'อบขาว', glassType: 'เขียว 6 มม.',
-        width: 1, height: 1, area: 1, qty: 1, unit: 'ชุด', pricingType: 'per_sqm', unitPrice: 1000, total: 1000
-      }];
+      state.items = [];
       ['custName','custPhone','custTaxId','custAddress','projectName','refNo','total-cost'].forEach(id => safeSetValue(id, ''));
       state.customer = { name:'', phone:'', taxId:'', address:'', project:'' };
       state.payments=[]; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0;
       state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0;
-      state.paymentEnabled=false;
+      state.paymentEnabled=false; state.totalCost=null;
       safeSetValue('prev-paid',0); safeSetValue('current-payment',0); safeSetValue('deposit-percent',0);
       safeSetChecked('payment-toggle', false); safeSetChecked('deposit-toggle', false);
       togglePaymentBox(); toggleDepositBox();
@@ -3212,3 +3227,4 @@
   </script>
 </body>
 </html>
+
