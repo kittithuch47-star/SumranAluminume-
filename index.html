@@ -525,6 +525,16 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .modal-overlay { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
 
+
+    /* Document wizard: presentation only; all original input IDs and logic remain. */
+    #doc-wizard-bar{position:sticky;top:66px;z-index:30;background:#fff;border:1px solid #dbeafe;border-radius:20px;padding:14px;box-shadow:0 5px 20px #0f172a10}
+    .wizard-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .wizard-step{border:1px solid #e2e8f0;border-radius:13px;padding:10px 6px;font-size:12px;font-weight:700;color:#64748b;background:#f8fafc;display:flex;align-items:center;justify-content:center;gap:6px}
+    .wizard-step.active{background:#0369a1;color:#fff;border-color:#0369a1}.wizard-step.complete{color:#0369a1;background:#e0f2fe;border-color:#bae6fd}
+    .wizard-panel{display:none!important}.wizard-panel.wizard-active{display:block!important}
+    .wizard-actions{display:flex;gap:10px;justify-content:space-between;align-items:center;margin:14px 0 5px}
+    .wizard-actions button{border-radius:12px;padding:12px 18px;font-weight:700;font-size:13px}
+    @media(max-width:640px){#doc-wizard-bar{top:58px;padding:10px}.wizard-step{font-size:10px;gap:3px;padding:10px 3px}.wizard-actions button{flex:1}}
     /* SUMRAN APP HOME: responsive dashboard; document print remains untouched */
     .app-home-hero{background:linear-gradient(125deg,#075985,#0369a1 52%,#0f172a);color:white;border-radius:26px;padding:26px;position:relative;overflow:hidden;box-shadow:0 12px 32px #07598525}
     .app-home-hero:after{content:"";position:absolute;width:230px;height:230px;border-radius:50%;background:#ffffff12;right:-55px;top:-95px;pointer-events:none}
@@ -662,6 +672,21 @@
 
     <!-- TAB 1: EDITOR -->
     <div id="tab-editor" class="hidden space-y-6">
+      <div id="doc-wizard-bar" class="no-print">
+        <div class="flex items-center justify-between mb-2"><strong class="text-sm text-slate-800">สร้างเอกสารทีละขั้นตอน</strong><span id="wizard-count" class="text-xs text-slate-500">ขั้นตอน 1 จาก 3</span></div>
+        <div class="wizard-steps">
+          <button type="button" class="wizard-step active" data-wizard="1" onclick="goDocumentStep(1)">1 · ลูกค้า</button>
+          <button type="button" class="wizard-step" data-wizard="2" onclick="goDocumentStep(2)">2 · สินค้า</button>
+          <button type="button" class="wizard-step" data-wizard="3" onclick="goDocumentStep(3)">3 · ตรวจสอบ</button>
+        </div>
+      </div>
+      <div id="wizard-step-1" class="wizard-panel"></div>
+      <div id="wizard-step-2" class="wizard-panel"></div>
+      <div id="wizard-step-3" class="wizard-panel"></div>
+      <div class="wizard-actions no-print" id="wizard-navigation">
+        <button type="button" id="wizard-prev" class="bg-slate-100 text-slate-700 border border-slate-300" onclick="goDocumentStep(documentWizardStep-1)">← ย้อนกลับ</button>
+        <button type="button" id="wizard-next" class="bg-sky-600 text-white" onclick="goDocumentStep(documentWizardStep+1)">ถัดไป →</button>
+      </div>
       
       <!-- Doc Types -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
@@ -1899,8 +1924,53 @@
       } catch (e) { console.error("Init error:", e); }
     };
 
+
+    // Three-step presentation reuses the original controls, avoiding duplicate state.
+    let documentWizardStep = 1;
+    let documentWizardReady = false;
+    function initDocumentWizard(){
+      if(documentWizardReady) return;
+      const editor=document.getElementById('tab-editor');
+      const one=document.getElementById('wizard-step-1');
+      const two=document.getElementById('wizard-step-2');
+      const three=document.getElementById('wizard-step-3');
+      if(!editor||!one||!two||!three)return;
+      const blocks=Array.from(editor.children).filter(el=>el.tagName==='DIV' && el!==one && el!==two && el!==three && el.id!=='doc-wizard-bar' && el.id!=='wizard-navigation');
+      if(blocks.length<4)return;
+      one.append(blocks[0],blocks[1]);
+      two.append(blocks[2],blocks[3]);
+      const totals=two.querySelector('#docNotes')?.closest('.mt-6.pt-6');
+      if(totals) three.append(totals);
+      documentWizardReady=true;
+      goDocumentStep(documentWizardStep,false);
+    }
+    function goDocumentStep(next,validate=true){
+      initDocumentWizard();
+      const step=Math.max(1,Math.min(3,Number(next)||1));
+      if(validate && step>documentWizardStep && documentWizardStep===1){
+        const name=document.getElementById('custName');
+        if(name && !name.value.trim()){
+          name.focus();showToast('กรุณากรอกชื่อลูกค้าก่อนดำเนินการต่อ');return;
+        }
+      }
+      documentWizardStep=step;
+      for(let n=1;n<=3;n++){
+        document.getElementById('wizard-step-'+n)?.classList.toggle('wizard-active',n===step);
+        const btn=document.querySelector('[data-wizard="'+n+'"]');
+        if(btn){btn.classList.toggle('active',n===step);btn.classList.toggle('complete',n<step);}
+      }
+      const counter=document.getElementById('wizard-count');if(counter)counter.textContent='ขั้นตอน '+step+' จาก 3';
+      const prev=document.getElementById('wizard-prev'),nextBtn=document.getElementById('wizard-next');
+      if(prev)prev.style.visibility=step===1?'hidden':'visible';
+      if(nextBtn){nextBtn.style.display=step===3?'none':'inline-flex';nextBtn.textContent=step===1?'ถัดไป: เพิ่มสินค้า →':'ถัดไป: ตรวจสอบยอด →';}
+      if(step===3)calculateTotals();
+      if(validate)document.getElementById('doc-wizard-bar')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    window.goDocumentStep=goDocumentStep;
+
     function switchTab(tab) {
       state.currentTab = tab;
+      if(tab==='editor') initDocumentWizard();
       document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('is-active'));
       const activeMobile = document.querySelector(
         tab === 'history' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(2)' :
@@ -2976,7 +3046,7 @@
       generateAutoDocNo(state.docType);
       renderItems(); calculateTotals();
       setCurrentDocUiState(false);
-      switchTab('editor'); showToast('สร้างเอกสารใหม่และรีเซ็ตประวัติการรับชำระแล้ว');
+      documentWizardStep=1;switchTab('editor');goDocumentStep(1,false); showToast('สร้างเอกสารใหม่และรีเซ็ตประวัติการรับชำระแล้ว');
     }
 
     function saveStoreSettings() {
