@@ -609,11 +609,6 @@
           <span class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black">G</span>
           <span>เข้าสู่ระบบด้วย Google</span>
         </button>
-        <div id="ios-pwa-login-help" class="hidden text-xs bg-amber-50 border border-amber-200 text-amber-950 rounded-xl p-3 space-y-2">
-          <p class="font-bold">iPhone: โหมดแอปอาจไม่รองรับหน้าต่าง Google Login</p>
-          <p>แตะปุ่มด้านล่างเพื่อเปิดเว็บไซต์ใน Safari และเข้าสู่ระบบที่นั่นได้ทันที ข้อมูลใน Firebase ของร้านยังคงเดิม แต่สถานะล็อกอินจาก Safari จะไม่ส่งกลับมายัง PWA โดยอัตโนมัติ</p>
-          <a href="https://sumranaluminume.vercel.app/" target="_blank" rel="noopener noreferrer" class="block text-center font-bold rounded-lg bg-sky-700 text-white px-3 py-3">เปิดเว็บไซต์เพื่อเข้าสู่ระบบ</a>
-        </div>
         <div class="text-[10px] text-slate-400 leading-relaxed text-center">
           ระบบจะพยายามผูก Google เข้ากับบัญชี Anonymous เดิมก่อน หาก Google บัญชีนี้มีอยู่แล้ว ระบบจะย้ายเอกสารเดิมไปยังบัญชี Google
         </div>
@@ -1101,6 +1096,11 @@
     let db, auth, userId, firebaseReady = false;
     if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
         const app = initializeApp(firebaseConfig);
+        // Same-origin Firebase OAuth helper for iOS standalone PWA (requires Vercel rewrite).
+        // Keep the original Firebase auth domain in normal Safari/desktop sessions.
+        if ((window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          app.options.authDomain = location.hostname;
+        }
         auth = getAuth(app);
         db = getFirestore(app);
         firebaseReady = true;
@@ -1687,13 +1687,6 @@
     }
 
     async function loginWithGoogle() {
-      if(isInstalledPwa() && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        const help = document.getElementById('ios-pwa-login-help');
-        if(help) help.classList.remove('hidden');
-        const status = document.getElementById('auth-gate-status');
-        if(status) status.textContent = 'iOS อาจจำกัด Google Login ในแอปที่เพิ่มไปยังหน้าจอโฮม กรุณาเปิดผ่าน Safari ด้วยปุ่มด้านล่าง (ยังไม่ลบข้อมูลเดิม)';
-        return;
-      }
       if(!auth) return showToast('Firebase ยังไม่พร้อมใช้งาน');
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
@@ -1704,7 +1697,11 @@
         setAuthUiBusy(true);
         // Standalone PWA: a redirect may return to an isolated browser context,
         // losing the OAuth result. Try a user-initiated popup instead.
-        if(standalone) {
+        if(standalone && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          // Full-page redirect, avoiding popup limitations of iOS Home Screen apps.
+          await signInWithRedirect(auth, provider);
+          return;
+        } else if(standalone) {
           await signInWithPopup(auth, provider);
         } else if(isMobileOrTablet) {
           await signInWithRedirect(auth, provider);
@@ -1715,8 +1712,10 @@
       } catch(e) {
         console.error('Google login failed:', e);
         if(standalone) {
-          // Do not redirect in standalone mode: it can loop back to the login gate.
-          showPwaLoginHelp();
+          setAuthUiBusy(false);
+          showAuthError(e);
+          const status = document.getElementById('auth-gate-status');
+          if(status) status.textContent += ' หากขึ้น auth/unauthorized-domain หรือ redirect_uri_mismatch ให้ตรวจสอบการตั้งค่าโดเมน Firebase/Google OAuth ตาม README';
           return;
         }
         const code = String(e?.code || '');
