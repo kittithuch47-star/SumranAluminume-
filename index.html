@@ -1001,10 +1001,19 @@
     <!-- TAB 3: HISTORY -->
     <div id="tab-history" class="hidden space-y-4">
       
+      <div class="bg-white border border-slate-200 rounded-xl p-3 flex flex-wrap gap-3 items-center justify-between">
+        <label class="text-sm font-bold text-slate-700" for="report-year">รายงานรายปี (ไม่ลบเอกสารเก่า)</label>
+        <select id="report-year" onchange="renderHistory()" class="border rounded-lg px-3 py-2 text-sm bg-white"><option value="all">ทุกปี</option></select>
+        <span class="text-xs text-slate-500">หนี้ค้างชำระทุกปีจะไม่ถูกรีเซ็ต</span>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-3 grid grid-cols-2 gap-3">
+        <div><div class="text-xs text-slate-500">รับเงินจริงในปีที่เลือก</div><div id="dash-received-year" class="text-lg font-black text-emerald-700">฿0</div></div>
+        <div><div class="text-xs text-slate-500">หนี้ค้างชำระทุกปี</div><div id="dash-debt-all" class="text-lg font-black text-rose-700">฿0</div></div>
+      </div>
       <!-- Dashboard Summary -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-          <div class="text-[11px] font-bold text-slate-500 mb-1">ยอดขายรวม (ทั้งหมด)</div>
+          <div class="text-[11px] font-bold text-slate-500 mb-1">มูลค่างาน (ไม่รวมเอกสารซ้ำ)</div>
           <div class="text-xl font-black font-mono text-slate-800" id="dash-total-sales">฿0.00</div>
         </div>
         <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200 bg-emerald-50/30">
@@ -1381,7 +1390,7 @@
 
     const state = {
       currentTab: 'editor', docType: 'quotation',
-      docNo: '', refNo: '',
+      docNo: '', refNo: '', jobId: '',
       docDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
       salesName: 'พนักงานขาย 1',
@@ -1417,7 +1426,7 @@
 
     function resetEditorForSession() {
       clearTimeout(state.liveSyncTimer);
-      state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo='';
+      state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo=''; state.jobId='';
       state.docDate=new Date().toISOString().split('T')[0]; state.dueDate=new Date(Date.now()+14*86400000).toISOString().split('T')[0];
       state.customer={name:'',phone:'',taxId:'',address:'',project:''}; state.salesName=state.salesName||'พนักงานขาย 1';
       state.items=[];
@@ -2584,7 +2593,10 @@
       payload.createdByEmail = existing?.createdByEmail || (auth.currentUser?.email || '');
       payload.createdByName = existing?.createdByName || (auth.currentUser?.displayName || '');
       payload.updatedByUid = userId; payload.updatedByEmail = auth.currentUser?.email || ''; payload.updatedByName = auth.currentUser?.displayName || '';
+      const jobId = existing?.jobId || state.jobId || resolveJobId(state.refNo, state.history) || ('JOB-' + Date.now() + '-' + Math.random().toString(36).slice(2,7));
+      state.jobId = jobId; payload.jobId = jobId;
       const rec = {
+        jobId,
         id: existing?.id || ('doc-' + Date.now()),
         docNo: state.docNo, docType: state.docType, refNo: state.refNo,
         rootDocNo: getRootDocNo({docNo: state.docNo, refNo: state.refNo}, state.history),
@@ -2822,6 +2834,16 @@
 
     // ---- Transaction / document linking helpers ----
     // ใบเสนอราคา -> ใบแจ้งหนี้ -> ใบเสร็จ ต้องนับเป็น "งานเดียว" ใน Dashboard
+    function resolveJobId(refNo, allHistory = state.history) {
+      const parent = allHistory.find(h => String(h.docNo || '') === String(refNo || ''));
+      if(!parent) return '';
+      return parent.jobId || getRootDocNo(parent, allHistory);
+    }
+    function jobKey(h, allHistory = state.history) {
+      const rootNo=getRootDocNo(h,allHistory);
+      const root=allHistory.find(x=>String(x.docNo||'')===rootNo);
+      return String(root?.jobId || h?.jobId || rootNo);
+    }
     function getRootDocNo(historyItem, allHistory = state.history) {
       if(!historyItem) return '';
       const byDocNo = new Map(allHistory.map(x => [String(x.docNo || ''), x]));
@@ -2841,12 +2863,12 @@
     }
 
     function getTransactionSummary(rootDocNo, allHistory = state.history) {
-      const docs = allHistory.filter(h => getRootDocNo(h, allHistory) === rootDocNo);
+      const docs = allHistory.filter(h => jobKey(h, allHistory) === rootDocNo);
       if(!docs.length) return null;
       const quotation = docs.find(h => h.docType === 'quotation');
       const financial = docs.filter(h => ['quotation','invoice','receipt','cashbill'].includes(h.docType));
-      const master = quotation || financial[0] || docs[0];
-      const total = Number((quotation || financial[0] || master).grandTotal || 0);
+      const master = quotation || docs.find(h => h.docType === 'invoice') || docs.find(h => h.docType === 'cashbill') || docs[0];
+      const total = Number(master.jobTotalOverride ?? master.grandTotal ?? 0);
       let cost = null;
       docs.forEach(h => {
         const raw = h.totalCost ?? h.payload?.totalCost;
@@ -2876,14 +2898,14 @@
       const profit = cost === null ? null : +(total - cost).toFixed(2);
       const accepted = !!quotation && quotation.status === 'accepted';
       const hasSaleDoc = docs.some(h => ['invoice','receipt','cashbill'].includes(h.docType));
-      const active = accepted || hasSaleDoc;
+      const active = accepted || hasSaleDoc || docs.some(h=>h.docType==='delivery');
       return { rootDocNo, docs, master, total, cost, paid, remaining, profit, accepted, hasSaleDoc, active };
     }
 
     function getTransactionMap(allHistory = state.history) {
       const map = new Map();
       allHistory.forEach(h => {
-        const root = getRootDocNo(h, allHistory);
+        const root = jobKey(h, allHistory);
         if(root && !map.has(root)) map.set(root, getTransactionSummary(root, allHistory));
       });
       return map;
@@ -2911,14 +2933,37 @@
       
       const txMap = getTransactionMap(state.history);
       let totalSales = 0, totalProfit = 0, totalDebt = 0;
+      const yearSelector=document.getElementById('report-year');
+      const selectedYear=yearSelector?.dataset.initialized ? yearSelector.value : String(new Date().getFullYear());
+      if(yearSelector){
+        const years=[...new Set([String(new Date().getFullYear()),...state.history.map(h=>String(h.date||'').slice(0,4)).filter(y=>/^\d{4}$/.test(y))])].sort().reverse();
+        const options=['<option value="all">ทุกปี</option>',...years.map(y=>`<option value="${y}">${Number(y)+543} (${y})</option>`)].join('');
+        if(yearSelector.innerHTML!==options){yearSelector.innerHTML=options;yearSelector.value=years.includes(selectedYear)?selectedYear:'all';yearSelector.dataset.initialized='1';}
+      }
+      const reportYear=yearSelector?.value || 'all';
+      let allDebt=0, receivedInYear=0;
       txMap.forEach(tx => {
         if(!tx?.active) return;
-        totalSales += tx.total;
-        totalProfit += tx.profit;
-        totalDebt += tx.remaining;
+        allDebt += tx.remaining;
+        const jobYear=String(tx.master?.date || '').slice(0,4);
+        if(reportYear==='all' || jobYear===reportYear){
+          totalSales += tx.total;
+          totalProfit += Number(tx.profit || 0);
+          totalDebt += tx.remaining;
+        }
+        const unique=new Set();
+        tx.docs.forEach(h=>(h.payload?.payments||[]).forEach(pay=>{
+          const key=String(pay.id||`${h.docNo}-${pay.date}-${pay.amount}`);
+          if(unique.has(key))return;
+          unique.add(key);
+          const year=String(pay.date||h.date||'').slice(0,4);
+          if(reportYear==='all'||year===reportYear)receivedInYear+=Number(pay.amount||0);
+        }));
       });
+      safeSetText('dash-received-year','฿'+receivedInYear.toLocaleString('th-TH'));
+      safeSetText('dash-debt-all','฿'+allDebt.toLocaleString('th-TH'));
       safeSetText('dash-total-sales', '฿' + totalSales.toLocaleString('th-TH'));
-      safeSetText('dash-total-profit', [...txMap.values()].some(tx => tx?.active && tx.cost === null) ? 'รอระบุต้นทุนบางงาน · ฿' + totalProfit.toLocaleString('th-TH') : '฿' + totalProfit.toLocaleString('th-TH'));
+      safeSetText('dash-total-profit', [...txMap.values()].some(tx => tx?.active && (reportYear==='all'||String(tx.master?.date||'').slice(0,4)===reportYear) && tx.cost === null) ? 'รอระบุต้นทุนบางงาน · ฿' + totalProfit.toLocaleString('th-TH') : '฿' + totalProfit.toLocaleString('th-TH'));
       safeSetText('dash-total-debt', '฿' + totalDebt.toLocaleString('th-TH'));
 
       if(filtered.length === 0) return tb.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบเอกสาร</td></tr>`;
@@ -2932,7 +2977,7 @@
         else if(['receipt','cashbill'].includes(h.docType)) opts=`<option value="paid" ${h.status==='paid'?'selected':''}>รับเงินแล้ว</option><option value="cancelled" ${h.status==='cancelled'?'selected':''}>ยกเลิก</option>`;
         else if(h.docType==='delivery') opts=`<option value="pending_delivery" ${h.status==='pending_delivery'?'selected':''}>รอส่งมอบ</option><option value="delivered" ${h.status==='delivered'?'selected':''}>ส่งมอบแล้ว</option>`;
 
-        const tx = txMap.get(getRootDocNo(h, state.history));
+        const tx = txMap.get(jobKey(h, state.history));
         const txPaid = tx ? tx.paid : Number(h.paidTotal || 0);
         const txRemaining = tx ? tx.remaining : Number(h.remainingAmt || 0);
         const linkedLabel = tx && tx.docs.length > 1 ? `<div class="text-[9px] text-indigo-600 mt-0.5">งานเดียวกัน: ${escapeHtml(tx.rootDocNo)} · ${tx.docs.length} เอกสาร</div>` : '';
@@ -2950,6 +2995,7 @@
                 <select ${canEditHistoryItem(h)?'':'disabled'} onchange="if(this.value){ generateFlowDoc('${h.id}', this.value); this.value=''; }" class="text-[10px] p-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-bold ${canEditHistoryItem(h)?'':'opacity-50 cursor-not-allowed'}">
                   <option value="">+ ต่อยอด...</option><option value="invoice">-> ใบแจ้งหนี้</option><option value="receipt">-> ใบเสร็จ</option><option value="delivery">-> ใบส่งของ</option>
                 </select>
+                <button type="button" onclick="prepareJobReceipt('${h.id}')" class="px-2 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[10px] font-bold" title="ออกใบเสร็จตามยอดเงินที่รับจริง">+ รับเงิน</button>
                 ${isOwner() ? `<button type="button" onclick="editHistoryCost('${h.id}')" class="px-2 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[10px] font-bold" title="บันทึกต้นทุนภายหลัง">${h.totalCost === null || h.totalCost === undefined ? 'กรอกต้นทุน' : 'ต้นทุน ฿'+Number(h.totalCost).toLocaleString('th-TH')}</button>` : ''}
                 <button onclick="loadHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-sky-100 rounded" title="${canEditHistoryItem(h)?'แก้ไข':'ดูอย่างเดียว'}"><i data-lucide="${canEditHistoryItem(h)?'edit':'eye'}" class="w-3.5 h-3.5"></i></button>
                 ${isOwner() ? `<button onclick="delHistory('${h.id}')" class="p-1.5 bg-slate-100 text-slate-600 hover:bg-rose-100 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
@@ -2990,6 +3036,35 @@
       if(userId && db) updateDoc(cloudPath('history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
     }
 
+    function prepareJobReceipt(id) {
+      if(!companyAccessReady || !userId) return showToast('กรุณาเข้าสู่ระบบก่อนรับเงิน');
+      const h=state.history.find(x=>x.id===id);if(!h)return;
+      const tx=getTransactionMap(state.history).get(jobKey(h,state.history));
+      if(!tx || tx.remaining<=0) return showToast('งานนี้ไม่มีหนี้ค้างชำระ');
+      const raw=prompt(`รับเงินจริงสำหรับงาน ${h.docNo}\nยอดค้าง ฿${tx.remaining.toLocaleString('th-TH',{minimumFractionDigits:2})}\nกรอกยอดที่ได้รับจริง (บาท)`,'');
+      if(raw===null)return;
+      const amount=Number(String(raw).replace(/,/g,'').trim());
+      if(!Number.isFinite(amount)||amount<=0||amount>tx.remaining)return showToast('จำนวนเงินต้องมากกว่า 0 และไม่เกินยอดค้างชำระ');
+      const currentShopSettings=clone(state.shop||{});
+      Object.assign(state,clone(tx.master.payload||h.payload||{}));
+      state.shop=currentShopSettings;
+      state.currentHistoryId=null;state.isReadOnlyDocument=false;
+      state.docType='receipt';state.refNo=h.docNo;state.jobId=jobKey(h,state.history);
+      state.items=[{id:'payment-'+Date.now(),type:'general',name:'รับชำระเงินค่างาน '+String(tx.master.docNo||h.docNo),aluColor:'-',glassType:'-',width:0,height:0,area:0,qty:1,unit:'ครั้ง',pricingType:'per_unit',unitPrice:amount,total:amount,showQty:true,showUnit:true}];
+      state.isLumpSum=false;state.lumpSumAmt=0;state.discount=0;state.vatEnabled=false;state.whtEnabled=false;
+      state.payments=[];state.prevPaid=0;state.currentPayment=amount;state.paymentEnabled=true;
+      state.depositEnabled=false;state.depositPercent=0;state.depositAmount=0;state.totalCost=null;
+      generateAutoDocNo('receipt');
+      const radio=document.querySelector('input[name="docType"][value="receipt"]');if(radio)radio.checked=true;
+      safeSetValue('refNo',state.refNo);safeSetValue('calc-discount',0);safeSetValue('total-cost','');
+      safeSetChecked('vat-toggle',false);safeSetChecked('wht-toggle',false);
+      safeSetChecked('payment-toggle',true);safeSetChecked('deposit-toggle',false);
+      safeSetValue('prev-paid',0);safeSetValue('current-payment',amount);
+      renderItems();togglePaymentBox();toggleDepositBox();
+      restoreCalculatedValuesToUI();safeSetValue('current-payment',amount);calculateTotals(true);
+      setCurrentDocUiState(false);switchTab('editor');goDocumentStep(3,false);
+      showToast('เตรียมใบเสร็จรับเงินจริง ฿'+amount.toLocaleString('th-TH')+' — ตรวจสอบแล้วกดบันทึก');
+    }
     function generateFlowDoc(oldId, newType) {
       const h = state.history.find(x => x.id === oldId); if(!h) return;
       if(!canEditHistoryItem(h)) return showToast('พนักงานต่อยอดเอกสารของผู้อื่นไม่ได้ — สร้างเอกสารใหม่แทนได้');
@@ -3000,6 +3075,7 @@
       state.shop = currentShopSettings;
       state.currentHistoryId = null;
       state.refNo = h.docNo;
+      state.jobId = h.jobId || getRootDocNo(h,state.history);
       safeSetValue('refNo', state.refNo);
       const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
       if(radioEl) radioEl.checked = true;
@@ -3085,6 +3161,7 @@
       clearTimeout(state.liveSyncTimer);
       state.currentHistoryId = null;
       state.isReadOnlyDocument = false;
+      state.jobId = '';
       state.items = [];
       ['custName','custPhone','custTaxId','custAddress','projectName','refNo','total-cost'].forEach(id => safeSetValue(id, ''));
       state.customer = { name:'', phone:'', taxId:'', address:'', project:'' };
@@ -3335,7 +3412,7 @@
     // Expose all globals
     window.editHistoryCost = editHistoryCost;
     window.openPrintPicker = openPrintPicker; window.closePrintPicker = closePrintPicker; window.renderPrintPicker = renderPrintPicker; window.openCashBill = openCashBill;
-    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
   <script>
     // PWA registration only. Never cache application HTML, Firebase or PDF requests.
