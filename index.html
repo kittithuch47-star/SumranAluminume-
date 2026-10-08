@@ -3071,23 +3071,28 @@
       const tb = document.getElementById('history-tbody');
       if(tb) tb.innerHTML = '';
       const searchInput = document.getElementById('search-history');
-      const q = String(searchInput?.value || '').trim().toLowerCase();
+      // Search the same document fields shown in the new history cards and detail pane.
+      // Normalize whitespace, punctuation and Thai/Arabic year representations.
+      const normalizeHistorySearch = value => String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/[\s\u200b\u200c\u200d\-_/.,:()]+/g, ' ').trim();
+      const compactHistorySearch = value => normalizeHistorySearch(value).replace(/\s/g, '');
+      const q = normalizeHistorySearch(searchInput?.value || '');
+      const qCompact = compactHistorySearch(q);
       const filtered = state.history.filter(h => {
-        const docNo = String(h?.docNo || '').toLowerCase();
-        const customerName = String(h?.customerName || '').toLowerCase();
-        const refNo = String(h?.refNo || '').toLowerCase();
-        const project = String(h?.project || '').toLowerCase();
-        const createdByName = String(h?.createdByName || '').toLowerCase();
-        const createdByEmail = String(h?.createdByEmail || '').toLowerCase();
-        return !q ||
-          docNo.includes(q) ||
-          customerName.includes(q) ||
-          refNo.includes(q) ||
-          project.includes(q) ||
-          createdByName.includes(q) ||
-          createdByEmail.includes(q);
+        if (!qCompact) return true;
+        const dateText = String(h.date || '');
+        const year = Number(dateText.slice(0,4));
+        const dateVariants = [dateText, formatDateThai(h.date), Number.isFinite(year) && year >= 1900 ? String(year + 543) : ''];
+        const values = [
+          h.docNo, h.refNo, h.customerName, h.project, h.createdByName,
+          h.createdByEmail, h.customerPhone, h.customerAddress,
+          h.payload?.customerName, h.payload?.project, h.payload?.customerPhone,
+          h.payload?.customerAddress, h.payload?.note, h.payload?.notes,
+          historyDocLabel(h.docType), h.docType, h.status,
+          ...dateVariants
+        ];
+        return values.some(value => compactHistorySearch(value).includes(qCompact));
       });
-      
+
       const txMap = getTransactionMap(state.history);
       let totalSales = 0, totalProfit = 0, totalDebt = 0;
       const yearSelector=document.getElementById('report-year');
