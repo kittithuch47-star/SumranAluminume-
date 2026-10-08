@@ -969,6 +969,17 @@
           </div>
         </div>
 
+        <div id="p-receipt-original-items" class="hidden mb-4 border border-slate-200 rounded-lg overflow-hidden text-[11px]">
+          <div class="px-3 py-2 font-bold text-slate-800 bg-slate-100">รายละเอียดสินค้าและบริการตามงานต้นฉบับ</div>
+          <table class="w-full text-left border-collapse"><thead class="bg-slate-50"><tr><th class="p-2">รายการ</th><th class="p-2 text-center">จำนวน</th><th class="p-2 text-right">ราคา/หน่วย</th><th class="p-2 text-right">มูลค่ารายการ</th></tr></thead><tbody id="p-receipt-original-items-body"></tbody></table>
+        </div>
+        <div id="p-receipt-job-summary" class="hidden border border-sky-200 bg-sky-50 text-[11px] p-3 rounded-lg mb-4">
+          <div class="font-bold text-sky-900 mb-2" id="p-receipt-sequence">สรุปการรับชำระเงิน</div>
+          <div class="flex justify-between"><span>มูลค่างานทั้งหมด:</span><strong id="p-receipt-job-total">฿0.00</strong></div>
+          <div id="p-receipt-payments" class="my-1 space-y-0.5"></div>
+          <div class="flex justify-between border-t border-sky-200 pt-1 mt-1 font-bold text-emerald-800"><span>รับเงินสะสม:</span><span id="p-receipt-paid">฿0.00</span></div>
+          <div class="flex justify-between font-bold text-rose-700"><span>ยอดค้างชำระ:</span><span id="p-receipt-remaining">฿0.00</span></div>
+        </div>
         <div id="p-bank-payment-box" class="border border-sky-200 bg-sky-50 text-[10px] text-sky-900 p-2 rounded mb-6"><strong>การชำระเงิน:</strong> <span id="p-bank-info">-</span></div>
 
         <div class="grid grid-cols-3 gap-4 text-center text-[11px] pt-4">
@@ -1429,7 +1440,7 @@
       state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo=''; state.jobId='';
       state.docDate=new Date().toISOString().split('T')[0]; state.dueDate=new Date(Date.now()+14*86400000).toISOString().split('T')[0];
       state.customer={name:'',phone:'',taxId:'',address:'',project:''}; state.salesName=state.salesName||'พนักงานขาย 1';
-      state.items=[];state.sourceJobItems=[];
+      state.items=[];state.sourceJobItems=[];state.receiptJobTotal=0;state.receiptPriorPaid=0;state.receiptPaymentAmount=0;state.receiptSequence=0;state.receiptPriorRecords=[];
       state.notes='1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี'; state.discount=0; state.vatEnabled=false; state.whtEnabled=false; state.totalCost=null;
       state.isLumpSum=false; state.lumpSumAmt=0; state.paymentEnabled=false; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0; state.payments=[];
       ['docNo','refNo','docDate','dueDate','docNotes','custName','custPhone','custTaxId','custAddress','projectName','calc-discount','total-cost','current-payment','deposit-percent'].forEach(id=>safeSetValue(id,''));
@@ -2381,7 +2392,9 @@
       safeSetText('calc-wht', '-฿' + wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-grandtotal', '฿' + grand.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('calc-total-paid', '฿' + (totalPaidBeforeCurrent + state.currentPayment).toLocaleString('th-TH',{minimumFractionDigits:2}));
-      safeSetText('calc-remaining-amt', '฿' + remAmt.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      const displayRemaining = state.docType==='receipt' && Number(state.receiptJobTotal)>0
+        ? Math.max(0, +(Number(state.receiptJobTotal)-Number(state.receiptPriorPaid||0)-Number(state.currentPayment||0)).toFixed(2)) : remAmt;
+      safeSetText('calc-remaining-amt', '฿' + displayRemaining.toLocaleString('th-TH',{minimumFractionDigits:2}));
 
       const totalCostInput = document.getElementById('total-cost');
       state.totalCost = totalCostInput && totalCostInput.value.trim() !== '' ? Math.max(0, Number(totalCostInput.value) || 0) : null;
@@ -2498,19 +2511,29 @@
         });
       }
 
-      if(tb && state.docType==='receipt' && Array.isArray(state.sourceJobItems) && state.sourceJobItems.length) {
-        const header=document.createElement('tr');
-        header.innerHTML='<td colspan="7" class="px-3 py-2 bg-sky-50 text-sky-900 font-bold">รายละเอียดงานที่อ้างอิง (ไม่รวมยอดเงินซ้ำ)</td>';
-        tb.prepend(header);
-        state.sourceJobItems.forEach((item,i)=>{
-          const tr=document.createElement('tr');
-          tr.className='border-b border-slate-100 text-slate-600';
-          const details=item.type==='alu' ? 'สี '+(item.aluColor||'-')+' / กระจก '+(item.glassType||'-')+' / '+Number(item.width||0)+'×'+Number(item.height||0)+' ม.' : '';
-          tr.innerHTML='<td class="px-2 py-1 text-center">'+(i+1)+'</td><td colspan="4" class="px-3 py-1">'+escapeHtml(item.name||'-')+' <span class="text-[9px]">'+escapeHtml(details)+'</span></td><td class="px-2 py-1 text-center">'+Number(item.qty||1)+' '+escapeHtml(item.unit||'')+'</td><td class="px-2 py-1 text-right">อ้างอิง</td>';
-          const firstPayment=Array.from(tb.children).find(x=>x!==header && x.querySelector('td'));
-          if(firstPayment)tb.insertBefore(tr,firstPayment);else tb.appendChild(tr);
-        });
+
+      // A linked receipt has two distinct concepts: original goods (informational)
+      // and the amount received on this receipt (the only amount charged here).
+      const linkedReceipt=state.docType==='receipt' && Number(state.receiptJobTotal)>0;
+      const originalBox=document.getElementById('p-receipt-original-items');
+      const originalBody=document.getElementById('p-receipt-original-items-body');
+      if(originalBox && originalBody) {
+        const originals=Array.isArray(state.sourceJobItems)?state.sourceJobItems:[];
+        originalBox.style.display=linkedReceipt && originals.length?'block':'none';
+        if(linkedReceipt && originals.length) {
+          const baht=n=>'฿'+Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2});
+          originalBody.innerHTML=originals.map((it,i)=>{
+            const qty=Number(it.qty||1);
+            const desc=escapeHtml(String(it.name||'-'));
+            const detail=it.type==='alu' ? '<div class="text-[9px] text-slate-500">'+escapeHtml(String(it.aluColor||''))+' / '+escapeHtml(String(it.glassType||''))+' · '+Number(it.width||0)+' × '+Number(it.height||0)+' ม.</div>' : '';
+            return '<tr class="border-t border-slate-100"><td class="p-2">'+(i+1)+'. '+desc+detail+'</td><td class="p-2 text-center">'+qty+' '+escapeHtml(String(it.unit||''))+'</td><td class="p-2 text-right">'+baht(it.unitPrice)+'</td><td class="p-2 text-right">'+baht(it.total)+'</td></tr>';
+          }).join('');
+        } else originalBody.innerHTML='';
       }
+      const receiptTable=document.getElementById('p-items-table');
+      // For linked receipts, show the original items above instead of a confusing
+      // synthetic line that says "payment installment" as though it were a product.
+      if(receiptTable) receiptTable.style.display=linkedReceipt && Array.isArray(state.sourceJobItems) && state.sourceJobItems.length?'none':'';
 
       safeSetText('p-calc-subtotal', '฿' + state.subtotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
       const discountRow = document.getElementById('p-discount-row');
@@ -2528,8 +2551,29 @@
       safeSetText('p-calc-grandtotal', '฿' + state.grandTotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
       safeSetText('p-baht-text', `(${state.bahtText})`);
 
+      const receiptSummaryBox=document.getElementById('p-receipt-job-summary');
+      if(receiptSummaryBox) {
+        const isJobReceipt=state.docType==='receipt' && Number(state.receiptJobTotal)>0;
+        receiptSummaryBox.style.display=isJobReceipt?'block':'none';
+        if(isJobReceipt) {
+          const money=n=>'฿'+Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2});
+          const own=Number(state.receiptPaymentAmount||0);
+          const saved=!!state.currentHistoryId;
+          const previous=Array.isArray(state.receiptPriorRecords)?state.receiptPriorRecords:[];
+          const records=previous.map(x=>({...x}));
+          records.push({amount:own,date:state.docDate||'',docNo:state.docNo});
+          const sum=records.reduce((v,x)=>v+Number(x.amount||0),0);
+          safeSetText('p-receipt-sequence','สรุปการชำระเงิน · ใบเสร็จครั้งที่ '+Number(state.receiptSequence||records.length)+' · รับครั้งนี้ '+money(own));
+          safeSetText('p-receipt-job-total',money(state.receiptJobTotal));
+          const list=document.getElementById('p-receipt-payments');
+          if(list) list.innerHTML=records.map((p,i)=>'<div class="flex justify-between"><span>ชำระครั้งที่ '+(i+1)+(i===records.length-1?' (ใบเสร็จฉบับนี้)':'')+'</span><strong>'+money(p.amount)+'</strong></div>').join('');
+          safeSetText('p-receipt-paid',money(sum));
+          safeSetText('p-receipt-remaining',money(Math.max(0,Number(state.receiptJobTotal)-sum)));
+        }
+      }
       let depBox = document.getElementById('p-deposit-box');
       if (depBox) {
+        if(state.docType==='receipt' && Number(state.receiptJobTotal)>0) { depBox.style.display='none'; } else {
         const totalPaid = getTotalPaid() + (Number(state.currentPayment)||0);
         const showPaymentInfo = state.paymentEnabled && (state.depositEnabled || totalPaid > 0 || state.remainingAmt > 0);
         if (showPaymentInfo) {
@@ -2545,6 +2589,7 @@
           safeSetText('p-remaining-amt', '฿' + Number(state.remainingAmt||0).toLocaleString('th-TH',{minimumFractionDigits:2}));
         } else {
           depBox.style.display = 'none';
+        }
         }
       }
     }
@@ -2876,6 +2921,22 @@
       return String(current?.docNo || historyItem.docNo || '');
     }
 
+    function getJobPayments(docs) {
+      const seen = new Set();
+      const records = [];
+      docs.forEach(h => {
+        (Array.isArray(h.payload?.payments) ? h.payload.payments : []).forEach(p => {
+          const amount = Number(p.amount || 0);
+          if(!Number.isFinite(amount) || amount <= 0) return;
+          const id = String(p.id || `${h.docNo}-${p.date || ''}-${amount}`);
+          if(seen.has(id)) return;
+          seen.add(id);
+          records.push({id, amount, date:p.date || h.savedAt || '', docNo:p.docNo || h.docNo});
+        });
+      });
+      return records.sort((a,b) => String(a.date).localeCompare(String(b.date)) || String(a.id).localeCompare(String(b.id)));
+    }
+
     function getTransactionSummary(rootDocNo, allHistory = state.history) {
       const docs = allHistory.filter(h => jobKey(h, allHistory) === rootDocNo);
       if(!docs.length) return null;
@@ -2892,21 +2953,9 @@
         }
       });
 
-      // รวมเงินที่รับจริงจากทุกเอกสารในงานเดียวกัน แต่ไม่ซ้ำ payment id
-      const seenPayments = new Set();
-      let paid = 0;
-      let hasPaymentRecords = false;
-      docs.forEach(h => {
-        const payments = Array.isArray(h.payload?.payments) ? h.payload.payments : [];
-        payments.forEach(p => {
-          hasPaymentRecords = true;
-          const pid = String(p.id || `${h.docNo}-${p.date || ''}-${p.amount || 0}`);
-          if(seenPayments.has(pid)) return;
-          seenPayments.add(pid);
-          paid += Number(p.amount || 0);
-        });
-      });
-      if(!hasPaymentRecords) paid = Math.max(...docs.map(h => Number(h.paidTotal || 0)), 0);
+      const paymentRecords = getJobPayments(docs);
+      let paid = paymentRecords.reduce((sum,p) => sum + p.amount, 0);
+      if(!paymentRecords.length) paid = Math.max(...docs.map(h => Number(h.paidTotal || 0)), 0);
       paid = Math.min(total, +paid.toFixed(2));
       const remaining = Math.max(0, +(total - paid).toFixed(2));
       const profit = cost === null ? null : +(total - cost).toFixed(2);
@@ -3072,7 +3121,7 @@
       const panel=document.createElement('div');
       panel.id='source-job-items';
       panel.className='p-3 border border-sky-200 bg-sky-50 rounded-xl text-xs';
-      panel.innerHTML='<div class="font-bold text-sky-900 mb-2">รายการสินค้าและบริการของงานต้นฉบับ (แสดงเพื่ออ้างอิง ไม่รวมยอดซ้ำ)</div>'+
+      panel.innerHTML='<div class="font-bold text-sky-900 mb-2">รายการสินค้าและบริการของงานนี้ (แสดงในใบเสร็จ)</div>'+
         state.sourceJobItems.map((item,i)=>'<div class="py-1 border-b border-sky-100">'+(i+1)+'. '+escapeHtml(item.name||'-')+
           (item.type==='alu'?' — '+escapeHtml(item.aluColor||'-')+' / '+escapeHtml(item.glassType||'-')+
            ' / '+Number(item.width||0)+' × '+Number(item.height||0)+' ม.':'')+
@@ -3097,7 +3146,12 @@
       state.shop=currentShopSettings;
       state.currentHistoryId=null;state.isReadOnlyDocument=false;
       state.docType='receipt';state.refNo=h.docNo;state.jobId=jobKey(h,state.history);
-      state.items=[{id:'payment-'+Date.now(),type:'general',name:'รับชำระเงินค่างาน '+String(tx.master.docNo||h.docNo),aluColor:'-',glassType:'-',width:0,height:0,area:0,qty:1,unit:'ครั้ง',pricingType:'per_unit',unitPrice:amount,total:amount,showQty:true,showUnit:true}];
+      state.receiptJobTotal=tx.total;
+      state.receiptPriorPaid=tx.paid;
+      state.receiptPaymentAmount=amount;
+      state.receiptSequence=getJobPayments(tx.docs).length+1;
+      state.receiptPriorRecords=clone(getJobPayments(tx.docs));
+      state.items=[{id:'payment-'+Date.now(),type:'general',name:'รับชำระเงินครั้งที่ '+state.receiptSequence+' อ้างอิง '+String(tx.master.docNo||h.docNo),aluColor:'-',glassType:'-',width:0,height:0,area:0,qty:1,unit:'ครั้ง',pricingType:'per_unit',unitPrice:amount,total:amount,showQty:true,showUnit:true}];
       state.isLumpSum=false;state.lumpSumAmt=0;state.discount=0;state.vatEnabled=false;state.whtEnabled=false;
       state.payments=[];state.prevPaid=0;state.currentPayment=amount;state.paymentEnabled=true;
       state.depositEnabled=false;state.depositPercent=0;state.depositAmount=0;state.totalCost=null;
@@ -3124,7 +3178,7 @@
       state.currentHistoryId = null;
       state.refNo = h.docNo;
       state.jobId = h.jobId || getRootDocNo(h,state.history);
-      state.sourceJobItems=[];
+      state.sourceJobItems=[];state.receiptJobTotal=0;state.receiptPriorPaid=0;state.receiptPaymentAmount=0;state.receiptSequence=0;state.receiptPriorRecords=[];
       restoreFlowFormFields();
       const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
       if(radioEl) radioEl.checked = true;
