@@ -3066,7 +3066,10 @@
     }
 
     function renderHistory() {
-      const tb = document.getElementById('history-tbody'); if(!tb) return; tb.innerHTML = '';
+      // History redesign uses hc-list-items / hc-detail instead of the removed history-tbody.
+      // Do not abort: annual summaries and the new document center both depend on this render.
+      const tb = document.getElementById('history-tbody');
+      if(tb) tb.innerHTML = '';
       const searchInput = document.getElementById('search-history');
       const q = String(searchInput?.value || '').trim().toLowerCase();
       const filtered = state.history.filter(h => {
