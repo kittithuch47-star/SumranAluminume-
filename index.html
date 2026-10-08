@@ -1674,6 +1674,26 @@
       if(isOwner()) renderMembers();
     }
 
+    // OAuth UI helpers: these must exist before the Google Login button is used.
+    function setAuthUiBusy(busy) {
+      authActionBusy = !!busy;
+      const btn = document.getElementById('google-login-btn');
+      if (btn) {
+        btn.disabled = authActionBusy || !firebaseReady;
+        btn.setAttribute('aria-busy', String(authActionBusy));
+      }
+      const status = document.getElementById('auth-gate-status');
+      if (status && busy) status.textContent = 'กำลังเปิด Google Login...';
+    }
+
+    function showAuthError(error) {
+      const code = String(error?.code || 'unknown');
+      const message = String(error?.message || 'ไม่ทราบสาเหตุ');
+      const status = document.getElementById('auth-gate-status');
+      if (status) status.textContent = `เข้าสู่ระบบไม่สำเร็จ (${code}): ${message}`;
+      showToast('Google Login ไม่สำเร็จ: ' + code);
+    }
+
     function isInstalledPwa() {
       return window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true;
@@ -1700,6 +1720,9 @@
         if(standalone && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
           // Full-page redirect, avoiding popup limitations of iOS Home Screen apps.
           await signInWithRedirect(auth, provider);
+          setAuthUiBusy(false);
+          const status = document.getElementById('auth-gate-status');
+          if(status) status.textContent = 'ยังไม่เปิดหน้า Google โปรดลองอีกครั้ง หากยังไม่ทำงาน ให้เปิดเว็บผ่าน Safari โดยตรง';
           return;
         } else if(standalone) {
           await signInWithPopup(auth, provider);
@@ -1741,7 +1764,8 @@
     async function handleGoogleUserReady(user) {
       if(!user||user.isAnonymous){setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว กรุณากดเข้าสู่ระบบด้วย Google');return;}
       userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
-      if(authActionBusy) return;
+      // A redirect may leave the previous page's busy flag set; do not block membership loading.
+      setAuthUiBusy(false);
       try {
         currentMember=await loadMembershipForUser(user);
         if(!currentMember){
@@ -1771,14 +1795,15 @@
         // Resolve the redirect before creating an anonymous session. Otherwise the
         // temporary anonymous user can interfere with OAuth redirect completion.
         try { await getRedirectResult(auth); }
-        catch(e) { console.error('Google redirect result failed:', e); showAuthError(e); }
+        catch(e) { console.error('Google redirect result failed:', e); setAuthUiBusy(false); showAuthError(e); }
+        finally { setAuthUiBusy(false); }
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
         if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
         const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
         if(current&&!current.isAnonymous&&!authActionBusy) await handleGoogleUserReady(current);
         if(window.lucide) window.lucide.createIcons();
-      } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
+      } catch(e){console.error('Firebase Init Error:',e);setAuthUiBusy(false);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
     }
 
     window.getFirebaseStatus = () => ({ ready: firebaseReady, projectId: firebaseConfig?.projectId || null, userId });
