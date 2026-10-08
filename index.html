@@ -562,6 +562,19 @@
 @media(max-width:850px){.hc-layout{grid-template-columns:1fr}.hc-list-items{max-height:none}.hc-detail{position:static}.hc-head{align-items:flex-start}.hc-new{margin-left:auto}.history-center{padding:13px;border-radius:18px}.hc-heading h2{font-size:16px}.hc-tools{display:block}.hc-filters{margin-top:10px;justify-content:space-between}.hc-filters button{flex:1;padding:10px 5px}.hc-item{padding:14px}.hc-item.selected{padding:13px}.hc-detail-body{padding:15px}}
 @media print{.history-center{display:none!important}}
 
+
+/* Mobile history: list and details are separate views; desktop remains split-pane. */
+.hc-mobile-back{display:none}
+@media screen and (max-width:850px){
+  #tab-history.hc-mobile-detail-open .hc-head,
+  #tab-history.hc-mobile-detail-open .hc-tools,
+  #tab-history.hc-mobile-detail-open .hc-list{display:none!important}
+  #tab-history:not(.hc-mobile-detail-open) .hc-detail{display:none!important}
+  #tab-history.hc-mobile-detail-open .hc-detail{display:block!important;border-radius:18px}
+  #tab-history.hc-mobile-detail-open .hc-layout{display:block}
+  #tab-history.hc-mobile-detail-open .hc-mobile-back{display:flex;align-items:center;gap:9px;width:100%;padding:12px 14px;margin-bottom:12px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:13px;font-size:14px;font-weight:700;text-align:left}
+  #tab-history.hc-mobile-detail-open .history-center{padding:12px}
+}
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -2096,6 +2109,7 @@
     function switchTab(tab) {
       state.currentTab = tab;
       if(tab==='editor') initDocumentWizard();
+      if(tab==='history' && window.matchMedia('(max-width:850px)').matches) { historyMobileDetailOpen = false; document.getElementById('tab-history')?.classList.remove('hc-mobile-detail-open'); }
       document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('is-active'));
       const activeMobile = document.querySelector(
         tab === 'history' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(2)' :
@@ -3139,6 +3153,12 @@
 
     let historyPaymentFilter = 'all';
     let historySelectedId = '';
+    let historyMobileDetailOpen = false;
+    function closeMobileHistoryDetail() {
+      historyMobileDetailOpen = false;
+      document.getElementById('tab-history')?.classList.remove('hc-mobile-detail-open');
+      window.scrollTo(0, 0);
+    }
     let historyDetailExpanded = false;
     function setHistoryPaymentFilter(filter) {
       historyPaymentFilter = ['all','due','paid'].includes(filter) ? filter : 'all';
@@ -3148,7 +3168,12 @@
     function selectHistoryDocument(id) {
       historySelectedId = id;
       historyDetailExpanded = false;
+      if(window.matchMedia('(max-width:850px)').matches) {
+        historyMobileDetailOpen = true;
+        document.getElementById('tab-history')?.classList.add('hc-mobile-detail-open');
+      }
       renderHistory();
+      if(historyMobileDetailOpen) window.scrollTo(0, 0);
     }
     function toggleHistoryDetail() {
       historyDetailExpanded = !historyDetailExpanded;
@@ -3170,7 +3195,7 @@
         return historyPaymentFilter==='all' || (historyPaymentFilter==='due' ? Number(tx?.remaining||0)>0 : Number(tx?.remaining||0)===0);
       });
       safeSetText('hc-count', `${docs.length} รายการ`);
-      if(!docs.length){list.innerHTML='<div class="hc-empty">ไม่พบเอกสารที่ค้นหา</div>';detail.innerHTML='<div class="hc-empty">ไม่มีเอกสารที่ตรงกับตัวกรอง</div>';return;}
+      if(!docs.length){list.innerHTML='<div class="hc-empty">ไม่พบเอกสารที่ค้นหา</div>';detail.innerHTML='<div class="hc-empty">ไม่มีเอกสารที่ตรงกับตัวกรอง</div>';closeMobileHistoryDetail();return;}
       if(!docs.some(h=>h.id===historySelectedId)){historySelectedId=docs[0].id;historyDetailExpanded=false;}
       const amount=n=>'฿'+Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
       const tone=t=>({quotation:'blue',invoice:'purple',receipt:'green',delivery:'indigo',cashbill:'orange',taxreceipt:'green'})[t]||'blue';
@@ -3186,7 +3211,7 @@
       const h=docs.find(x=>x.id===historySelectedId),tx=txMap.get(jobKey(h,state.history));
       const remaining=Number(tx?.remaining||0),paid=Number(tx?.paid||0),total=Number(tx?.total??h.grandTotal??0);
       const canEdit=canEditHistoryItem(h),owner=isOwner();
-      detail.innerHTML=`<div class="hc-detail-banner ${tone(h.docType)}"><span>รายละเอียดเอกสาร</span><i data-lucide="file-check-2"></i><h3>${escapeHtml(h.docNo||'')}</h3><p>${historyDocLabel(h.docType)}</p></div>
+      detail.innerHTML=`<button type="button" class="hc-mobile-back" onclick="closeMobileHistoryDetail()"><i data-lucide="arrow-left"></i> กลับไปหน้ารายการเอกสาร</button><div class="hc-detail-banner ${tone(h.docType)}"><span>รายละเอียดเอกสาร</span><i data-lucide="file-check-2"></i><h3>${escapeHtml(h.docNo||'')}</h3><p>${historyDocLabel(h.docType)}</p></div>
         <div class="hc-detail-body"><h4>${escapeHtml(h.customerName||'ไม่ระบุลูกค้า')}</h4><p class="hc-job">${escapeHtml(h.project||'ไม่มีชื่อโครงการ')}</p>
         <div class="hc-meta"><div><small><i data-lucide="calendar-days"></i> วันที่จัดทำ</small><strong>${escapeHtml(formatDateThai(h.date)||'-')}</strong></div><div><small><i data-lucide="user-round"></i> ผู้จัดทำ</small><strong>${escapeHtml(h.createdByName||h.createdByEmail||'เดิม/ไม่ทราบ')}</strong></div></div>
         <div class="hc-money"><div><span>ยอดสุทธิงาน</span><strong>${amount(total)}</strong></div><div><span>รับเงินจริงแล้ว</span><strong class="hc-positive">${amount(paid)}</strong></div><div class="hc-money-final"><span>ยอดคงเหลือ</span><strong class="${remaining>0?'hc-negative':'hc-positive'}">${amount(remaining)}</strong></div></div>
@@ -3666,6 +3691,7 @@
     // Inline handlers in the redesigned history view must be exposed from this ES module.
     window.setHistoryPaymentFilter = setHistoryPaymentFilter;
     window.selectHistoryDocument = selectHistoryDocument;
+    window.closeMobileHistoryDetail = closeMobileHistoryDetail;
     window.toggleHistoryDetail = toggleHistoryDetail;
     window.editHistoryCost = editHistoryCost;
     window.openPrintPicker = openPrintPicker; window.closePrintPicker = closePrintPicker; window.renderPrintPicker = renderPrintPicker; window.openCashBill = openCashBill;
