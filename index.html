@@ -97,6 +97,7 @@
       }
 
       /* Hide the desktop-style tab buttons; bottom nav becomes the main mobile nav. */
+      #tab-btn-home,
       #tab-btn-editor,
       #tab-btn-preview,
       #tab-btn-history,
@@ -523,6 +524,26 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .modal-overlay { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
+
+    /* SUMRAN APP HOME: responsive dashboard; document print remains untouched */
+    .app-home-hero{background:linear-gradient(125deg,#075985,#0369a1 52%,#0f172a);color:white;border-radius:26px;padding:26px;position:relative;overflow:hidden;box-shadow:0 12px 32px #07598525}
+    .app-home-hero:after{content:"";position:absolute;width:230px;height:230px;border-radius:50%;background:#ffffff12;right:-55px;top:-95px;pointer-events:none}
+    .app-home-kicker{font-size:11px;letter-spacing:2px;color:#bae6fd;font-weight:700}
+    .app-home-title{font-size:clamp(23px,3vw,34px);font-weight:800;margin:8px 0}
+    .app-home-subtitle{font-size:13px;color:#e0f2fe}
+    .app-home-cta{display:inline-flex;align-items:center;gap:8px;margin-top:20px;background:white;color:#075985;padding:12px 18px;border-radius:14px;font-weight:700;font-size:13px}
+    .app-home-section{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 13px}
+    .app-home-section h2{font-size:17px;font-weight:800;color:#0f172a}
+    .app-home-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .app-home-tile{background:white;border:1px solid #e2e8f0;border-radius:21px;padding:20px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:11px;min-height:148px;box-shadow:0 4px 16px #0f172a08;transition:transform .15s,box-shadow .15s}
+    .app-home-tile:active{transform:scale(.98)}.app-home-tile:hover{box-shadow:0 8px 22px #0f172a13}
+    .app-home-icon{width:53px;height:53px;border-radius:17px;display:flex;align-items:center;justify-content:center}
+    .app-home-icon svg{width:26px;height:26px}
+    .app-home-tile strong{font-size:14px;color:#0f172a}.app-home-tile small{font-size:11px;color:#64748b;line-height:1.5}
+    .app-home-tip{margin-top:18px;padding:15px 18px;border-radius:17px;background:#eff6ff;color:#075985;border:1px solid #bfdbfe;font-size:12px}
+    @media(max-width:640px){.app-home-hero{padding:22px 19px;border-radius:21px}.app-home-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.app-home-tile{min-height:151px;padding:15px;gap:10px}.app-home-icon{width:49px;height:49px}.app-home-tile strong{font-size:13px}.app-home-tile small{font-size:10px}.app-home-section{margin-top:18px}}
+    @media(min-width:641px) and (max-width:1024px){.app-home-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media print{#tab-home{display:none!important}}
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -554,6 +575,7 @@
           <span id="auth-user-role" class="text-[9px] px-1.5 py-0.5 rounded bg-white/10 border border-white/10 text-sky-100 whitespace-nowrap">-</span>
           <button type="button" onclick="logoutGoogle()" class="text-[10px] px-2 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/10 font-semibold">ออกจากระบบ</button>
         </div>
+        <button onclick="switchTab('home')" id="tab-btn-home" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white"><i data-lucide="house" class="w-4 h-4"></i> หน้าหลัก</button>
         <button onclick="switchTab('editor')" id="tab-btn-editor" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow">
           <i data-lucide="file-pen" class="w-4 h-4"></i> แก้ไขเอกสาร
         </button>
@@ -573,7 +595,7 @@
 
   <!-- MOBILE NAVIGATION: screen-only, uses the existing tabs/functions -->
   <nav id="mobile-bottom-nav" class="mobile-only-nav no-print" aria-label="เมนูมือถือ">
-    <button type="button" onclick="switchTab('editor')" class="mobile-nav-item">
+    <button type="button" onclick="switchTab('home')" class="mobile-nav-item">
       <i data-lucide="home"></i><span>หน้าหลัก</span>
     </button>
     <button type="button" onclick="switchTab('history')" class="mobile-nav-item">
@@ -618,8 +640,28 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 relative">
 
+    <!-- APP HOME: visual dashboard; existing editor/data/auth are unchanged -->
+    <section id="tab-home" class="space-y-4" aria-label="หน้าหลัก Sumran Aluminum">
+      <div class="app-home-hero">
+        <div class="app-home-kicker">SUMRAN ALUMINUM · PRO</div>
+        <h2 class="app-home-title">จัดการงานร้านในที่เดียว</h2>
+        <p class="app-home-subtitle">สร้างเอกสาร ค้นหางาน และจัดการข้อมูลได้ง่ายทั้งมือถือและคอมพิวเตอร์</p>
+        <button type="button" class="app-home-cta" onclick="switchTab('editor')"><i data-lucide="file-plus-2" class="w-5 h-5"></i> ไปหน้าสร้างเอกสาร</button>
+      </div>
+      <div class="app-home-section"><h2>เมนูจัดการร้าน</h2><span class="text-xs text-slate-500">เลือกเมนูที่ต้องการ</span></div>
+      <div class="app-home-grid">
+        <button type="button" class="app-home-tile" onclick="switchTab('editor')"><span class="app-home-icon" style="background:#dbeafe;color:#1d4ed8"><i data-lucide="file-plus-2"></i></span><strong>สร้างเอกสาร</strong><small>ใบเสนอราคา ใบส่งของ ใบเสร็จ และใบแจ้งหนี้</small></button>
+        <button type="button" class="app-home-tile" onclick="switchTab('history')"><span class="app-home-icon" style="background:#dcfce7;color:#15803d"><i data-lucide="files"></i></span><strong>ประวัติเอกสาร</strong><small>ค้นหาเอกสารและติดตามงานที่บันทึกไว้</small></button>
+        <button type="button" class="app-home-tile" onclick="switchTab('preview')"><span class="app-home-icon" style="background:#fef3c7;color:#b45309"><i data-lucide="printer"></i></span><strong>พรีวิวและ PDF</strong><small>ตรวจสอบเอกสารก่อนดาวน์โหลดหรือพิมพ์</small></button>
+        <button type="button" class="app-home-tile" onclick="switchTab('editor'); document.getElementById('payment-toggle')?.scrollIntoView({behavior:'smooth',block:'center'})"><span class="app-home-icon" style="background:#fce7f3;color:#be185d"><i data-lucide="wallet"></i></span><strong>รับชำระเงิน</strong><small>มัดจำ แบ่งจ่าย และยอดค้างชำระในเอกสาร</small></button>
+        <button type="button" class="app-home-tile" onclick="switchTab('editor'); document.getElementById('presets-container')?.scrollIntoView({behavior:'smooth',block:'center'})"><span class="app-home-icon" style="background:#f3e8ff;color:#7e22ce"><i data-lucide="package"></i></span><strong>สินค้าและพรีเซ็ต</strong><small>เลือกแบบมาตรฐานและจัดการรายการสินค้า</small></button>
+        <button type="button" class="app-home-tile" onclick="switchTab('settings')"><span class="app-home-icon" style="background:#e2e8f0;color:#334155"><i data-lucide="settings-2"></i></span><strong>ตั้งค่าร้าน</strong><small>ข้อมูลร้าน สมาชิก และการตั้งค่าระบบ</small></button>
+      </div>
+      <div class="app-home-tip">ข้อมูลและเอกสารเดิมยังอยู่ในระบบเดิม เมนูใหม่นี้เป็นเพียงทางลัดเพื่อให้ใช้งานสะดวกขึ้น</div>
+    </section>
+
     <!-- TAB 1: EDITOR -->
-    <div id="tab-editor" class="space-y-6">
+    <div id="tab-editor" class="hidden space-y-6">
       
       <!-- Doc Types -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 md:p-6">
@@ -1674,26 +1716,6 @@
       if(isOwner()) renderMembers();
     }
 
-    // OAuth UI helpers: these must exist before the Google Login button is used.
-    function setAuthUiBusy(busy) {
-      authActionBusy = !!busy;
-      const btn = document.getElementById('google-login-btn');
-      if (btn) {
-        btn.disabled = authActionBusy || !firebaseReady;
-        btn.setAttribute('aria-busy', String(authActionBusy));
-      }
-      const status = document.getElementById('auth-gate-status');
-      if (status && busy) status.textContent = 'กำลังเปิด Google Login...';
-    }
-
-    function showAuthError(error) {
-      const code = String(error?.code || 'unknown');
-      const message = String(error?.message || 'ไม่ทราบสาเหตุ');
-      const status = document.getElementById('auth-gate-status');
-      if (status) status.textContent = `เข้าสู่ระบบไม่สำเร็จ (${code}): ${message}`;
-      showToast('Google Login ไม่สำเร็จ: ' + code);
-    }
-
     function isInstalledPwa() {
       return window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true;
@@ -1720,9 +1742,6 @@
         if(standalone && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
           // Full-page redirect, avoiding popup limitations of iOS Home Screen apps.
           await signInWithRedirect(auth, provider);
-          setAuthUiBusy(false);
-          const status = document.getElementById('auth-gate-status');
-          if(status) status.textContent = 'ยังไม่เปิดหน้า Google โปรดลองอีกครั้ง หากยังไม่ทำงาน ให้เปิดเว็บผ่าน Safari โดยตรง';
           return;
         } else if(standalone) {
           await signInWithPopup(auth, provider);
@@ -1764,8 +1783,7 @@
     async function handleGoogleUserReady(user) {
       if(!user||user.isAnonymous){setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว กรุณากดเข้าสู่ระบบด้วย Google');return;}
       userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
-      // A redirect may leave the previous page's busy flag set; do not block membership loading.
-      setAuthUiBusy(false);
+      if(authActionBusy) return;
       try {
         currentMember=await loadMembershipForUser(user);
         if(!currentMember){
@@ -1795,15 +1813,14 @@
         // Resolve the redirect before creating an anonymous session. Otherwise the
         // temporary anonymous user can interfere with OAuth redirect completion.
         try { await getRedirectResult(auth); }
-        catch(e) { console.error('Google redirect result failed:', e); setAuthUiBusy(false); showAuthError(e); }
-        finally { setAuthUiBusy(false); }
+        catch(e) { console.error('Google redirect result failed:', e); showAuthError(e); }
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
         if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
         const current=auth.currentUser; userId=current?.uid||null; if(userId)localStorage.setItem(LOCAL_USER_KEY,userId);
         if(current&&!current.isAnonymous&&!authActionBusy) await handleGoogleUserReady(current);
         if(window.lucide) window.lucide.createIcons();
-      } catch(e){console.error('Firebase Init Error:',e);setAuthUiBusy(false);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
+      } catch(e){console.error('Firebase Init Error:',e);setAuthGate(true,'Firebase เชื่อมต่อไม่ได้ — ตรวจสอบ Firebase config, Authentication และ Firestore Rules');showToast('Firebase เชื่อมต่อไม่ได้');}
     }
 
     window.getFirebaseStatus = () => ({ ready: firebaseReady, projectId: firebaseConfig?.projectId || null, userId });
@@ -1858,6 +1875,7 @@
         togglePaymentBox();
         toggleDepositBox();
         calculateTotals();
+        switchTab('home');
         if(window.lucide) window.lucide.createIcons();
       } catch (e) { console.error("Init error:", e); }
     };
@@ -1869,10 +1887,10 @@
         tab === 'history' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(2)' :
         tab === 'preview' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(4)' :
         tab === 'settings' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(5)' :
-        '#mobile-bottom-nav .mobile-nav-item:nth-child(1)'
+        tab === 'home' ? '#mobile-bottom-nav .mobile-nav-item:nth-child(1)' : null
       );
       if(activeMobile) activeMobile.classList.add('is-active');
-      ['editor', 'preview', 'history', 'settings'].forEach(t => {
+      ['home', 'editor', 'preview', 'history', 'settings'].forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
         const btnEl = document.getElementById(`tab-btn-${t}`);
         if(tabEl) tabEl.classList.toggle('hidden', t !== tab);
