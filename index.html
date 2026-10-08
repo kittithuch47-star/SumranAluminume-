@@ -641,7 +641,7 @@
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 relative">
 
     <!-- APP HOME: visual dashboard; existing editor/data/auth are unchanged -->
-    <section id="tab-home" class="hidden space-y-4" aria-label="หน้าหลัก Sumran Aluminum">
+    <section id="tab-home" class="space-y-4" aria-label="หน้าหลัก Sumran Aluminum">
       <div class="app-home-hero">
         <div class="app-home-kicker">SUMRAN ALUMINUM · PRO</div>
         <h2 class="app-home-title">จัดการงานร้านในที่เดียว</h2>
@@ -1875,9 +1875,7 @@
         togglePaymentBox();
         toggleDepositBox();
         calculateTotals();
-        // Safe startup: keep the proven editor as the initial screen.
-        // Dashboard remains available via Home; do not change the authentication boot flow.
-        switchTab('editor');
+        switchTab('home');
         if(window.lucide) window.lucide.createIcons();
       } catch (e) { console.error("Init error:", e); }
     };
@@ -3123,8 +3121,7 @@
     // PWA registration only. Never cache application HTML, Firebase or PDF requests.
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
-          .then(reg => reg.update().catch(error => console.warn('PWA update:', error)))
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
           .catch(error => console.warn('PWA service worker:', error));
       });
     }
