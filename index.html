@@ -698,6 +698,7 @@
             <label class="cursor-pointer"><input type="radio" name="docType" value="delivery" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">ใบส่งของ</div></label>
             <label class="cursor-pointer"><input type="radio" name="docType" value="invoice" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-600 transition-all">ใบแจ้งหนี้/วางบิล</div></label>
             <label class="cursor-pointer"><input type="radio" name="docType" value="receipt" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition-all">ใบเสร็จรับเงิน</div></label>
+            <label class="cursor-pointer" id="tax-invoice-type-option" style="display:none"><input type="radio" name="docType" value="taxreceipt" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition-all">ใบเสร็จรับเงิน/ใบกำกับภาษี</div></label>
             <label class="cursor-pointer"><input type="radio" name="docType" value="cashbill" onchange="updateDocType(this.value)" class="peer sr-only"><div class="p-2 text-center text-xs font-semibold rounded-xl border border-slate-200 peer-checked:bg-slate-700 peer-checked:text-white peer-checked:border-slate-700 transition-all">บิลเงินสด</div></label>
           </div>
         </div>
@@ -809,7 +810,7 @@
             <div class="flex justify-between items-center text-sm"><span class="text-slate-600">ยอดหลังหักส่วนลด:</span><span id="calc-after-discount" class="font-mono font-semibold text-slate-800">฿0.00</span></div>
 
             <div class="pt-2 border-t border-slate-200 grid grid-cols-2 gap-4">
-              <div><label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700"><input type="checkbox" id="vat-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> VAT 7%</label><div id="calc-vat" class="text-xs font-mono text-slate-500 mt-1 pl-6">฿0.00</div></div>
+              <div><label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700"><input type="checkbox" id="vat-toggle" onchange="handleVatToggleChange()" class="rounded border-slate-300 text-sky-600"> VAT 7% (เฉพาะร้านจด VAT)</label><div id="calc-vat" class="text-xs font-mono text-slate-500 mt-1 pl-6">฿0.00</div></div>
               <div><label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700"><input type="checkbox" id="wht-toggle" onchange="calculateTotals()" class="rounded border-slate-300 text-sky-600"> หัก ณ ที่จ่าย 3%</label><div id="calc-wht" class="text-xs font-mono text-rose-500 mt-1 pl-6">-฿0.00</div></div>
             </div>
 
@@ -978,6 +979,8 @@
           <div class="font-bold text-sky-900 mb-2" id="p-receipt-sequence">สรุปการรับชำระเงิน</div>
           <div class="flex justify-between"><span>มูลค่างานทั้งหมด:</span><strong id="p-receipt-job-total">฿0.00</strong></div>
           <div id="p-receipt-payments" class="my-1 space-y-0.5"></div>
+          <div class="flex justify-between border-t border-sky-200 pt-2 mt-2 font-bold text-sky-900 text-[12px]"><span>ยอดรับเงินจริงตามใบเสร็จฉบับนี้:</span><span id="p-receipt-current-amount">฿0.00</span></div>
+          <div id="p-receipt-current-words" class="text-right text-[10px] text-slate-600 pb-1"></div>
           <div class="flex justify-between border-t border-sky-200 pt-1 mt-1 font-bold text-emerald-800"><span>รับเงินสะสม:</span><span id="p-receipt-paid">฿0.00</span></div>
           <div class="flex justify-between font-bold text-rose-700"><span>ยอดค้างชำระ:</span><span id="p-receipt-remaining">฿0.00</span></div>
         </div>
@@ -1109,6 +1112,22 @@
             <div><label class="block font-medium mb-1">Line ID</label><input type="text" id="setting-shop-line" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
             <div><label class="block font-medium mb-1">เลขผู้เสียภาษี</label><input type="text" id="setting-shop-taxid" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
           </div>
+          <section class="rounded-xl border border-sky-200 bg-sky-50 p-4 space-y-3" id="vat-ready-settings">
+            <div class="font-bold text-sm text-slate-800">เตรียมระบบใบกำกับภาษี (VAT)</div>
+            <p class="text-slate-600 leading-relaxed">ร้านยังไม่จดทะเบียน VAT ให้เลือก “ยังไม่จดทะเบียน” ไว้ก่อน ระบบจะไม่อนุญาตให้ออกใบกำกับภาษีหรือคิด VAT ในเอกสารใหม่</p>
+            <label class="block font-semibold">สถานะการจดทะเบียน VAT</label>
+            <select id="setting-vat-status" onchange="updateVatSettingsVisibility()" class="w-full p-2 border rounded-lg bg-white">
+              <option value="unregistered">ยังไม่จดทะเบียน VAT (ค่าเริ่มต้น)</option>
+              <option value="registered">จดทะเบียน VAT แล้ว (เจ้าของร้านยืนยัน)</option>
+            </select>
+            <div id="vat-registered-fields" class="hidden space-y-3 rounded-lg bg-white border p-3">
+              <div class="font-semibold text-amber-700">เปิดใช้เฉพาะเมื่อจดทะเบียนจริงและตรวจสอบข้อมูลแล้ว</div>
+              <label class="block">เลขประจำตัวผู้เสียภาษี 13 หลัก <input id="setting-vat-taxid" inputmode="numeric" maxlength="13" class="w-full p-2 border rounded-lg mt-1" placeholder="เลขผู้เสียภาษี 13 หลัก"></label>
+              <label class="block">ประเภทสถานประกอบการ <select id="setting-vat-branch" class="w-full p-2 border rounded-lg mt-1"><option value="head">สำนักงานใหญ่</option><option value="branch">สาขา</option></select></label>
+              <label class="block">เลขที่สาขา (ถ้ามี) <input id="setting-vat-branch-no" maxlength="5" class="w-full p-2 border rounded-lg mt-1" placeholder="เช่น 00001"></label>
+              <p class="text-amber-700">การเปิดใช้ไม่ได้รับรองว่าเอกสารผ่านข้อกำหนดใบกำกับภาษีทุกกรณี ควรตรวจสอบกับผู้ทำบัญชีก่อนออกจริง โดยเฉพาะการรับเงินเป็นงวด</p>
+            </div>
+          </section>
           <div><label class="block font-medium mb-1">บัญชีรับชำระเงิน (แสดงท้ายบิล)</label><input type="text" id="setting-shop-bank" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500"></div>
           <div><label class="block font-medium mb-1">ข้อความสเปกมาตรฐาน (แสดงใต้ชื่อลูกค้าเวลาพิมพ์)</label><textarea id="setting-standard-spec" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-sky-500 bg-slate-50"></textarea></div>
           <div class="pt-4 flex justify-end"><button onclick="saveStoreSettings()" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold">บันทึกตั้งค่าร้าน</button></div>
@@ -1388,6 +1407,40 @@
         (currentMember.role === 'owner' || currentMember.role === 'staff');
     }
 
+    function vatIsRegistered() { return state.shop?.vatRegistration === 'registered'; }
+    function updateVatSettingsVisibility() {
+      const sel=document.getElementById('setting-vat-status');
+      const fields=document.getElementById('vat-registered-fields');
+      if(fields) fields.classList.toggle('hidden',sel?.value!=='registered');
+    }
+    function syncVatReadyUi() {
+      const shop=state.shop||{};
+      safeSetValue('setting-vat-status',shop.vatRegistration||'unregistered');
+      safeSetValue('setting-vat-taxid',shop.vatTaxId||shop.taxId||'');
+      safeSetValue('setting-vat-branch',shop.vatBranch||'head');
+      safeSetValue('setting-vat-branch-no',shop.vatBranchNo||'');
+      updateVatSettingsVisibility();
+      const opt=document.getElementById('tax-invoice-type-option');
+      if(opt) opt.style.display=vatIsRegistered()?'':'none';
+      const vatBox=document.getElementById('vat-toggle');
+      if(vatBox) vatBox.title=vatIsRegistered()?'ร้านจดทะเบียน VAT แล้ว':'ยังไม่จดทะเบียน VAT ไม่สามารถคิด VAT ในเอกสารใหม่';
+    }
+    function handleVatToggleChange() {
+      const box=document.getElementById('vat-toggle');
+      if(box?.checked && !vatIsRegistered()) {
+        box.checked=false;
+        showToast('ยังไม่จดทะเบียน VAT จึงไม่สามารถเพิ่ม VAT ได้');
+      }
+      calculateTotals();
+    }
+    function guardTaxInvoiceType() {
+      if(state.docType==='taxreceipt' && !vatIsRegistered()) {
+        state.docType='receipt';
+        const radio=document.querySelector('input[name="docType"][value="receipt"]');
+        if(radio) radio.checked=true;
+        showToast('ร้านยังไม่จด VAT ไม่สามารถออกใบกำกับภาษีได้');
+      }
+    }
     function persist() { saveLocalState(); }
     function cloudPath(name, id) { return doc(db, 'artifacts', appId, 'companies', COMPANY_ID, name, id); }
     function cloudCollection(name) { return collection(db, 'artifacts', appId, 'companies', COMPANY_ID, name); }
@@ -1411,6 +1464,7 @@
         name: 'Sumran Aluminum (สำราญ อลูมิเนียม)', subtitle: 'รับติดตั้ง กระจก บานเลื่อน บานสวิง บานกระทุ้ง',
         address: '45/8 ถ.รัตนาธิเบศร์ จ.นนทบุรี 11000', phone: '089-555-8899', line: '@sumran_alu', taxId: '0125565001234',
         bank: 'ธ.กสิกรไทย 045-8-91234-5 ชื่อบัญชี บจก. สำราญ อลูมิเนียม',
+        vatRegistration: 'unregistered', vatTaxId: '', vatBranch: 'head', vatBranchNo: '',
         standardSpec: '* สเปกมาตรฐาน: อลูมิเนียมหนา 1.2 มม. กระจกหนา 6 มม. พร้อมซีลยางกันน้ำ', logo: null
       },
       items: [],
@@ -1441,7 +1495,7 @@
       state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo=''; state.jobId='';
       state.docDate=new Date().toISOString().split('T')[0]; state.dueDate=new Date(Date.now()+14*86400000).toISOString().split('T')[0];
       state.customer={name:'',phone:'',taxId:'',address:'',project:''}; state.salesName=state.salesName||'พนักงานขาย 1';
-      state.items=[];state.sourceJobItems=[];state.receiptJobTotal=0;state.receiptPriorPaid=0;state.receiptPaymentAmount=0;state.receiptSequence=0;state.receiptPriorRecords=[];
+      state.items=[];state.sourceJobItems=[];state.receiptJobTotal=0;state.receiptPriorPaid=0;state.receiptPaymentAmount=0;state.receiptSequence=0;state.receiptPriorRecords=[];state.receiptSourceSubtotal=0;state.receiptSourceDiscount=0;state.receiptSourceVat=0;state.receiptSourceWht=0;
       state.notes='1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี'; state.discount=0; state.vatEnabled=false; state.whtEnabled=false; state.totalCost=null;
       state.isLumpSum=false; state.lumpSumAmt=0; state.paymentEnabled=false; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0; state.payments=[];
       ['docNo','refNo','docDate','dueDate','docNotes','custName','custPhone','custTaxId','custAddress','projectName','calc-discount','total-cost','current-payment','deposit-percent'].forEach(id=>safeSetValue(id,''));
@@ -1719,6 +1773,8 @@
           ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k=>safeSetValue('setting-shop-'+k,state.shop[k]));
           const logoPrev=document.getElementById('setting-logo-preview');
           if(state.shop.logo&&logoPrev){logoPrev.src=state.shop.logo;logoPrev.classList.remove('hidden');}
+          syncVatReadyUi();
+          guardTaxInvoiceType();
           persist();
           if(state.currentTab === 'preview') renderPreview();
         }
@@ -1930,6 +1986,7 @@
         safeSetValue('salesName', state.salesName); safeSetValue('docNotes', state.notes);
         
         ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => safeSetValue('setting-shop-'+k, state.shop[k]));
+        syncVatReadyUi(); guardTaxInvoiceType();
         
         renderPresets(); renderItems(); renderPrintArchive();
         setCurrentDocUiState(!!state.currentHistoryId);
@@ -2093,7 +2150,7 @@
       }));
     }
     function generateAutoDocNo(type) {
-      const pfx = { quotation: 'QT', delivery: 'DO', invoice: 'IV', receipt: 'RE', cashbill: 'CS' }[type] || 'QT';
+      const pfx = { quotation: 'QT', delivery: 'DO', invoice: 'IV', receipt: 'RE', taxreceipt: 'TX', cashbill: 'CS' }[type] || 'QT';
       const d = new Date(); const ym = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0');
       let last = 0;
       state.history.filter(h => String(h?.docNo || '').startsWith(pfx + '-' + ym)).forEach(h => {
@@ -2105,6 +2162,7 @@
     }
 
     function updateDocType(val) {
+      if(val==='taxreceipt' && !vatIsRegistered()) { showToast('ต้องจดทะเบียน VAT ก่อนออกใบกำกับภาษี'); return; }
       state.docType = val;
       generateAutoDocNo(val);
       showToast('เปลี่ยนประเภทบิลเป็น ' + val);
@@ -2445,6 +2503,7 @@
         delivery: { th: 'ใบส่งของ', en: 'DELIVERY ORDER', s1: 'ผู้ส่งสินค้า', s2: 'ผู้รับสินค้าสมบูรณ์', s3: 'พยาน' },
         invoice: { th: 'ใบแจ้งหนี้ / วางบิล', en: 'INVOICE', s1: 'ผู้วางบิล', s2: 'ผู้รับเอกสาร', s3: 'ผู้มีอำนาจลงนาม' },
         receipt: { th: 'ใบเสร็จรับเงิน', en: 'RECEIPT', s1: 'ผู้รับเงิน', s2: 'ผู้จ่ายเงิน', s3: 'ผู้มีอำนาจลงนาม' },
+        taxreceipt: { th: 'ใบเสร็จรับเงิน/ใบกำกับภาษี', en: 'RECEIPT / TAX INVOICE', s1: 'ผู้รับเงิน', s2: 'ผู้จ่ายเงิน', s3: 'ผู้มีอำนาจลงนาม' },
         cashbill: { th: 'บิลเงินสด', en: 'CASH BILL', s1: 'ผู้รับเงิน', s2: 'ผู้จ่ายเงิน', s3: '-' }
       };
       const m = types[state.docType] || types.quotation;
@@ -2541,21 +2600,25 @@
       const normalWrap=document.getElementById('p-normal-items-wrapper');
       if(normalWrap) normalWrap.style.display=linkedReceipt && Array.isArray(state.sourceJobItems) && state.sourceJobItems.length?'none':'';
 
-      safeSetText('p-calc-subtotal', '฿' + state.subtotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
+      // Linked receipt: item prices/discount are the original job's figures,
+      // whereas the actual money received is shown independently below.
+      const printMoney=n=>'฿'+Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2});
+      const receiptOriginalSubtotal=linkedReceipt ? Number(state.receiptSourceSubtotal||0) : Number(state.subtotal||0);
+      const receiptOriginalDiscount=linkedReceipt ? Number(state.receiptSourceDiscount||0) : Number(state.discount||0);
+      const receiptOriginalVat=linkedReceipt ? Number(state.receiptSourceVat||0) : Number(state.vat||0);
+      const receiptOriginalWht=linkedReceipt ? Number(state.receiptSourceWht||0) : Number(state.wht||0);
+      safeSetText('p-calc-subtotal', printMoney(receiptOriginalSubtotal));
       const discountRow = document.getElementById('p-discount-row');
-      if(discountRow) discountRow.style.display = state.discount > 0 ? 'flex' : 'none'; 
-      safeSetText('p-calc-discount', '-฿' + state.discount.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      
+      if(discountRow) discountRow.style.display = receiptOriginalDiscount > 0 ? 'flex' : 'none';
+      safeSetText('p-calc-discount', '-'+printMoney(receiptOriginalDiscount));
       const vatRow = document.getElementById('p-vat-row');
-      if(vatRow) vatRow.style.display = state.vatEnabled ? 'flex' : 'none'; 
-      safeSetText('p-calc-vat', '฿' + state.vat.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      
+      if(vatRow) vatRow.style.display = receiptOriginalVat !== 0 ? 'flex' : 'none';
+      safeSetText('p-calc-vat', printMoney(receiptOriginalVat));
       const whtRow = document.getElementById('p-wht-row');
-      if(whtRow) whtRow.style.display = state.whtEnabled ? 'flex' : 'none'; 
-      safeSetText('p-calc-wht', '-฿' + state.wht.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      
-      safeSetText('p-calc-grandtotal', '฿' + state.grandTotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
-      safeSetText('p-baht-text', `(${state.bahtText})`);
+      if(whtRow) whtRow.style.display = receiptOriginalWht !== 0 ? 'flex' : 'none';
+      safeSetText('p-calc-wht', '-'+printMoney(receiptOriginalWht));
+      safeSetText('p-calc-grandtotal', printMoney(state.grandTotal));
+      safeSetText('p-baht-text', linkedReceipt ? '(มูลค่างานสุทธิ ไม่ใช่ยอดรับตามใบเสร็จฉบับนี้)' : `(${state.bahtText})`);
 
       const receiptSummaryBox=document.getElementById('p-receipt-job-summary');
       if(receiptSummaryBox) {
@@ -2572,7 +2635,14 @@
           safeSetText('p-receipt-sequence','สรุปการชำระเงิน · ใบเสร็จครั้งที่ '+Number(state.receiptSequence||records.length)+' · รับครั้งนี้ '+money(own));
           safeSetText('p-receipt-job-total',money(state.receiptJobTotal));
           const list=document.getElementById('p-receipt-payments');
-          if(list) list.innerHTML=records.map((p,i)=>'<div class="flex justify-between"><span>ชำระครั้งที่ '+(i+1)+(i===records.length-1?' (ใบเสร็จฉบับนี้)':'')+'</span><strong>'+money(p.amount)+'</strong></div>').join('');
+          if(list) list.innerHTML=records.map((p,i)=>{
+            const ref=String(p.docNo||'').trim();
+            const date=String(p.date||'').trim();
+            const meta=[ref,date].filter(Boolean).map(escapeHtml).join(' · ');
+            return '<div class="flex justify-between gap-2"><span>ชำระครั้งที่ '+(i+1)+(i===records.length-1?' (ใบเสร็จฉบับนี้)':'')+(meta?' <span class="text-[9px] text-slate-500">('+meta+')</span>':'')+'</span><strong class="whitespace-nowrap">'+money(p.amount)+'</strong></div>';
+          }).join('');
+          safeSetText('p-receipt-current-amount',money(own));
+          safeSetText('p-receipt-current-words','('+thaiBahtConversion(own)+')');
           safeSetText('p-receipt-paid',money(sum));
           safeSetText('p-receipt-remaining',money(Math.max(0,Number(state.receiptJobTotal)-sum)));
         }
@@ -2609,6 +2679,8 @@
       const recordPayment = options.recordPayment !== false;
       const silent = !!options.silent;
       if(!companyAccessReady || !currentMember || !userId) return showToast('กรุณาเข้าสู่ระบบและได้รับสิทธิ์ร้านก่อนบันทึก');
+      if(state.docType==='taxreceipt' && !vatIsRegistered()) return showToast('ยังไม่จดทะเบียน VAT ไม่สามารถบันทึกใบกำกับภาษีได้');
+      if(state.docType==='taxreceipt' && (!/^\d{13}$/.test(state.shop.vatTaxId||'') || !state.shop.address?.trim())) return showToast('กรุณาตรวจสอบเลขผู้เสียภาษี 13 หลักและที่อยู่ร้านก่อนออกใบกำกับภาษี');
       const existingBeforeSave = state.currentHistoryId ? state.history.find(h=>h.id===state.currentHistoryId) : null;
       if(existingBeforeSave && !canEditHistoryItem(existingBeforeSave)) return showToast('พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองเป็นผู้จัดทำ');
       calculateTotals(true);
@@ -3154,6 +3226,12 @@
       state.currentHistoryId=null;state.isReadOnlyDocument=false;
       state.docType='receipt';state.refNo=h.docNo;state.jobId=jobKey(h,state.history);
       state.receiptJobTotal=tx.total;
+      // Preserve the original job pricing separately from the amount received.
+      // Never overwrite the receipt's actual payment amount with the job subtotal.
+      state.receiptSourceSubtotal=Number(sourcePayload.subtotal ?? 0);
+      state.receiptSourceDiscount=Number(sourcePayload.discount ?? 0);
+      state.receiptSourceVat=Number(sourcePayload.vat ?? 0);
+      state.receiptSourceWht=Number(sourcePayload.wht ?? 0);
       state.receiptPriorPaid=tx.paid;
       state.receiptPaymentAmount=amount;
       state.receiptSequence=getJobPayments(tx.docs).length+1;
@@ -3187,7 +3265,7 @@
       state.currentHistoryId = null;
       state.refNo = h.docNo;
       state.jobId = h.jobId || getRootDocNo(h,state.history);
-      state.sourceJobItems=[];state.receiptJobTotal=0;state.receiptPriorPaid=0;state.receiptPaymentAmount=0;state.receiptSequence=0;state.receiptPriorRecords=[];
+      state.sourceJobItems=[];state.receiptJobTotal=0;state.receiptPriorPaid=0;state.receiptPaymentAmount=0;state.receiptSequence=0;state.receiptPriorRecords=[];state.receiptSourceSubtotal=0;state.receiptSourceDiscount=0;state.receiptSourceVat=0;state.receiptSourceWht=0;
       restoreFlowFormFields();
       const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
       if(radioEl) radioEl.checked = true;
@@ -3282,6 +3360,7 @@
       state.paymentEnabled=false; state.totalCost=null;
       safeSetValue('prev-paid',0); safeSetValue('current-payment',0); safeSetValue('deposit-percent',0);
       safeSetChecked('payment-toggle', false); safeSetChecked('deposit-toggle', false);
+      if(!vatIsRegistered()) { safeSetChecked('vat-toggle',false); state.vatEnabled=false; }
       togglePaymentBox(); toggleDepositBox();
       generateAutoDocNo(state.docType);
       renderItems(); calculateTotals();
@@ -3291,10 +3370,22 @@
 
     function saveStoreSettings() {
       if(!requireOwner('การตั้งค่าร้าน')) return;
+      const vatStatus=document.getElementById('setting-vat-status')?.value||'unregistered';
+      const vatTaxId=(document.getElementById('setting-vat-taxid')?.value||'').trim();
+      if(vatStatus==='registered') {
+        if(!/^\d{13}$/.test(vatTaxId)) return showToast('กรุณากรอกเลขผู้เสียภาษี 13 หลักก่อนเปิดใช้ VAT');
+        if(!confirm('ยืนยันว่าร้านจดทะเบียน VAT แล้วจริง และต้องการเปิดใช้โหมดใบกำกับภาษี?')) return;
+      }
       ['name','subtitle','address','phone','line','taxid','bank','standardSpec'].forEach(k => {
         const el = document.getElementById('setting-shop-'+k);
         if(el) state.shop[k] = el.value;
       });
+      state.shop.vatRegistration=vatStatus;
+      state.shop.vatTaxId=vatTaxId;
+      state.shop.vatBranch=document.getElementById('setting-vat-branch')?.value||'head';
+      state.shop.vatBranchNo=(document.getElementById('setting-vat-branch-no')?.value||'').trim();
+      if(vatStatus!=='registered') { safeSetChecked('vat-toggle',false); state.vatEnabled=false; guardTaxInvoiceType(); }
+      syncVatReadyUi();
       persist();
       if(state.currentTab === 'preview') renderPreview();
       if(userId&&db) setDoc(cloudSettings(), state.shop, {merge:true}).then(()=>showToast('บันทึกตั้งค่าขึ้น Cloud แล้ว')).catch(e=>cloudError('Save shop settings',e));
@@ -3522,6 +3613,7 @@
     }
 
     // Expose all globals
+    window.updateVatSettingsVisibility=updateVatSettingsVisibility; window.handleVatToggleChange=handleVatToggleChange;
     window.editHistoryCost = editHistoryCost;
     window.openPrintPicker = openPrintPicker; window.closePrintPicker = closePrintPicker; window.renderPrintPicker = renderPrintPicker; window.openCashBill = openCashBill;
     window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
