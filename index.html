@@ -1721,6 +1721,26 @@
       if(isOwner()) renderMembers();
     }
 
+    // Keep these helpers available: loginWithGoogle and redirect completion use them.
+    function setAuthUiBusy(busy) {
+      authActionBusy = !!busy;
+      const btn = document.getElementById('google-login-btn');
+      if (btn) {
+        btn.disabled = authActionBusy || !firebaseReady;
+        btn.setAttribute('aria-busy', String(authActionBusy));
+      }
+      const status = document.getElementById('auth-gate-status');
+      if (status && busy) status.textContent = 'กำลังเปิด Google Login...';
+    }
+
+    function showAuthError(error) {
+      const code = String(error?.code || 'unknown');
+      const message = String(error?.message || 'ไม่ทราบสาเหตุ');
+      const status = document.getElementById('auth-gate-status');
+      if (status) status.textContent = `เข้าสู่ระบบไม่สำเร็จ (${code}): ${message}`;
+      showToast('Google Login ไม่สำเร็จ: ' + code);
+    }
+
     function isInstalledPwa() {
       return window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true;
@@ -1818,7 +1838,7 @@
         // Resolve the redirect before creating an anonymous session. Otherwise the
         // temporary anonymous user can interfere with OAuth redirect completion.
         try { await getRedirectResult(auth); }
-        catch(e) { console.error('Google redirect result failed:', e); showAuthError(e); }
+        catch(e) { console.error('Google redirect result failed:', e); setAuthUiBusy(false); showAuthError(e); }
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
         if(!auth.currentUser){if(initialToken) await signInWithCustomToken(auth,initialToken);else await signInAnonymously(auth);}
