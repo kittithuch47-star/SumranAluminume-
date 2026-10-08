@@ -975,6 +975,11 @@
           </div>
         </div>
 
+        <!-- Full one-time payments use a plain receipt rather than an installment ledger. -->
+        <div id="p-receipt-full-payment" class="hidden mb-4 border-t border-slate-200 pt-2 text-[12px]">
+          <div class="flex justify-between font-bold text-slate-900"><span>ยอดรับเงินจริงตามใบเสร็จฉบับนี้:</span><span id="p-receipt-full-amount">฿0.00</span></div>
+          <div id="p-receipt-full-words" class="text-right text-[10px] text-slate-600"></div>
+        </div>
         <div id="p-receipt-job-summary" class="hidden border border-sky-200 bg-sky-50 text-[11px] p-3 rounded-lg mb-4">
           <div class="font-bold text-sky-900 mb-2" id="p-receipt-sequence">สรุปการรับชำระเงิน</div>
           <div class="flex justify-between"><span>มูลค่างานทั้งหมด:</span><strong id="p-receipt-job-total">฿0.00</strong></div>
@@ -2620,10 +2625,26 @@
       safeSetText('p-calc-grandtotal', printMoney(state.grandTotal));
       safeSetText('p-baht-text', linkedReceipt ? '(มูลค่างานสุทธิ ไม่ใช่ยอดรับตามใบเสร็จฉบับนี้)' : `(${state.bahtText})`);
 
+      // A single full payment is a standard receipt: product rows, discount,
+      // net amount and amount actually received. Show the installment ledger
+      // only if a job has prior payments or this payment leaves a balance.
+      const linkedReceiptFullOnce=linkedReceipt &&
+        Number(state.receiptPriorPaid||0)<0.005 &&
+        (!Array.isArray(state.receiptPriorRecords)||state.receiptPriorRecords.length===0) &&
+        Math.abs(Number(state.receiptPaymentAmount||0)-Number(state.receiptJobTotal||0))<0.005;
+      const fullPaymentBox=document.getElementById('p-receipt-full-payment');
+      if(fullPaymentBox){
+        fullPaymentBox.style.display=linkedReceiptFullOnce?'block':'none';
+        if(linkedReceiptFullOnce){
+          const amount=Number(state.receiptPaymentAmount||0);
+          safeSetText('p-receipt-full-amount','฿'+amount.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}));
+          safeSetText('p-receipt-full-words','('+thaiBahtConversion(amount)+')');
+        }
+      }
       const receiptSummaryBox=document.getElementById('p-receipt-job-summary');
       if(receiptSummaryBox) {
         const isJobReceipt=state.docType==='receipt' && Number(state.receiptJobTotal)>0;
-        receiptSummaryBox.style.display=isJobReceipt?'block':'none';
+        receiptSummaryBox.style.display=(isJobReceipt&&!linkedReceiptFullOnce)?'block':'none';
         if(isJobReceipt) {
           const money=n=>'฿'+Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2});
           const own=Number(state.receiptPaymentAmount||0);
