@@ -1936,11 +1936,33 @@
       const two=document.getElementById('wizard-step-2');
       const three=document.getElementById('wizard-step-3');
       if(!editor||!one||!two||!three)return;
-      const blocks=Array.from(editor.children).filter(el=>el.tagName==='DIV' && el!==one && el!==two && el!==three && el.id!=='doc-wizard-bar' && el.id!=='wizard-navigation');
-      if(blocks.length<4){ console.error('Document wizard: expected four editor sections',blocks.length); return; }
-      one.append(blocks[0],blocks[1]);
-      two.append(blocks[2]);
-      three.append(blocks[3]);
+      // Locate sections by their real field IDs, not child positions: the error
+      // banner and navigation are also direct DIV children of the editor.
+      const directSection=(id)=>{
+        let el=document.getElementById(id);
+        while(el && el.parentElement!==editor) el=el.parentElement;
+        return el && el.parentElement===editor ? el : null;
+      };
+      const docSection=directSection('docNo');
+      const customerSection=directSection('custName');
+      const presetSection=directSection('presets-container');
+      const itemsSection=directSection('items-list');
+      if(!docSection||!customerSection||!presetSection||!itemsSection){
+        console.error('Document wizard: missing a required editor section');
+        return;
+      }
+      // Move existing nodes: keep every original input, event handler and ID.
+      one.append(docSection,customerSection);
+      two.append(presetSection,itemsSection);
+      // Move the totals/payment/save area into the review step.
+      const itemsList=document.getElementById('items-list');
+      const financeSection=Array.from(itemsList.parentElement.children).find(el=>el!==itemsList && el.querySelector?.('#calc-grandtotal'));
+      if(financeSection){
+        three.append(financeSection);
+      } else {
+        console.error('Document wizard: could not locate totals and save buttons');
+      }
+      // The error must remain visible above the navigation, never be treated as a panel.
       documentWizardReady=true;
       goDocumentStep(documentWizardStep,false);
     }
@@ -1949,7 +1971,7 @@
       let firstMissing=null;
       for(const [id,label] of fields){
         const input=document.getElementById(id);
-        if(!input) continue;
+        if(!input) { console.error("Missing customer field",id); return false; }
         const missing=!input.value.trim();
         input.classList.toggle('border-rose-500',missing);
         input.setAttribute('aria-invalid',String(missing));
@@ -1986,7 +2008,7 @@
       if(step===3)calculateTotals();
       if(validate)document.getElementById('doc-wizard-bar')?.scrollIntoView({behavior:'smooth',block:'start'});
     }
-    ['custName','custPhone','custAddress'].forEach(id=>{
+    document.addEventListener('DOMContentLoaded',()=>['custName','custPhone','custAddress'].forEach(id=>{
       document.getElementById(id)?.addEventListener('input',()=>{
         const input=document.getElementById(id);
         if(input.value.trim()) {input.classList.remove('border-rose-500');input.setAttribute('aria-invalid','false');}
@@ -1994,7 +2016,7 @@
           document.getElementById('wizard-customer-error')?.classList.add('hidden');
         }
       });
-    });
+    }));
     window.goDocumentStep=goDocumentStep;
 
     function switchTab(tab) {
