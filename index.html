@@ -899,7 +899,7 @@
           </div>
         </div>
 
-        <div class="border border-sky-200 bg-sky-50 text-[10px] text-sky-900 p-2 rounded mb-6"><strong>การชำระเงิน:</strong> <span id="p-bank-info">-</span></div>
+        <div id="p-bank-payment-box" class="border border-sky-200 bg-sky-50 text-[10px] text-sky-900 p-2 rounded mb-6"><strong>การชำระเงิน:</strong> <span id="p-bank-info">-</span></div>
 
         <div class="grid grid-cols-3 gap-4 text-center text-[11px] pt-4">
           <div>
@@ -2207,6 +2207,8 @@
       
       ['name','subtitle','address','phone','line','taxid','standardSpec'].forEach(k => safeSetText('p-shop-'+k, state.shop[k]));
       safeSetText('p-bank-info', state.shop.bank || '-');
+      const bankPaymentBox = document.getElementById('p-bank-payment-box');
+      if (bankPaymentBox) bankPaymentBox.style.display = state.docType === 'cashbill' ? 'none' : '';
 
       // แสดงโลโก้ร้านในเอกสารพิมพ์
       const printLogo = document.getElementById('p-shop-logo');
