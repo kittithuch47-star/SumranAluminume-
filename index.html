@@ -1429,7 +1429,7 @@
       state.currentHistoryId=null; state.isReadOnlyDocument=false; state.docNo=''; state.refNo=''; state.jobId='';
       state.docDate=new Date().toISOString().split('T')[0]; state.dueDate=new Date(Date.now()+14*86400000).toISOString().split('T')[0];
       state.customer={name:'',phone:'',taxId:'',address:'',project:''}; state.salesName=state.salesName||'พนักงานขาย 1';
-      state.items=[];
+      state.items=[];state.sourceJobItems=[];
       state.notes='1. ยืนราคานี้ 14 วัน\n2. รับประกันงานรั่วซึม 1 ปี'; state.discount=0; state.vatEnabled=false; state.whtEnabled=false; state.totalCost=null;
       state.isLumpSum=false; state.lumpSumAmt=0; state.paymentEnabled=false; state.depositEnabled=false; state.depositPercent=0; state.depositAmount=0; state.prevPaid=0; state.currentPayment=0; state.remainingAmt=0; state.payments=[];
       ['docNo','refNo','docDate','dueDate','docNotes','custName','custPhone','custTaxId','custAddress','projectName','calc-discount','total-cost','current-payment','deposit-percent'].forEach(id=>safeSetValue(id,''));
@@ -2498,6 +2498,20 @@
         });
       }
 
+      if(tb && state.docType==='receipt' && Array.isArray(state.sourceJobItems) && state.sourceJobItems.length) {
+        const header=document.createElement('tr');
+        header.innerHTML='<td colspan="7" class="px-3 py-2 bg-sky-50 text-sky-900 font-bold">รายละเอียดงานที่อ้างอิง (ไม่รวมยอดเงินซ้ำ)</td>';
+        tb.prepend(header);
+        state.sourceJobItems.forEach((item,i)=>{
+          const tr=document.createElement('tr');
+          tr.className='border-b border-slate-100 text-slate-600';
+          const details=item.type==='alu' ? 'สี '+(item.aluColor||'-')+' / กระจก '+(item.glassType||'-')+' / '+Number(item.width||0)+'×'+Number(item.height||0)+' ม.' : '';
+          tr.innerHTML='<td class="px-2 py-1 text-center">'+(i+1)+'</td><td colspan="4" class="px-3 py-1">'+escapeHtml(item.name||'-')+' <span class="text-[9px]">'+escapeHtml(details)+'</span></td><td class="px-2 py-1 text-center">'+Number(item.qty||1)+' '+escapeHtml(item.unit||'')+'</td><td class="px-2 py-1 text-right">อ้างอิง</td>';
+          const firstPayment=Array.from(tb.children).find(x=>x!==header && x.querySelector('td'));
+          if(firstPayment)tb.insertBefore(tr,firstPayment);else tb.appendChild(tr);
+        });
+      }
+
       safeSetText('p-calc-subtotal', '฿' + state.subtotal.toLocaleString('th-TH',{minimumFractionDigits:2}));
       const discountRow = document.getElementById('p-discount-row');
       if(discountRow) discountRow.style.display = state.discount > 0 ? 'flex' : 'none'; 
@@ -2824,7 +2838,7 @@
       safeSetValue('current-payment', 0);
       safeSetChecked('deposit-toggle', !!state.depositEnabled);
       safeSetValue('deposit-percent', state.depositPercent || 0);
-      renderItems();
+      renderItems();renderSourceJobItems();
       togglePaymentBox();
       toggleDepositBox();
       restoreCalculatedValuesToUI();
@@ -3036,6 +3050,36 @@
       if(userId && db) updateDoc(cloudPath('history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
     }
 
+    // Restore document form controls after applying a saved payload.
+    // The preview/save routines read from DOM controls, not just state.
+    function restoreFlowFormFields() {
+      ['docNo','refNo','docDate','dueDate','salesName'].forEach(k => safeSetValue(k, state[k] || ''));
+      const customer = state.customer || {};
+      [['custName','name'],['custPhone','phone'],['custAddress','address'],['custTaxId','taxId'],['projectName','project']]
+        .forEach(([id,key]) => safeSetValue(id,customer[key] || ''));
+      safeSetValue('docNotes',state.notes || '');
+      safeSetChecked('lump-sum-toggle',!!state.isLumpSum);
+      safeSetValue('lump-sum-amt',state.lumpSumAmt || 0);
+    }
+
+    // Receipt shows the original job's itemization for reference, without
+    // adding its full price to the amount actually received on this receipt.
+    function renderSourceJobItems() {
+      const host=document.getElementById('items-list');
+      if(!host) return;
+      host.querySelector('#source-job-items')?.remove();
+      if(state.docType!=='receipt' || !Array.isArray(state.sourceJobItems) || !state.sourceJobItems.length) return;
+      const panel=document.createElement('div');
+      panel.id='source-job-items';
+      panel.className='p-3 border border-sky-200 bg-sky-50 rounded-xl text-xs';
+      panel.innerHTML='<div class="font-bold text-sky-900 mb-2">รายการสินค้าและบริการของงานต้นฉบับ (แสดงเพื่ออ้างอิง ไม่รวมยอดซ้ำ)</div>'+
+        state.sourceJobItems.map((item,i)=>'<div class="py-1 border-b border-sky-100">'+(i+1)+'. '+escapeHtml(item.name||'-')+
+          (item.type==='alu'?' — '+escapeHtml(item.aluColor||'-')+' / '+escapeHtml(item.glassType||'-')+
+           ' / '+Number(item.width||0)+' × '+Number(item.height||0)+' ม.':'')+
+          ' — '+Number(item.qty||1)+' '+escapeHtml(item.unit||'')+'</div>').join('');
+      host.prepend(panel);
+    }
+
     function prepareJobReceipt(id) {
       if(!companyAccessReady || !userId) return showToast('กรุณาเข้าสู่ระบบก่อนรับเงิน');
       const h=state.history.find(x=>x.id===id);if(!h)return;
@@ -3046,7 +3090,10 @@
       const amount=Number(String(raw).replace(/,/g,'').trim());
       if(!Number.isFinite(amount)||amount<=0||amount>tx.remaining)return showToast('จำนวนเงินต้องมากกว่า 0 และไม่เกินยอดค้างชำระ');
       const currentShopSettings=clone(state.shop||{});
-      Object.assign(state,clone(tx.master.payload||h.payload||{}));
+      const sourcePayload=clone(tx.master.payload||h.payload||{});
+      Object.assign(state,sourcePayload);
+      state.customer=clone(sourcePayload.customer||h.payload?.customer||{});
+      state.sourceJobItems=clone(sourcePayload.sourceJobItems?.length ? sourcePayload.sourceJobItems : (sourcePayload.items||[]));
       state.shop=currentShopSettings;
       state.currentHistoryId=null;state.isReadOnlyDocument=false;
       state.docType='receipt';state.refNo=h.docNo;state.jobId=jobKey(h,state.history);
@@ -3055,12 +3102,13 @@
       state.payments=[];state.prevPaid=0;state.currentPayment=amount;state.paymentEnabled=true;
       state.depositEnabled=false;state.depositPercent=0;state.depositAmount=0;state.totalCost=null;
       generateAutoDocNo('receipt');
+      restoreFlowFormFields();
       const radio=document.querySelector('input[name="docType"][value="receipt"]');if(radio)radio.checked=true;
       safeSetValue('refNo',state.refNo);safeSetValue('calc-discount',0);safeSetValue('total-cost','');
       safeSetChecked('vat-toggle',false);safeSetChecked('wht-toggle',false);
       safeSetChecked('payment-toggle',true);safeSetChecked('deposit-toggle',false);
       safeSetValue('prev-paid',0);safeSetValue('current-payment',amount);
-      renderItems();togglePaymentBox();toggleDepositBox();
+      renderItems();renderSourceJobItems();togglePaymentBox();toggleDepositBox();
       restoreCalculatedValuesToUI();safeSetValue('current-payment',amount);calculateTotals(true);
       setCurrentDocUiState(false);switchTab('editor');goDocumentStep(3,false);
       showToast('เตรียมใบเสร็จรับเงินจริง ฿'+amount.toLocaleString('th-TH')+' — ตรวจสอบแล้วกดบันทึก');
@@ -3076,7 +3124,8 @@
       state.currentHistoryId = null;
       state.refNo = h.docNo;
       state.jobId = h.jobId || getRootDocNo(h,state.history);
-      safeSetValue('refNo', state.refNo);
+      state.sourceJobItems=[];
+      restoreFlowFormFields();
       const radioEl = document.querySelector(`input[name="docType"][value="${newType}"]`);
       if(radioEl) radioEl.checked = true;
       // เปลี่ยนชนิดเอกสารอย่างเดียว ไม่คำนวณยอดใหม่ เพื่อรักษาส่วนลด/VAT/WHT/ยอดสุทธิของเอกสารต้นฉบับ
