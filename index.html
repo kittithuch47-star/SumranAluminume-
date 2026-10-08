@@ -1946,8 +1946,8 @@
               <div class="sm:col-span-2 lg:col-span-2 space-y-1">
                 <button type="button" onclick="toggleItemSpecPanel('${item.id}','glass')" class="w-full flex justify-between items-center px-3 py-2 bg-white border rounded-lg text-slate-700 font-semibold">กระจก: ${escapeHtml(item.glassType||'-')} <span>▾ รายละเอียด</span></button>
                 <div id="spec-glass-${item.id}" class="hidden bg-white border rounded-lg p-2 space-y-2">
-                  <label class="block text-slate-500">ชนิดกระจก</label>
-                  <div class="flex flex-wrap gap-1">${['ใส','เขียวตัดแสง','ชาดำ','ฝ้า','สะท้อนแสง','เทมเปอร์','ลามิเนต','Low-E'].map(v=>`<button type="button" onclick="setItemGlassChoice('${item.id}',decodeURIComponent('${encodeURIComponent(v)}'))" class="px-2 py-1.5 border rounded-full bg-sky-50 text-sky-800">${escapeHtml(v)}</button>`).join('')}</div>
+                  <label class="block text-slate-500">เลือกชนิดกระจก</label><select onchange="setItemGlassChoice('${item.id}',this.value)" class="w-full px-2 py-1 border rounded"><option value="">-- เลือกชนิดกระจก --</option>${glassKinds().map(v=>`<option value="${escapeHtml(v)}" ${getGlassParts(item.glassType).kind===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select>
+                  <div class="flex flex-wrap gap-1">${glassKinds().map(v=>`<button type="button" onclick="setItemGlassChoice('${item.id}',decodeURIComponent('${encodeURIComponent(v)}'))" class="px-2 py-1.5 border rounded-full bg-sky-50 text-sky-800">${escapeHtml(v)}</button>`).join('')}</div>
                   <input type="text" value="${escapeHtml(getGlassParts(item.glassType).kind)}" onchange="setItemGlassChoice('${item.id}',this.value)" placeholder="ระบุชนิดกระจกเพิ่มเติม" class="w-full px-2 py-1 border rounded">
                   <div class="flex gap-2 items-end"><div class="flex-1"><label class="block text-slate-500">ความหนา</label><input type="number" min="0" step="0.1" value="${escapeHtml(getGlassParts(item.glassType).thickness)}" oninput="setItemGlassThickness('${item.id}',this.value,this.nextElementSibling.value)" class="w-full px-2 py-1 border rounded"><select onchange="setItemGlassThickness('${item.id}',this.previousElementSibling.value,this.value)" class="w-full px-2 py-1 border rounded mt-1">${['มม.','ซม.','นิ้ว'].map(v=>`<option value="${v}" ${getGlassParts(item.glassType).unit===v?'selected':''}>${v}</option>`).join('')}</select></div></div>
                 </div>
@@ -2887,6 +2887,27 @@
       if(window.lucide) window.lucide.createIcons();
     }
 
+    // Glass catalog UI only; retains the existing glassType string and Firestore schema.
+    const defaultGlassKinds=['ใส','เขียวตัดแสง','ใสเขียว','ชาดำ','ฝ้า','สะท้อนแสง','เทมเปอร์','ลามิเนต','Low-E'];
+    function glassKinds(){try{return [...new Set([...defaultGlassKinds,...JSON.parse(localStorage.getItem('sumran-glass-kinds')||'[]')])]}catch(e){return [...defaultGlassKinds]}}
+    function addGlassKind(){
+      const input=document.getElementById('preset-glass-new-kind');const name=String(input?.value||'').trim();
+      if(!name)return showToast('กรุณากรอกชนิดกระจก');
+      const kinds=glassKinds();if(!kinds.includes(name)){kinds.push(name);localStorage.setItem('sumran-glass-kinds',JSON.stringify(kinds));}
+      const select=document.getElementById('preset-glass-kind');if(select){select.innerHTML=glassKinds().map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');select.value=name;}
+      if(input)input.value='';updatePresetGlassValue();showToast('เพิ่มชนิดกระจกแล้ว');
+    }
+    function updatePresetGlassValue(){
+      const kind=document.getElementById('preset-glass-kind')?.value||'';
+      const size=document.getElementById('preset-glass-size')?.value||'';
+      const unit=document.getElementById('preset-glass-unit')?.value||'มม.';
+      const target=document.getElementById('preset-glass');if(target)target.value=kind+(size?' '+size+' '+unit:'');
+    }
+    function fillPresetGlassOptions(){
+      const el=document.getElementById('preset-glass-kind');if(!el)return;
+      el.innerHTML=glassKinds().map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+      el.value='เขียวตัดแสง';updatePresetGlassValue();
+    }
     function openPresetEditor() {
       const list=document.getElementById('gmodal-list'); if(!list)return; normalizePresetOptions();
       list.innerHTML=`<div class="border border-sky-200 bg-sky-50 rounded-xl p-3 space-y-3">
@@ -2900,10 +2921,10 @@
       <div><label class="block text-[10px] font-medium text-slate-600 mb-1">หน่วย</label><select id="preset-unit-select" onchange="handlePresetUnitMode()" class="w-full p-2 text-xs border rounded-lg bg-white"></select><input id="preset-new-unit" class="hidden w-full p-2 text-xs border rounded-lg bg-white mt-1" placeholder="พิมพ์หน่วยใหม่"><button type="button" onclick="addPresetUnit()" class="mt-1 px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มหน่วยไว้ใช้</button></div>
       <div><label class="block text-[10px] font-medium text-slate-600 mb-1">ราคา</label><input id="preset-price" type="number" value="0" class="w-full p-2 text-xs border rounded-lg bg-white"></div>
       <div id="preset-color-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">สีอลูมิเนียม</label><select id="preset-alu-color" class="w-full p-2 text-xs border rounded-lg bg-white"></select><div class="flex gap-1 mt-1"><input id="preset-new-color" class="flex-1 p-2 text-xs border rounded-lg bg-white" placeholder="เพิ่มสีใหม่"><button type="button" onclick="addPresetColor()" class="px-2 py-1 bg-white border rounded text-[10px] text-sky-700">+ เพิ่มสี</button></div><div id="preset-color-chips" class="flex flex-wrap gap-1 mt-2"></div></div>
-      <div id="preset-glass-wrap"><label class="block text-[10px] font-medium text-slate-600 mb-1">ชนิดกระจก</label><input id="preset-glass" value="เขียวตัดแสง 6 มม." class="w-full p-2 text-xs border rounded-lg bg-white"></div>
+      <div id="preset-glass-wrap" class="sm:col-span-2"><details class="bg-white border border-sky-200 rounded-lg p-2" open><summary class="cursor-pointer text-xs font-bold text-sky-800">รายละเอียดกระจก ▾ เลือกชนิด / ความหนา / หน่วย</summary><div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2"><div><label class="block text-[10px] text-slate-600 mb-1">เลือกชนิดกระจก</label><select id="preset-glass-kind" onchange="updatePresetGlassValue()" class="w-full p-2 text-xs border rounded-lg"></select></div><div><label class="block text-[10px] text-slate-600 mb-1">ความหนา / ขนาด</label><input id="preset-glass-size" type="number" min="0" step="0.1" value="6" oninput="updatePresetGlassValue()" class="w-full p-2 text-xs border rounded-lg"></div><div><label class="block text-[10px] text-slate-600 mb-1">หน่วยกระจก</label><select id="preset-glass-unit" onchange="updatePresetGlassValue()" class="w-full p-2 text-xs border rounded-lg"><option>มม.</option><option>ซม.</option><option>นิ้ว</option></select></div></div><div class="flex gap-2 mt-2"><input id="preset-glass-new-kind" placeholder="เพิ่มชนิดกระจก เช่น กระจกพิเศษ" class="flex-1 min-w-0 p-2 text-xs border rounded-lg"><button type="button" onclick="addGlassKind()" class="px-3 py-2 border border-sky-200 rounded-lg text-xs text-sky-700">+ เพิ่มชนิด</button></div><div class="mt-2 text-[10px] text-slate-500">รายละเอียดที่บันทึก: <input id="preset-glass" readonly value="เขียวตัดแสง 6 มม." class="w-full p-2 mt-1 text-xs bg-slate-50 border rounded-lg"></div></details></div>
       <div class="sm:col-span-2 border-t pt-2"><div class="text-[10px] font-medium text-slate-600 mb-1">สินค้าทั่วไปจะแสดงอะไร</div><label class="flex gap-2 text-xs"><input id="preset-show-qty" type="checkbox" checked> แสดงจำนวน</label><label class="flex gap-2 text-xs mt-1"><input id="preset-show-unit" type="checkbox" checked> แสดงหน่วย</label><div class="text-[10px] text-slate-500 mt-1">เอาออกทั้งสองช่อง = แสดงราคาอย่างเดียว</div></div>
       </div><div class="flex justify-end gap-2"><button onclick="openGenericModal('presetModal')" class="px-3 py-1.5 bg-white border rounded-lg text-xs">ยกเลิก</button><button onclick="savePreset()" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-bold">บันทึกแบบมาตรฐาน</button></div></div>`;
-      renderPresetEditorOptions(); const c=document.getElementById('preset-alu-color');if(c)c.value=state.presetColors.includes('อบขาว')?'อบขาว':state.presetColors[0];togglePresetFields();
+      renderPresetEditorOptions();fillPresetGlassOptions(); const c=document.getElementById('preset-alu-color');if(c)c.value=state.presetColors.includes('อบขาว')?'อบขาว':state.presetColors[0];togglePresetFields();
     }
     function togglePresetFields(){const alu=document.getElementById('preset-type')?.value==='alu';['preset-width-wrap','preset-height-wrap','preset-color-wrap','preset-glass-wrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=alu?'':'none'});const p=document.getElementById('preset-price-type');if(p&&!alu&&p.value==='per_sqm')p.value='per_unit';togglePresetPriceLabel();}
     function togglePresetPriceLabel(){const pt=document.getElementById('preset-price-type')?.value||'per_unit';const m=document.getElementById('preset-price-method-select');if(m){m.disabled=pt==='per_sqm';m.classList.toggle('opacity-50',pt==='per_sqm');}handlePresetPriceMethodMode();}
