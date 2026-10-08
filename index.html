@@ -683,9 +683,10 @@
       <div id="wizard-step-1" class="wizard-panel"></div>
       <div id="wizard-step-2" class="wizard-panel"></div>
       <div id="wizard-step-3" class="wizard-panel"></div>
+      <div id="wizard-customer-error" role="alert" class="hidden text-rose-700 text-xs font-semibold bg-rose-50 border border-rose-200 rounded-xl p-3 mt-2">กรุณากรอกชื่อลูกค้า เบอร์โทรศัพท์ และที่อยู่</div>
       <div class="wizard-actions no-print" id="wizard-navigation">
-        <button type="button" id="wizard-prev" class="bg-slate-100 text-slate-700 border border-slate-300" onclick="goDocumentStep(documentWizardStep-1)">← ย้อนกลับ</button>
-        <button type="button" id="wizard-next" class="bg-sky-600 text-white" onclick="goDocumentStep(documentWizardStep+1)">ถัดไป →</button>
+        <button type="button" id="wizard-prev" class="bg-slate-100 text-slate-700 border border-slate-300" onclick="goDocumentStep(-1)">← ย้อนกลับ</button>
+        <button type="button" id="wizard-next" class="bg-sky-600 text-white" onclick="goDocumentStep(-2)">ถัดไป →</button>
       </div>
       
       <!-- Doc Types -->
@@ -1936,23 +1937,42 @@
       const three=document.getElementById('wizard-step-3');
       if(!editor||!one||!two||!three)return;
       const blocks=Array.from(editor.children).filter(el=>el.tagName==='DIV' && el!==one && el!==two && el!==three && el.id!=='doc-wizard-bar' && el.id!=='wizard-navigation');
-      if(blocks.length<4)return;
+      if(blocks.length<4){ console.error('Document wizard: expected four editor sections',blocks.length); return; }
       one.append(blocks[0],blocks[1]);
-      two.append(blocks[2],blocks[3]);
-      const totals=two.querySelector('#docNotes')?.closest('.mt-6.pt-6');
-      if(totals) three.append(totals);
+      two.append(blocks[2]);
+      three.append(blocks[3]);
       documentWizardReady=true;
       goDocumentStep(documentWizardStep,false);
     }
+    function validateWizardCustomer(){
+      const fields=[['custName','ชื่อลูกค้า'],['custPhone','เบอร์โทรศัพท์'],['custAddress','ที่อยู่ลูกค้า']];
+      let firstMissing=null;
+      for(const [id,label] of fields){
+        const input=document.getElementById(id);
+        if(!input) continue;
+        const missing=!input.value.trim();
+        input.classList.toggle('border-rose-500',missing);
+        input.setAttribute('aria-invalid',String(missing));
+        if(missing&&!firstMissing) firstMissing={input,label};
+      }
+      const error=document.getElementById('wizard-customer-error');
+      if(error){
+        error.textContent=firstMissing?'กรุณากรอกชื่อลูกค้า เบอร์โทรศัพท์ และที่อยู่ให้ครบก่อนดำเนินการต่อ':'';
+        error.classList.toggle('hidden',!firstMissing);
+      }
+      if(firstMissing){
+        firstMissing.input.focus();
+        showToast('กรุณากรอก'+firstMissing.label+'ก่อนดำเนินการต่อ');
+        return false;
+      }
+      return true;
+    }
     function goDocumentStep(next,validate=true){
       initDocumentWizard();
-      const step=Math.max(1,Math.min(3,Number(next)||1));
-      if(validate && step>documentWizardStep && documentWizardStep===1){
-        const name=document.getElementById('custName');
-        if(name && !name.value.trim()){
-          name.focus();showToast('กรุณากรอกชื่อลูกค้าก่อนดำเนินการต่อ');return;
-        }
-      }
+      if(!documentWizardReady)return;
+      const step=Math.max(1,Math.min(3,next===-1?documentWizardStep-1:next===-2?documentWizardStep+1:(Number(next)||1)));
+      // Validate only when advancing past the customer step, never on Back.
+      if(validate && documentWizardStep===1 && step>1 && !validateWizardCustomer())return;
       documentWizardStep=step;
       for(let n=1;n<=3;n++){
         document.getElementById('wizard-step-'+n)?.classList.toggle('wizard-active',n===step);
@@ -1966,6 +1986,15 @@
       if(step===3)calculateTotals();
       if(validate)document.getElementById('doc-wizard-bar')?.scrollIntoView({behavior:'smooth',block:'start'});
     }
+    ['custName','custPhone','custAddress'].forEach(id=>{
+      document.getElementById(id)?.addEventListener('input',()=>{
+        const input=document.getElementById(id);
+        if(input.value.trim()) {input.classList.remove('border-rose-500');input.setAttribute('aria-invalid','false');}
+        if(['custName','custPhone','custAddress'].every(k=>document.getElementById(k)?.value.trim())){
+          document.getElementById('wizard-customer-error')?.classList.add('hidden');
+        }
+      });
+    });
     window.goDocumentStep=goDocumentStep;
 
     function switchTab(tab) {
