@@ -711,7 +711,31 @@
 @media(max-width:640px){.v37-hero{padding:22px 19px}.v37-hero-label{display:none}.v37-body{padding:16px}.v36-progress{gap:5px!important}.v36-step{min-height:77px!important;padding:10px 2px!important;font-size:9px!important;border-radius:11px!important}.v36-step span{font-size:20px!important;margin-bottom:4px!important}.v36-stage{padding:17px!important}.v37-stage-wrap{grid-template-columns:1fr;gap:8px}.v37-stage-icon{width:49px;height:49px;font-size:24px;border-radius:14px}.v36-main{width:100%!important;min-width:0}.v36-compact{padding:12px 16px}.v37-minihead small{display:none}}
 
 </style>
-</head>
+<style>
+/* V38 desktop-first dashboard, preserving original form nodes and Firebase listeners */
+#tab-inventory{--v38-ink:#102b48;--v38-blue:#1267d5;--v38-line:#dce7f2;color:var(--v38-ink)}
+#tab-inventory>.bg-gradient-to-r{display:none!important}
+#v38-shell{display:grid;grid-template-columns:235px minmax(0,1fr);gap:20px;align-items:start}
+#v38-sidebar{position:sticky;top:112px;background:linear-gradient(165deg,#0d3358,#0a2544);border-radius:22px;padding:22px 13px;color:white;min-height:580px;box-shadow:0 14px 32px #13345120}
+#v38-sidebar h2{font-size:17px;font-weight:850;padding:0 12px;margin-bottom:5px}#v38-sidebar p{font-size:11px;color:#bad0e5;padding:0 12px;margin-bottom:22px}
+#v38-sidebar .v24-nav{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}#v38-sidebar .v24-nav-head{display:none!important}
+#v38-sidebar .v24-tabs{display:flex!important;flex-direction:column!important;gap:7px!important}
+#v38-sidebar .v24-tab{min-height:46px!important;width:100%;text-align:left!important;justify-content:flex-start!important;padding:12px 15px!important;background:transparent!important;border:0!important;color:#d4e5f6!important;font-size:13px!important;border-radius:12px!important}
+#v38-sidebar .v24-tab[aria-selected=true]{background:#1972c8!important;color:white!important;box-shadow:0 6px 14px #051b3250!important}
+#v38-main{min-width:0}#v38-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+#v38-topbar h2{font-size:27px;font-weight:850;letter-spacing:-.04em}#v38-topbar p{color:#647b95;font-size:12px}
+#v38-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:16px}
+.v38-shortcut{background:white;border:1px solid #dbe7f2;border-radius:16px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:8px;box-shadow:0 5px 16px #0e375509;transition:.15s}
+.v38-shortcut:hover{transform:translateY(-2px);border-color:#8dc3f8}.v38-shortcut .v38-ico{font-size:23px}.v38-shortcut strong{font-size:13px}.v38-shortcut small{font-size:11px;color:#637c95}
+#v38-main #v36-assistant{margin-bottom:16px!important;border:1px solid #dbe7f2!important;box-shadow:0 10px 28px #153b5b0c!important}
+#v38-main .v37-hero{background:linear-gradient(105deg,#0e4774,#127e9b)!important}
+#v38-main .v36-step[aria-current=step]{background:#e8f3ff!important;border-color:#4e9cf1!important;color:#0e5cba!important}
+#v38-main .v36-main{background:#116bce!important;color:white!important}
+#v38-main .v24-panel{background:transparent!important}#v38-main .v24-panel>section{border-radius:18px!important}
+#v38-legacy{display:none!important}#v38-sidebar .v24-tabs button{cursor:pointer}
+@media(max-width:1050px){#v38-shell{grid-template-columns:190px minmax(0,1fr)}#v38-shortcuts{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){#v38-shell{display:block}#v38-sidebar{position:static;min-height:0;padding:14px;margin-bottom:15px;border-radius:16px}#v38-sidebar h2,#v38-sidebar p{display:none}#v38-sidebar .v24-tabs{display:flex!important;flex-direction:row!important;overflow-x:auto!important;gap:5px!important}#v38-sidebar .v24-tab{white-space:nowrap!important;min-width:max-content!important;width:auto!important;font-size:11px!important;padding:10px!important}#v38-topbar h2{font-size:22px}#v38-shortcuts{grid-template-columns:repeat(2,1fr);gap:8px}.v38-shortcut{padding:12px}#v38-main .v36-progress{overflow-x:auto}#v38-main .v36-step{min-width:75px}}
+</style></head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
   <header class="bg-gradient-to-r from-sky-800 to-slate-900 text-white shadow-md sticky top-0 z-40 no-print">
@@ -5251,6 +5275,30 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  window.v36Next=function(n){current=Math.max(0,Math.min(4,n));render();document.getElementById('v36-assistant')?.scrollIntoView({behavior:'smooth',block:'start'});};
  function setup(){if(!document.getElementById('v36-assistant'))return;document.getElementById('v36-primary').onclick=()=>{const s=stages[current];openSection(s.section);if(!reveal(s.target))alert('ไม่พบแบบฟอร์มของขั้นตอนนี้ กรุณาตรวจการโหลดหน้า');};document.getElementById('v36-back').onclick=()=>window.v36Next(current-1);render();}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
+
+<script>
+/* V38: move existing nodes (never clone inputs) into desktop dashboard */
+(function(){
+ function boot(){
+ const root=document.getElementById('tab-inventory'),nav=document.getElementById('v24-inventory-nav'),assistant=document.getElementById('v36-assistant');
+ if(!root||!nav||!assistant||document.getElementById('v38-shell'))return;
+ const shell=document.createElement('div');shell.id='v38-shell';
+ const side=document.createElement('aside');side.id='v38-sidebar';side.innerHTML='<h2>▣ คลังสินค้า</h2><p>จัดการงานและวัสดุ</p>';
+ const main=document.createElement('div');main.id='v38-main';
+ const top=document.createElement('div');top.id='v38-topbar';top.innerHTML='<div><h2>📦 คลังสินค้าและงานผลิต</h2><p>เลือกงาน · ตรวจวัสดุ · จัดซื้อ · รับเข้า · เบิกผลิต</p></div>';
+ const shortcuts=document.createElement('div');shortcuts.id='v38-shortcuts';
+ const tiles=[['📋','งานลูกค้า','เลือกใบเสนอราคา','jobs'],['🛒','ศูนย์จัดซื้อ','ติดตามของที่ต้องซื้อ','buy'],['📥','รับ–เบิก–คืน','บันทึกการเคลื่อนไหว','movement'],['🕘','ประวัติ','ตรวจสอบย้อนหลัง','history']];
+ tiles.forEach(([ico,title,sub,key])=>{const b=document.createElement('button');b.type='button';b.className='v38-shortcut';b.innerHTML='<span class="v38-ico">'+ico+'</span><strong>'+title+'</strong><small>'+sub+'</small>';b.addEventListener('click',()=>{if(key==='buy'&&window.v35OpenPurchase)window.v35OpenPurchase();else window.v24InventoryOpen?.(key,false);setTimeout(()=>document.getElementById(key==='buy'?'v31-hub':'v24-panel-'+key)?.scrollIntoView({behavior:'smooth',block:'start'}),50)});shortcuts.appendChild(b)});
+ root.insertBefore(shell,assistant);shell.append(side,main);side.appendChild(nav);main.append(top,shortcuts,assistant);
+ // Keep existing panels within same visual workspace; no change to input IDs or event handlers.
+ const panels=['jobs','stock','movement','recipes','history'];panels.forEach(k=>{const el=document.getElementById('v24-panel-'+k);if(el)main.appendChild(el)});
+ const old=document.getElementById('v35-dashboard');if(old)old.hidden=true;
+ const guide=document.getElementById('v32-guide');if(guide)guide.hidden=true;
+ const status=document.getElementById('inv-cloud-status');if(status)main.insertBefore(status,top);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,250));else setTimeout(boot,250);
 })();
 </script>
 </body>
