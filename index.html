@@ -796,6 +796,29 @@
         <div class="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-900">ขั้นตอน: สร้างสูตร → ค้นหาวัสดุจากทะเบียนทีละรายการ → กำหนดจำนวน/กฎตัด W/H → ทดลองคำนวณ → ช่างตรวจ → เจ้าของยืนยัน → ใช้ตรวจสต๊อกก่อนรับงาน (ไม่ตัดสต๊อกอัตโนมัติ)</div>
         <div id="inv-recipes" class="grid gap-2"></div>
       </details>
+
+      <details class="bg-white rounded-2xl border p-4 space-y-3" id="inv-v10-panel">
+        <summary class="font-bold cursor-pointer">ออกแบบโครงสร้างบานอิสระ + สูตรผลิต + กระจก + แผนตัด (V11)</summary>
+        <p class="text-sm text-slate-600 mt-2">เลือกจำนวนช่องและสูตรที่ช่างยืนยันสำหรับแต่ละช่อง · ขนาดทุกช่องเป็นขนาดที่วัดจริง · ระบบจะจัดแผนตัดแยกตามรหัสวัสดุและความยาวเส้นที่บันทึกในทะเบียน · ไม่เบิกสต๊อกอัตโนมัติ</p>
+        <div class="grid sm:grid-cols-4 gap-2 mt-3">
+          <label class="text-xs font-semibold">จำนวนช่อง (1–20)<input id="inv-v10-count" type="number" min="1" max="20" value="3" class="w-full border rounded-lg p-2 mt-1"></label>
+          <label class="text-xs font-semibold">ความกว้างรวม (มม.)<input id="inv-v10-total-w" type="number" min="1" placeholder="เช่น 3000" class="w-full border rounded-lg p-2 mt-1"></label>
+          <label class="text-xs font-semibold">ความสูงรวม (มม.)<input id="inv-v10-total-h" type="number" min="1" placeholder="เช่น 2000" class="w-full border rounded-lg p-2 mt-1"></label>
+          <button type="button" onclick="invV11Build()" class="bg-teal-700 text-white rounded-lg p-2 self-end">กำหนดช่อง</button>
+        </div>
+        <p class="text-xs text-amber-800">ขนาดรวมใช้เป็นข้อมูลอ้างอิงเท่านั้น ขนาดช่องต้องวัด/ยืนยันจริง (รวมความกว้างช่องอาจไม่เท่ากับความกว้างรวมเพราะมีเสากลางและระยะซ้อน)</p>
+        <div class="border rounded-xl bg-amber-50 border-amber-200 p-3 text-sm text-amber-950">V11: กำหนดแต่ละบาน จุดเชื่อม และชุดพับได้อิสระ โครงสร้างนี้ใช้ตรวจสอบแบบก่อนผลิต ไม่คาดเดาจำนวนบานพับ/ลูกล้อจากชนิดบาน ต้องเลือกสูตรช่างที่ตรวจรับแล้วให้ตรงกับโครงสร้างจริง</div>
+        <div id="inv-v10-openings" class="grid gap-2"></div>
+        <div class="flex flex-wrap gap-2"><button type="button" onclick="invV11CopyLayout()" class="rounded-lg bg-teal-700 text-white px-4 py-2">คัดลอกผังบานและจุดเปิด</button><button type="button" onclick="invV11SaveDraft()" class="rounded-lg border px-4 py-2">บันทึกผังร่างในเครื่องนี้</button><button type="button" onclick="invV11LoadDraft()" class="rounded-lg border px-4 py-2">เรียกผังร่างในเครื่องนี้</button></div>
+        <div id="inv-v11-message" class="text-sm" aria-live="polite"></div>
+        <div class="border rounded-xl p-3 space-y-2 bg-sky-50">
+          <strong>กระจก: เพิ่มวัสดุกระจกจากทะเบียน แล้วกำหนดระยะหักจริงต่อช่อง</strong>
+          <p class="text-xs text-slate-600">ช่องกระจกใช้ความกว้าง/สูงจากช่องงาน + ค่าชดเชยที่ช่างกำหนด · ถ้าไม่มีข้อมูลขนาดกระจกจริง ห้ามใช้สั่งตัด</p>
+          <label class="text-xs font-semibold block">เผื่อรอยใบเลื่อยต่อชิ้น (มม.)<input id="inv-v10-kerf" type="number" min="0" max="30" value="3" class="block w-32 border rounded-lg p-2 mt-1"></label>
+        </div>
+        <button type="button" onclick="invV11Calculate()" class="w-full bg-sky-700 text-white rounded-xl p-3 font-bold">คำนวณรายการตัด กระจก และตรวจสต๊อก</button>
+        <div id="inv-v10-result" role="status" aria-live="polite" class="text-sm"></div>
+      </details>
     </section>
 
     <!-- TAB 1: EDITOR -->
@@ -4110,6 +4133,86 @@
       invV3.busy=true;invV3Render();try{await runTransaction(db,async tx=>{const snaps=[];for(const r of refs)snaps.push(await tx.get(r.itemRef));for(let j=0;j<refs.length;j++){const r=refs[j],snap=snaps[j];if(!snap.exists())throw Error('วัสดุบางรายการถูกลบ');const item=snap.data(),old=Number(item.quantity),delta=type==='issue'?-r.qty:r.qty,next=Math.round((old+delta)*1000)/1000;if(!Number.isFinite(old)||old<0||next<0)throw Error('สต๊อกไม่พอ: '+item.name);const movement={itemId:r.id,itemName:item.name,unit:item.unit,type,quantity:r.qty,delta,previousQuantity:old,nextQuantity:next,jobNo,reference,note,documentNo:batchNo,batchId:batchRef.id,actorUid:userId,actorEmail:auth.currentUser?.email||'',actorName:auth.currentUser?.displayName||'',createdAt:new Date().toISOString()};tx.update(r.itemRef,{quantity:next,lastMovementId:r.moveRef.id});tx.set(r.moveRef,movement);}});document.getElementById('inv-v3-document').value=batchNo;invV3.cart={};invMsg('บันทึกสำเร็จ เลขที่รายการ '+batchNo);}
       catch(e){invMsg('บันทึกไม่สำเร็จ: '+e.message,true);}finally{invV3.busy=false;invV3Render();}
     }
+
+    // V10 independent multi-opening planning: read-only stock check; never mutate inventory.
+    function invV10Build(){
+      const root=document.getElementById('inv-v10-openings');if(!root)return;
+      const n=Number(document.getElementById('inv-v10-count').value);
+      if(!Number.isInteger(n)||n<1||n>20){root.textContent='จำนวนช่องต้องอยู่ระหว่าง 1–20';return;}
+      const recipes=invState.recipes.filter(r=>r.status==='approved'&&!r.archived);
+      const glass=invState.items.filter(i=>!i.archived && /กระจก|glass/i.test([i.name,i.unit].join(' ')));
+      const opt=recipes.map(r=>`<option value="${invSafe(r.id)}">${invSafe(r.name)} · ${invSafe(r.brand)}</option>`).join('');
+      const glassopt=glass.map(i=>`<option value="${invSafe(i.id)}">${invSafe(i.name)} · ${invSafe(i.color)} · ${invSafe(i.sku)}</option>`).join('');
+      root.innerHTML=Array.from({length:n},(_,k)=>`<div class="border rounded-xl p-3 space-y-2 bg-white"><strong>ช่องที่ ${k+1}</strong><div class="grid sm:grid-cols-4 gap-2"><label class="text-xs">รูปแบบช่อง<select id="v10-type-${k}" class="w-full border rounded-lg p-2 mt-1"><option value="sliding">บานเลื่อน</option><option value="fixed">บานตาย</option><option value="swing">บานเปิด</option><option value="fold">บานเฟี้ยม</option><option value="other">อื่น ๆ</option></select></label><label class="text-xs">กว้างช่องจริง (มม.)<input id="v10-w-${k}" type="number" min="1" class="w-full border rounded-lg p-2 mt-1" placeholder="เช่น 1000"></label><label class="text-xs">สูงช่องจริง (มม.)<input id="v10-h-${k}" type="number" min="1" class="w-full border rounded-lg p-2 mt-1" placeholder="เช่น 2000"></label><label class="text-xs">จำนวนบานในช่อง<input id="v10-leaves-${k}" type="number" min="1" max="20" value="1" class="w-full border rounded-lg p-2 mt-1"></label></div><label class="text-xs block">สูตรช่างที่ยืนยันแล้ว (ใช้กับช่องนี้)<select id="v10-recipe-${k}" class="w-full border rounded-lg p-2 mt-1"><option value="">-- เลือกสูตร --</option>${opt}</select></label><div class="grid sm:grid-cols-4 gap-2"><label class="text-xs">กระจกจากทะเบียน<select id="v10-glass-${k}" class="w-full border rounded-lg p-2 mt-1"><option value="">ไม่คำนวณกระจกช่องนี้</option>${glassopt}</select></label><label class="text-xs">หัก/เพิ่มกว้างกระจก (มม.)<input id="v10-gw-${k}" type="number" value="0" class="w-full border rounded-lg p-2 mt-1"></label><label class="text-xs">หัก/เพิ่มสูงกระจก (มม.)<input id="v10-gh-${k}" type="number" value="0" class="w-full border rounded-lg p-2 mt-1"></label><label class="text-xs">จำนวนแผ่นกระจกต่อช่อง<input id="v10-gqty-${k}" type="number" min="1" max="50" value="1" class="w-full border rounded-lg p-2 mt-1"></label></div><p class="text-xs text-amber-800">หากสูตรเป็นสูตรต่อบาน ให้เลือก/สร้างสูตรที่ถูกต้องกับจำนวนบานจริง ห้ามคูณจำนวนบานโดยเดา</p></div>`).join('');
+      document.getElementById('inv-v10-result').textContent='กรอกขนาดจริงและเลือกสูตรแต่ละช่อง แล้วกดคำนวณ';
+    }
+    function invV10Calculate(){
+      const out=document.getElementById('inv-v10-result');if(!out)return;
+      const n=Number(document.getElementById('inv-v10-count')?.value),kerf=Number(document.getElementById('inv-v10-kerf')?.value);
+      if(!Number.isInteger(n)||n<1||n>20||!Number.isFinite(kerf)||kerf<0||kerf>30){out.textContent='จำนวนช่องหรือรอยใบเลื่อยไม่ถูกต้อง';return;}
+      const cuts=new Map(),fixed=new Map(),glasses=[],errors=[];
+      for(let k=0;k<n;k++){
+        const get=(prefix)=>document.getElementById('v10-'+prefix+'-'+k)?.value;
+        const w=Number(get('w')),h=Number(get('h')),leaves=Number(get('leaves'));
+        if(!(w>0&&h>0&&Number.isInteger(leaves)&&leaves>=1)){errors.push('ช่อง '+(k+1)+': กรอกขนาดและจำนวนบานให้ถูกต้อง');continue;}
+        const recipe=invState.recipes.find(r=>r.id===get('recipe')&&r.status==='approved'&&!r.archived);
+        if(!recipe){errors.push('ช่อง '+(k+1)+': ยังไม่ได้เลือกสูตรที่ยืนยันแล้ว');continue;}
+        if(!recipe.lines?.length){errors.push('ช่อง '+(k+1)+': สูตรไม่มีวัสดุ');continue;}
+        for(const l of recipe.lines){
+          const item=invState.items.find(i=>i.id===l.itemId&&!i.archived),qty=Number(l.qty);
+          if(!item||!(qty>0)||!['fixed','W','H'].includes(l.base)){errors.push('ช่อง '+(k+1)+': สูตรมีวัสดุไม่สมบูรณ์');continue;}
+          if(l.base==='fixed'){const old=fixed.get(item.id)||{item,qty:0};old.qty+=qty;fixed.set(item.id,old);continue;}
+          const cut=(l.base==='W'?w:h)+Number(l.offsetMm||0);
+          if(!(cut>0)){errors.push('ช่อง '+(k+1)+': ระยะตัดของ '+item.name+' ไม่ถูกต้อง');continue;}
+          if(!Number.isInteger(qty)){errors.push('ช่อง '+(k+1)+': จำนวนชิ้นตัดต้องเป็นจำนวนเต็ม');continue;}
+          const old=cuts.get(item.id)||{item,lengths:[]};for(let j=0;j<qty;j++)old.lengths.push(cut);cuts.set(item.id,old);
+        }
+        if(get('glass')){
+          const item=invState.items.find(i=>i.id===get('glass')&&!i.archived),gw=w+Number(get('gw')),gh=h+Number(get('gh')),gqty=Number(get('gqty'));
+          if(!item||!(gw>0&&gh>0)||!Number.isInteger(gqty)||gqty<1||gqty>50){errors.push('ช่อง '+(k+1)+': ข้อมูลกระจกไม่ถูกต้อง');continue;}
+          glasses.push({item,gw,gh,gqty,channel:k+1});
+        }
+      }
+      if(errors.length){out.innerHTML='<div class="border border-red-300 bg-red-50 text-red-800 rounded-lg p-3">'+errors.map(x=>'<p>'+invSafe(x)+'</p>').join('')+'</div>';return;}
+      const rows=[];
+      for(const {item,lengths} of cuts.values()){
+        // Each catalog row is a distinct SKU/length, never mix profiles, brands or colors.
+        const stockLength=Number(item.lengthMm),stockQty=Number(item.quantity);
+        const sorted=[...lengths].sort((a,b)=>b-a);
+        if(!(stockLength>0)){
+          rows.push(`<div class="border rounded-lg p-2"><strong>${invSafe(item.name)} · ${invSafe(item.brand)} · ${invSafe(item.color)}</strong><p>${sorted.length} ชิ้น · ${sorted.map(v=>invMoney(v)).join(', ')} มม.</p><p class="text-amber-800">ยังไม่ได้กำหนดความยาวเส้นในทะเบียนวัสดุ จึงไม่สามารถคำนวณจำนวนเส้นได้</p></div>`);continue;
+        }
+        const bins=[];let impossible=false;
+        for(const length of sorted){if(length+kerf>stockLength){impossible=true;continue;}
+          let b=bins.find(b=>b.left>=length+kerf);
+          if(!b){b={left:stockLength,parts:[]};bins.push(b);}
+          b.left-=length+kerf;b.parts.push(length);
+        }
+        const enough=Number.isFinite(stockQty)&&stockQty>=bins.length;
+        rows.push(`<div class="border rounded-lg p-2"><strong>${invSafe(item.name)} · ${invSafe(item.brand)} · ${invSafe(item.sku)} · ${invSafe(item.color)}</strong><p>ชิ้นตัด ${sorted.length} ชิ้น · เส้นยาว ${invMoney(stockLength)} มม. · แผนตัดเบื้องต้น ${bins.length} เส้น · คลังมี ${invMoney(stockQty)} เส้น</p><p class="${enough?'text-emerald-700':'text-red-700'}">${enough?'สต๊อกเพียงพอตามแผนเบื้องต้น':'ขาดอย่างน้อย '+invMoney(Math.max(0,bins.length-stockQty))+' เส้น (ตามแผนนี้)'}</p>${impossible?'<p class="text-red-700">มีชิ้นที่ยาวกว่าเส้นสต๊อก ต้องเลือกความยาวเส้นอื่นหรือทบทวนสูตร</p>':''}<details class="text-xs"><summary>ดูแผนตัดแต่ละเส้น</summary>${bins.map((b,j)=>`<p>เส้น ${j+1}: ${b.parts.map(invMoney).join(' + ')} มม. · เหลือ ${invMoney(b.left)} มม. (รวมรอยเลื่อยแล้ว)</p>`).join('')}</details></div>`);
+      }
+      for(const {item,qty} of fixed.values())rows.push(`<div class="border rounded-lg p-2"><strong>${invSafe(item.name)}</strong> · ใช้ ${invMoney(qty)} ${invSafe(item.unit)} · คงเหลือ ${invMoney(item.quantity)} ${invSafe(item.unit)} <span class="${Number(item.quantity)>=qty?'text-emerald-700':'text-red-700'}">${Number(item.quantity)>=qty?'เพียงพอ':'ขาด '+invMoney(qty-Number(item.quantity))}</span></div>`);
+      for(const g of glasses)rows.push(`<div class="border rounded-lg p-2"><strong>กระจกช่อง ${g.channel}: ${invSafe(g.item.name)}</strong><p>ขนาดตัด ${invMoney(g.gw)} × ${invMoney(g.gh)} มม. · ${g.gqty} แผ่น · พื้นที่รวม ${invMoney(g.gw*g.gh*g.gqty/1e6)} ตร.ม.</p><p class="text-amber-800">แสดงขนาดและพื้นที่เท่านั้น ยังไม่หักสต๊อกกระจก เพราะต้องระบุหน่วยจัดเก็บ/แผ่นกระจกตั้งต้นและแผนตัดกระจกจริง</p></div>`);
+      out.innerHTML='<div class="bg-sky-50 border rounded-xl p-3 space-y-2"><strong>ผลวางแผนเบื้องต้น (ยังไม่เบิก/จองสต๊อก)</strong>'+rows.join('')+'<p class="text-xs text-amber-800">สูตรที่เลือกต้องตรงกับรูปแบบและจำนวนบานของแต่ละช่อง · แผนตัดแบบ First Fit Decreasing เป็นแผนประมาณ ไม่รับประกันเศษต่ำสุด · สต๊อกเส้นยาวต่างกันต้องแยกรายการทะเบียน · ไม่รวมเศษคงคลัง/การจอง/การใช้กระจกแผ่นใหญ่</p></div>';
+    }
+    Object.assign(window,{invV10Build,invV10Calculate});
+    // V11 topology planner. It deliberately does not infer hardware or cut formulas.
+    const invV11Kinds=[['sliding','บานเลื่อน'],['fixed','บานตาย'],['swing','บานเปิด'],['fold','บานเฟี้ยม'],['awning','บานกระทุ้ง'],['pivot','บานหมุน'],['glass','กระจกเปลือย'],['other','ชนิดอื่น / กำหนดเอง']];
+    function invV11Note(message,error=false){const el=document.getElementById('inv-v11-message');if(el){el.textContent=message;el.className='text-sm '+(error?'text-red-700':'text-teal-800');}}
+    function invV11Build(){invV10Build();const n=Number(document.getElementById('inv-v10-count')?.value);if(!Number.isInteger(n)||n<1||n>20)return;for(let k=0;k<n;k++)invV11Create(k,1);invV11Note('กรอกแต่ละบานและจุดเชื่อมต่อ แล้วเลือกสูตรช่างที่ตรงกับชุดงานก่อนคำนวณ');}
+    function invV11Create(k,count){const host=document.getElementById('v10-type-'+k)?.closest('.border.rounded-xl');if(!host)return;let box=host.querySelector('.inv-v11-layout');if(!box){box=document.createElement('div');box.className='inv-v11-layout rounded-xl border border-teal-200 bg-teal-50 p-3 space-y-2';const warning=host.querySelector('.text-amber-800');if(warning)host.insertBefore(box,warning);else host.append(box);}box.innerHTML=`<div class="flex items-center justify-between gap-2"><strong>ผังบานช่องที่ ${k+1} (ซ้าย → ขวา)</strong><button type="button" class="rounded-lg bg-teal-700 text-white px-3 py-2 text-xs" onclick="invV11Add(${k})">+ เพิ่มบาน</button></div><p class="text-xs text-slate-600">ชุดพับ: ใส่รหัสชุดเดียวกัน เช่น A, A, B, B · จุดเชื่อม: ระบุความสัมพันธ์ของบานนี้กับบานถัดไป · จุดเปิดเลือกได้ทุกตำแหน่ง ไม่จำกัดซ้าย/ขวา/กลาง</p><div id="v11-panels-${k}" class="grid gap-2"></div><label class="text-xs block">คำอธิบายโครงสร้างพิเศษ / อุปกรณ์ที่ต้องตรวจสอบ<input id="v11-note-${k}" class="w-full border rounded-lg p-2 mt-1" placeholder="เช่น จุดเปิดระหว่างบาน 2–3, บานนำอยู่บาน 3"></label>`;for(let j=0;j<count;j++)invV11Add(k);}
+    function invV11Add(k,initial){const root=document.getElementById('v11-panels-'+k);if(!root)return;const j=root.children.length;if(j>=30)return invV11Note('แต่ละช่องรองรับสูงสุด 30 บาน',true);const el=document.createElement('div');el.className='v11-panel grid sm:grid-cols-5 gap-2 rounded-lg border bg-white p-2';el.innerHTML=`<label class="text-xs">บานที่ <b class="v11-index">${j+1}</b> / ชนิด<select class="v11-kind w-full border rounded p-2 mt-1">${invV11Kinds.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></label><label class="text-xs">รหัสชุดพับ/กลุ่ม<input class="v11-group w-full border rounded p-2 mt-1" placeholder="เช่น A, B"></label><label class="text-xs">ความสัมพันธ์กับบานถัดไป<select class="v11-joint w-full border rounded p-2 mt-1"><option value="none">ไม่เชื่อม / บานสุดท้าย</option><option value="hinge">บานพับเชื่อม</option><option value="slide">รางเลื่อนร่วม</option><option value="fixed">เฟรม/เสาร่วม</option><option value="other">แบบพิเศษ</option></select></label><label class="text-xs">จุดเปิดหลังบานนี้<select class="v11-access w-full border rounded p-2 mt-1"><option value="no">ไม่มี</option><option value="yes">มีจุดเปิด / จุดแยก</option></select></label><div class="flex items-end"><button type="button" class="v11-remove border rounded p-2 text-red-700 w-full" onclick="invV11Remove(this,${k})">ลบบาน</button></div>`;root.append(el);invV11Renumber(k);}
+    function invV11Remove(btn,k){const root=document.getElementById('v11-panels-'+k);if(root?.children.length<=1)return invV11Note('ต้องมีอย่างน้อย 1 บานต่อช่อง',true);btn.closest('.v11-panel')?.remove();invV11Renumber(k);}
+    function invV11Renumber(k){const root=document.getElementById('v11-panels-'+k);if(!root)return;[...root.children].forEach((r,j)=>r.querySelector('.v11-index').textContent=j+1);const leaves=document.getElementById('v10-leaves-'+k);if(leaves)leaves.value=root.children.length;}
+    function invV11Read(){const n=Number(document.getElementById('inv-v10-count')?.value);if(!Number.isInteger(n)||n<1||n>20)throw Error('จำนวนช่องไม่ถูกต้อง');return Array.from({length:n},(_,k)=>{const root=document.getElementById('v11-panels-'+k);if(!root)throw Error('กรุณากดกำหนดช่องก่อน');const panels=[...root.children].map((r,j)=>({number:j+1,kind:r.querySelector('.v11-kind').value,group:r.querySelector('.v11-group').value.trim().slice(0,30),joint:r.querySelector('.v11-joint').value,access:r.querySelector('.v11-access').value==='yes'}));return {channel:k+1,widthMm:Number(document.getElementById('v10-w-'+k)?.value),heightMm:Number(document.getElementById('v10-h-'+k)?.value),recipeId:document.getElementById('v10-recipe-'+k)?.value||'',note:document.getElementById('v11-note-'+k)?.value.trim()||'',panels};});}
+    function invV11Validate(layout){const errors=[];for(const ch of layout){if(!ch.panels.length)errors.push('ช่อง '+ch.channel+': ไม่มีบาน');if(!(ch.widthMm>0&&ch.heightMm>0))errors.push('ช่อง '+ch.channel+': ต้องกรอกความกว้างและสูงจริง');for(let j=0;j<ch.panels.length;j++){const p=ch.panels[j];if(j===ch.panels.length-1&&p.joint!=='none')errors.push('ช่อง '+ch.channel+': บานสุดท้ายต้องตั้งความสัมพันธ์กับบานถัดไปเป็น ไม่เชื่อม');if(p.kind==='fold'&&!p.group)errors.push('ช่อง '+ch.channel+': บานเฟี้ยม '+(j+1)+' ต้องกำหนดรหัสชุดพับ');if(p.kind==='fold'&&j<ch.panels.length-1&&p.joint==='none'&&!p.access)errors.push('ช่อง '+ch.channel+': ตรวจจุดเชื่อม/จุดเปิดหลังบาน '+(j+1));}}return errors;}
+    function invV11Calculate(){let layout;try{layout=invV11Read();}catch(e){return invV11Note(e.message,true);}const errors=invV11Validate(layout);if(errors.length)return invV11Note(errors.join(' | '),true);const summary=layout.map(ch=>`ช่อง ${ch.channel}: ${ch.panels.map(p=>p.number+'.'+(invV11Kinds.find(x=>x[0]===p.kind)?.[1]||p.kind)+(p.group?'['+p.group+']':'')+(p.access?'(จุดเปิด)':'')).join(' / ')}`).join(' | ');invV11Note('ผังโครงสร้าง: '+summary+' — ผลคำนวณด้านล่างยังใช้สูตรที่ยืนยันต่อช่อง ไม่เพิ่มฮาร์ดแวร์ตามจำนวนบานอัตโนมัติ');invV10Calculate();const out=document.getElementById('inv-v10-result');if(out){const warning=document.createElement('div');warning.className='border border-amber-300 bg-amber-50 rounded-xl p-3 mt-2 text-sm text-amber-950';warning.textContent='V11 ตรวจผังบานแล้ว แต่ยังไม่ได้คำนวณอุปกรณ์จากจุดพับ/จุดเปิดโดยอัตโนมัติ ต้องมีสูตรช่างเฉพาะโครงสร้างที่ยืนยันแล้วก่อนสั่งซื้อหรือตัดจริง';out.prepend(warning);}}
+    function invV11CopyLayout(){let layout;try{layout=invV11Read();}catch(e){return invV11Note(e.message,true);}const str=JSON.stringify({version:11,layout},null,2);if(navigator.clipboard?.writeText){navigator.clipboard.writeText(str).then(()=>invV11Note('คัดลอกผังบานแล้ว')).catch(()=>invV11Note('เบราว์เซอร์ไม่อนุญาตให้คัดลอก กรุณาใช้ HTTPS',true));}else invV11Note('เบราว์เซอร์ไม่รองรับการคัดลอก',true);}
+    function invV11SaveDraft(){try{const layout=invV11Read();localStorage.setItem('sumran-v11-layout-draft',JSON.stringify({version:11,layout}));invV11Note('บันทึกผังร่างไว้ในเบราว์เซอร์นี้แล้ว (ไม่ใช่ Firebase)');}catch(e){invV11Note('บันทึกไม่ได้: '+e.message,true);}}
+    function invV11LoadDraft(){try{const saved=JSON.parse(localStorage.getItem('sumran-v11-layout-draft')||'null');if(saved?.version!==11||!Array.isArray(saved.layout)||!saved.layout.length||saved.layout.length>20)throw Error('ไม่มีผังร่าง V11 ที่บันทึกไว้');document.getElementById('inv-v10-count').value=saved.layout.length;invV11Build();saved.layout.forEach((ch,k)=>{document.getElementById('v10-w-'+k).value=ch.widthMm||'';document.getElementById('v10-h-'+k).value=ch.heightMm||'';document.getElementById('v10-recipe-'+k).value=ch.recipeId||'';document.getElementById('v11-note-'+k).value=ch.note||'';const root=document.getElementById('v11-panels-'+k);if(!Array.isArray(ch.panels)||!ch.panels.length||ch.panels.length>30)return;while(root.children.length<ch.panels.length)invV11Add(k);ch.panels.forEach((p,j)=>{const r=root.children[j];r.querySelector('.v11-kind').value=p.kind;r.querySelector('.v11-group').value=p.group||'';r.querySelector('.v11-joint').value=p.joint;r.querySelector('.v11-access').value=p.access?'yes':'no';});invV11Renumber(k);});invV11Note('เรียกผังร่างจากเบราว์เซอร์นี้แล้ว ตรวจสูตรและวัสดุอีกครั้งก่อนคำนวณ');}catch(e){invV11Note('เรียกผังไม่ได้: '+e.message,true);}}
+    Object.assign(window,{invV11Build,invV11Add,invV11Remove,invV11Calculate,invV11CopyLayout,invV11SaveDraft,invV11LoadDraft});
+
+
     Object.assign(window,{invV8ToggleRecipeOffset,invV8FilterRecipeItems,invV8MissingMaterial,invRecipeAddLine,invRecipeRemoveLine,invRecipeSaveLine,invRecipeApprove,invRecipeCalculate,invV7CalculateLine,invV7ApplyFixed});
     Object.assign(window,{invV4RefreshDocuments,invV3JobOptions,invV3ChooseJob});
     window.invV3SetType=invV3SetType;window.invV3Add=invV3Add;window.invV3Adjust=invV3Adjust;window.invV3ClearCart=invV3ClearCart;window.invV3SetQty=invV3SetQty;window.invV3Save=invV3Save;window.invV3Render=invV3Render;
