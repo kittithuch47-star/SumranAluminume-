@@ -725,7 +725,7 @@
         <div class="flex flex-wrap gap-2 items-center justify-between"><h3 class="font-bold">ทะเบียนวัสดุ</h3><button type="button" id="inv-add-toggle" onclick="invToggleAdd()" class="bg-teal-700 text-white px-4 py-2 rounded-xl text-sm">+ เพิ่มวัสดุ</button></div>
         <div id="inv-add-panel" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 bg-teal-50 p-3 rounded-xl">
           <label class="text-xs">ชื่อวัสดุ *<input id="inv-name" maxlength="120" class="w-full border p-2 rounded-lg" placeholder="เช่น เฟรมล่าง" /></label>
-          <label class="text-xs">ยี่ห้อ<input id="inv-brand" maxlength="80" class="w-full border p-2 rounded-lg" placeholder="ไทยเม็ททอล" /></label>
+          <label class="text-xs">ยี่ห้อ (เลือกจากรายการหรือพิมพ์เพิ่มใหม่)<input id="inv-brand" list="inv-brand-options" maxlength="80" class="w-full border p-2 rounded-lg" placeholder="เลือกยี่ห้อที่เคยใช้" onchange="invRememberBrand(this.value)" /><datalist id="inv-brand-options"></datalist></label>
           <label class="text-xs">รหัส / รุ่น<input id="inv-sku" maxlength="80" class="w-full border p-2 rounded-lg" /></label>
           <label class="text-xs">สี<input id="inv-color" maxlength="80" class="w-full border p-2 rounded-lg" /></label>
           <label class="text-xs">หน่วย<select id="inv-unit" class="w-full border p-2 rounded-lg"><option>เส้น</option><option>ชิ้น</option><option>แผ่น</option><option>หลอด</option><option>กล่อง</option><option>เมตร</option><option>ชุด</option><option>ตัว</option></select></label>
@@ -738,7 +738,7 @@
         <div id="inv-items" class="grid gap-3"></div>
       </div>
       <div class="bg-white rounded-2xl border p-4 space-y-3">
-        <h3 class="font-bold">บันทึกการเคลื่อนไหววัสดุ</h3>
+        <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-bold">รับเข้า / เบิก / คืนวัสดุ</h3><span class="text-xs text-teal-700">เลือกวัสดุจากทะเบียนได้ทันที</span></div>
         <p class="text-xs text-slate-500">ทุกการรับเข้า/เบิกออก/คืนของ จะบันทึกผู้ทำรายการและเวลาไว้ โดยไม่ลบประวัติเดิม</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <label class="text-xs">วัสดุ<select id="inv-move-item" class="w-full border p-3 rounded-xl"></select></label>
@@ -751,18 +751,17 @@
         <button type="button" id="inv-move-save" onclick="invSaveMovement()" class="w-full sm:w-auto bg-sky-700 text-white px-5 py-3 rounded-xl font-bold">ยืนยันรายการ</button>
       </div>
       <div class="bg-white rounded-2xl border p-4 space-y-3">
-        <h3 class="font-bold">ประวัติการเคลื่อนไหวล่าสุด</h3><div id="inv-movements" class="grid gap-2 text-sm"></div>
+        <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-bold">ประวัติการเคลื่อนไหวล่าสุด</h3><select id="inv-history-filter" onchange="renderInventory()" class="border rounded-lg p-2 text-xs"><option value="all">ทั้งหมด</option><option value="receive">รับเข้า</option><option value="issue">เบิกออก</option><option value="return">คืนวัสดุ</option></select></div><p class="text-xs text-slate-500">แสดงเฉพาะ 20 รายการล่าสุดตามประเภทที่เลือก ประวัติเดิมไม่ถูกลบ</p><div id="inv-movements" class="grid gap-2 text-sm"></div>
       </div>
-      <div class="bg-white rounded-2xl border p-4 space-y-3">
-        <h3 class="font-bold">สูตรประกอบชุด (ฉบับร่าง)</h3>
+      <details class="bg-white rounded-2xl border p-4 space-y-3"><summary class="font-bold cursor-pointer">สูตรประกอบชุด (ไม่จำเป็นต้องกรอกตอนนี้) — กดเพื่อเปิด</summary>
         <p class="text-xs text-slate-500">เก็บชื่อรุ่นและบันทึกจากแค็ตตาล็อกได้ก่อน สูตรยังไม่คำนวณและไม่ตัดสต๊อก</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input id="inv-recipe-name" maxlength="120" placeholder="ชื่อชุด เช่น บานเลื่อน 2 บาน" class="border rounded-xl p-3" />
-          <input id="inv-recipe-brand" maxlength="80" placeholder="ยี่ห้อ / ระบบ" class="border rounded-xl p-3" />
+          <input id="inv-recipe-brand" list="inv-brand-options" maxlength="80" placeholder="เลือกยี่ห้อ / ระบบ" class="border rounded-xl p-3" />
           <button type="button" onclick="invSaveRecipe()" class="bg-teal-700 text-white rounded-xl p-3">+ เพิ่มสูตรฉบับร่าง</button>
         </div>
         <div id="inv-recipes" class="grid gap-2"></div>
-      </div>
+      </details>
     </section>
 
     <!-- TAB 1: EDITOR -->
@@ -3787,18 +3786,33 @@
         invState.unsubs.push(unsub);
       }
     }
+    const invSeedBrands=["ไทยเม็ททอล","Q7 Aluminium","Aluminium Premier","Tara Aluminum","UAI Aluminum","3D Aluminum","SKS Aluminum","ORM Aluminum","เมืองทอง Aluminum","ร้านทั่วไป"];
+    let invLastBrand="";
+    function invRememberBrand(value){invLastBrand=String(value||"").trim();}
+    function invRefreshBrands(){
+      const dl=document.getElementById("inv-brand-options");if(!dl)return;
+      const names=[...new Set([...invSeedBrands,...invState.items.map(i=>i.brand),...invState.recipes.map(r=>r.brand)].map(x=>String(x||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"th"));
+      dl.innerHTML=names.map(b=>`<option value="${invSafe(b)}"></option>`).join("");
+    }
+    function invQuickMove(id,type){
+      const item=invState.items.find(x=>x.id===id);if(!item)return;
+      document.getElementById("inv-move-item").value=id;document.getElementById("inv-move-type").value=type;invMoveTypeChanged();
+      document.getElementById("inv-move-qty").focus();
+      document.getElementById("inv-move-save").scrollIntoView({behavior:"smooth",block:"center"});
+    }
     function invToggleAdd(){if(!isOwner())return invMsg('เพิ่มทะเบียนวัสดุได้เฉพาะเจ้าของร้าน',true);document.getElementById('inv-add-panel').classList.toggle('hidden');}
     function invMoveTypeChanged(){const t=document.getElementById('inv-move-type').value;document.getElementById('inv-move-job').required=t!=='receive';}
     function renderInventory(){const root=document.getElementById('inv-items');if(!root)return;
+      invRefreshBrands();
       const all=invState.items.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'th'));
       const q=(document.getElementById('inv-search')?.value||'').toLocaleLowerCase();const filtered=all.filter(i=>[i.name,i.brand,i.sku,i.color].some(v=>String(v||'').toLocaleLowerCase().includes(q)));
       const low=all.filter(i=>invNum(i.quantity)<=invNum(i.minStock));
       document.getElementById('inv-summary').innerHTML=[['รายการวัสดุ',all.length],['จำนวนที่ควรสั่งเพิ่ม',low.length],['รายการเบิก/รับเข้า',invState.moves.length],['สูตรฉบับร่าง',invState.recipes.length]].map(([t,v])=>`<div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">${t}</div><strong class="text-2xl">${v}</strong></div>`).join('');
       document.getElementById('inv-add-toggle').disabled=!isOwner();
       document.getElementById('inv-cost').disabled=!isOwner();
-      root.innerHTML=filtered.length?filtered.map(i=>`<div class="border rounded-xl p-3 flex flex-wrap gap-2 justify-between items-center"><div><strong>${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)}</div>${isOwner()?`<div class="text-xs text-slate-500">ต้นทุน/หน่วย ฿${invMoney(i.unitCost)}</div>`:''}</div><div class="text-right"><strong class="text-lg ${invNum(i.quantity)<=invNum(i.minStock)?'text-amber-700':'text-teal-700'}">${invMoney(i.quantity)} ${invSafe(i.unit)}</strong><div class="text-xs text-slate-500">ขั้นต่ำ ${invMoney(i.minStock)} ${invSafe(i.unit)}</div></div></div>`).join(''):'<p class="text-sm text-slate-500">ยังไม่มีรายการวัสดุ</p>';
+      root.innerHTML=filtered.length?filtered.map(i=>`<div class="border rounded-xl p-3 flex flex-wrap gap-2 justify-between items-center"><div><strong>${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)}</div>${isOwner()?`<div class="text-xs text-slate-500">ต้นทุน/หน่วย ฿${invMoney(i.unitCost)}</div>`:''}</div><div class="text-right"><strong class="text-lg ${invNum(i.quantity)<=invNum(i.minStock)?'text-amber-700':'text-teal-700'}">${invMoney(i.quantity)} ${invSafe(i.unit)}</strong><div class="text-xs text-slate-500">ขั้นต่ำ ${invMoney(i.minStock)} ${invSafe(i.unit)}</div><div class="flex gap-1 justify-end mt-2"><button type="button" onclick="invQuickMove('${invSafe(i.id)}','receive')" class="bg-teal-50 text-teal-800 border rounded-lg px-2 py-1 text-xs">+ รับเข้า</button><button type="button" onclick="invQuickMove('${invSafe(i.id)}','issue')" class="bg-sky-50 text-sky-800 border rounded-lg px-2 py-1 text-xs">เบิก</button></div></div></div>`).join(''):'<p class="text-sm text-slate-500">ยังไม่มีรายการวัสดุ</p>';
       const select=document.getElementById('inv-move-item'),prev=select.value;select.innerHTML=all.map(i=>`<option value="${invSafe(i.id)}">${invSafe(i.name)} (${invSafe(i.brand)}) — ${invMoney(i.quantity)} ${invSafe(i.unit)}</option>`).join('');if(all.some(i=>i.id===prev))select.value=prev;
-      const moves=invState.moves.slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).slice(0,40);
+      const historyFilter=document.getElementById("inv-history-filter")?.value||"all";const moves=invState.moves.filter(m=>historyFilter==="all"||m.type===historyFilter).slice().sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||""))).slice(0,20);
       document.getElementById('inv-movements').innerHTML=moves.length?moves.map(m=>`<div class="border rounded-xl p-3"><strong>${m.type==='receive'?'รับเข้า':m.type==='return'?'คืน':'เบิก'} ${invMoney(m.quantity)} ${invSafe(m.unit)}</strong> — ${invSafe(m.itemName)}<div class="text-xs text-slate-500">งาน ${invSafe(m.jobNo||'-')} · ${invSafe(m.actorName||m.actorEmail)} · ${invSafe(m.createdAt||'')} · ${invSafe(m.reference||'')} ${invSafe(m.note||'')}</div></div>`).join(''):'<p class="text-slate-500">ยังไม่มีประวัติ</p>';
       document.getElementById('inv-recipes').innerHTML=invState.recipes.map(r=>`<div class="border rounded-xl p-3"><div class="flex justify-between gap-2"><strong>${invSafe(r.name)} · ${invSafe(r.brand)}</strong><span class="text-xs text-amber-700">ฉบับร่าง</span></div><textarea aria-label="บันทึกสูตร" id="inv-note-${invSafe(r.id)}" class="w-full border rounded-lg p-2 mt-2 text-sm" rows="2" placeholder="รหัสหน้าตัด/รายการวัสดุ/สูตรที่รอช่างยืนยัน">${invSafe(r.notes||'')}</textarea><button type="button" onclick="invUpdateRecipe('${invSafe(r.id)}')" class="bg-slate-100 px-3 py-2 rounded-lg text-xs mt-1">บันทึกโน้ต</button></div>`).join('')||'<p class="text-slate-500 text-sm">ยังไม่มีสูตร</p>';
     }
@@ -3807,7 +3821,7 @@
       const minStock=Number(val('inv-min')),unitCost=Number(val('inv-cost')),lengthMm=Number(val('inv-length')||0);
       if(![minStock,unitCost,lengthMm].every(n=>Number.isFinite(n)&&n>=0))return invMsg('ตัวเลขต้องเป็น 0 หรือมากกว่า',true);
       const id=doc(cloudCollection('inventoryItems')).id;
-      try{await setDoc(cloudPath('inventoryItems',id),{name,brand:val('inv-brand'),sku:val('inv-sku'),color:val('inv-color'),unit:val('inv-unit'),lengthMm,minStock,unitCost,quantity:0,lastMovementId:'',createdByUid:userId,createdAt:new Date().toISOString()});document.getElementById('inv-add-panel').classList.add('hidden');document.getElementById('inv-name').value='';invMsg('เพิ่มวัสดุแล้ว กรุณารับสินค้าเข้าคลังเพื่อเพิ่มจำนวน');}catch(e){invMsg('เพิ่มวัสดุไม่สำเร็จ: '+e.message,true);}
+      try{await setDoc(cloudPath('inventoryItems',id),{name,brand:val('inv-brand'),sku:val('inv-sku'),color:val('inv-color'),unit:val('inv-unit'),lengthMm,minStock,unitCost,quantity:0,lastMovementId:'',createdByUid:userId,createdAt:new Date().toISOString()});document.getElementById('inv-add-panel').classList.add('hidden');document.getElementById('inv-name').value='';invRememberBrand(val('inv-brand'));invMsg('เพิ่มวัสดุแล้ว กรุณารับสินค้าเข้าคลังเพื่อเพิ่มจำนวน');}catch(e){invMsg('เพิ่มวัสดุไม่สำเร็จ: '+e.message,true);}
     }
     async function invSaveMovement(){if(!invCanWrite()||invState.busy)return;
       const get=id=>document.getElementById(id).value.trim(),itemId=get('inv-move-item'),type=get('inv-move-type'),qty=Number(get('inv-move-qty')),jobNo=get('inv-move-job');
@@ -3824,10 +3838,10 @@
       catch(e){invMsg('บันทึกไม่สำเร็จ: '+e.message,true);}finally{invState.busy=false;document.getElementById('inv-move-save').disabled=false;}
     }
     async function invSaveRecipe(){if(!invCanWrite()||!isOwner())return invMsg('เพิ่มสูตรได้เฉพาะเจ้าของร้าน',true);const name=document.getElementById('inv-recipe-name').value.trim(),brand=document.getElementById('inv-recipe-brand').value.trim();if(!name)return invMsg('กรุณากรอกชื่อสูตร',true);
-      try{await setDoc(doc(cloudCollection('inventoryRecipes')),{name,brand,notes:'',status:'draft',version:1,createdByUid:userId,createdAt:new Date().toISOString()});document.getElementById('inv-recipe-name').value='';invMsg('บันทึกสูตรฉบับร่างแล้ว');}catch(e){invMsg(e.message,true);}}
+      try{await setDoc(doc(cloudCollection('inventoryRecipes')),{name,brand,notes:'',status:'draft',version:1,createdByUid:userId,createdAt:new Date().toISOString()});document.getElementById('inv-recipe-name').value='';invRememberBrand(brand);invMsg('บันทึกสูตรฉบับร่างแล้ว');}catch(e){invMsg(e.message,true);}}
     async function invUpdateRecipe(id){if(!invCanWrite()||!isOwner())return invMsg('แก้สูตรได้เฉพาะเจ้าของร้าน',true);const notes=document.getElementById('inv-note-'+id)?.value||'';if(notes.length>5000)return invMsg('โน้ตยาวเกิน 5,000 ตัวอักษร',true);
       try{await updateDoc(cloudPath('inventoryRecipes',id),{notes,updatedAt:new Date().toISOString(),updatedByUid:userId});invMsg('บันทึกโน้ตสูตรแล้ว');}catch(e){invMsg(e.message,true);}}
-    window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
+    window.renderInventory=renderInventory;window.invQuickMove=invQuickMove;window.invRememberBrand=invRememberBrand;window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
 
     // Expose all globals
     window.updateVatSettingsVisibility=updateVatSettingsVisibility; window.handleVatToggleChange=handleVatToggleChange;
