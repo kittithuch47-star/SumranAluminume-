@@ -715,7 +715,7 @@
         <button type="button" class="app-home-tile" onclick="openPrintPicker()"><span class="app-home-icon" style="background:#fef3c7;color:#b45309"><i data-lucide="printer"></i></span><strong>พรีวิวและ PDF</strong><small>ตรวจสอบเอกสารก่อนดาวน์โหลดหรือพิมพ์</small></button>
         <button type="button" class="app-home-tile" onclick="openCashBill()"><span class="app-home-icon" style="background:#fce7f3;color:#be185d"><i data-lucide="wallet"></i></span><strong>บิลเงินสด</strong><small>เข้าสู่หน้าบิลเงินสดโดยตรง</small></button>
         <button type="button" class="app-home-tile" onclick="openGenericModal('presetModal')"><span class="app-home-icon" style="background:#f3e8ff;color:#7e22ce"><i data-lucide="package"></i></span><strong>สินค้าและพรีเซ็ต</strong><small>เพิ่ม แก้ไข และจัดการสินค้า</small></button>
-        <button type="button" class="app-home-tile" onclick="switchTab('inventory')"><span class="app-home-icon" style="background:#ccfbf1;color:#0f766e"><i data-lucide="boxes"></i></span><strong>คลังสินค้า</strong><small>วัสดุ รับเข้า เบิกออก คืนของ และสูตรฉบับร่าง</small></button>
+        <button type="button" class="app-home-tile" onclick="switchTab('inventory')"><span class="app-home-icon" style="background:#ccfbf1;color:#0f766e"><i data-lucide="boxes"></i></span><strong>คลังสินค้า</strong><small>วัสดุ รับเข้า เบิกออก คืนของ และสูตรการผลิต</small></button>
         <button type="button" class="app-home-tile" onclick="switchTab('settings')"><span class="app-home-icon" style="background:#e2e8f0;color:#334155"><i data-lucide="settings-2"></i></span><strong>ตั้งค่าร้าน</strong><small>ข้อมูลร้าน สมาชิก และการตั้งค่าระบบ</small></button>
       </div>
       <div class="app-home-tip">ข้อมูลและเอกสารเดิมยังอยู่ในระบบเดิม เมนูใหม่นี้เป็นเพียงทางลัดเพื่อให้ใช้งานสะดวกขึ้น</div>
@@ -726,7 +726,7 @@
     <section id="tab-inventory" class="hidden space-y-4 no-print">
       <div class="bg-gradient-to-r from-teal-800 to-slate-900 text-white rounded-2xl p-5">
         <h2 class="text-xl font-bold">คลังวัสดุและการผลิต</h2>
-        <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรฉบับร่าง (ไม่ตัดสต๊อกจากใบเสนอราคา)</p>
+        <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรการผลิตมาตรฐาน</p>
       </div>
       <div id="inv-alert" role="status" class="hidden rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900"></div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="inv-summary"></div>
@@ -822,41 +822,21 @@
         </details>
         <div id="v12-msg" class="text-sm" aria-live="polite"></div>
       </details>
-      <details class="v14-legacy rounded-2xl border border-slate-200 bg-white p-4"><summary class="font-semibold cursor-pointer text-slate-600">เครื่องมือสูตรเดิมและผังบานขั้นสูง (สำหรับตรวจสอบงานเก่า)</summary><p class="text-xs text-slate-500 my-3">เก็บเครื่องมือเดิมไว้เพื่อรองรับสูตรและงานเก่า ไม่จำเป็นต้องเปิดสำหรับการใช้งานทั่วไป</p>
-      <details class="bg-white rounded-2xl border p-4 space-y-3"><summary class="font-bold cursor-pointer">สร้างสูตรผลิตจากทะเบียนวัสดุ — กดเพื่อเปิด</summary>
-        <p class="text-xs text-slate-500">เลือกวัสดุจากทะเบียนทีละรายการเป็นหลัก ระบุจำนวนและกฎตัดตามขนาดงาน ไม่ต้องเขียนอุปกรณ์ทั้งหมดในช่องคำอธิบาย</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <input id="inv-recipe-name" maxlength="120" placeholder="ชื่อชุด เช่น บานเลื่อน 2 บาน" class="border rounded-xl p-3" />
-          <input id="inv-recipe-brand" list="inv-brand-options" maxlength="80" placeholder="เลือกยี่ห้อ / ระบบ" class="border rounded-xl p-3" />
-          <button type="button" onclick="invSaveRecipe()" class="bg-teal-700 text-white rounded-xl p-3">+ เพิ่มสูตรฉบับร่าง</button>
+      <!-- Previous recipe editors removed from the interface. Preserve their DOM targets
+           for backward-compatible initialization; existing cloud records are untouched. -->
+      <div id="inv-legacy-compat" hidden aria-hidden="true">
+        <input id="inv-recipe-name" type="hidden"><input id="inv-recipe-brand" type="hidden">
+        <div id="inv-recipes"></div>
+        <div id="inv-v10-panel">
+          <input id="inv-v10-count" type="hidden" value="1">
+          <input id="inv-v10-total-w" type="hidden">
+          <input id="inv-v10-total-h" type="hidden">
+          <div id="inv-v10-openings"></div>
+          <div id="inv-v11-message"></div>
+          <input id="inv-v10-kerf" type="hidden" value="3">
+          <div id="inv-v10-result"></div>
         </div>
-        <div class="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-900">ขั้นตอน: สร้างสูตร → ค้นหาวัสดุจากทะเบียนทีละรายการ → กำหนดจำนวน/กฎตัด W/H → ทดลองคำนวณ → ช่างตรวจ → เจ้าของยืนยัน → ใช้ตรวจสต๊อกก่อนรับงาน (ไม่ตัดสต๊อกอัตโนมัติ)</div>
-        <div id="inv-recipes" class="grid gap-2"></div>
-      </details>
-
-      <details class="bg-white rounded-2xl border p-4 space-y-3" id="inv-v10-panel">
-        <summary class="font-bold cursor-pointer">ออกแบบโครงสร้างบานอิสระ + สูตรผลิต + กระจก + แผนตัด (V11)</summary>
-        <p class="text-sm text-slate-600 mt-2">เลือกจำนวนช่องและสูตรที่ช่างยืนยันสำหรับแต่ละช่อง · ขนาดทุกช่องเป็นขนาดที่วัดจริง · ระบบจะจัดแผนตัดแยกตามรหัสวัสดุและความยาวเส้นที่บันทึกในทะเบียน · ไม่เบิกสต๊อกอัตโนมัติ</p>
-        <div class="grid sm:grid-cols-4 gap-2 mt-3">
-          <label class="text-xs font-semibold">จำนวนช่อง (1–20)<input id="inv-v10-count" type="number" min="1" max="20" value="3" class="w-full border rounded-lg p-2 mt-1"></label>
-          <label class="text-xs font-semibold">ความกว้างรวม (มม.)<input id="inv-v10-total-w" type="number" min="1" placeholder="เช่น 3000" class="w-full border rounded-lg p-2 mt-1"></label>
-          <label class="text-xs font-semibold">ความสูงรวม (มม.)<input id="inv-v10-total-h" type="number" min="1" placeholder="เช่น 2000" class="w-full border rounded-lg p-2 mt-1"></label>
-          <button type="button" onclick="invV11Build()" class="bg-teal-700 text-white rounded-lg p-2 self-end">กำหนดช่อง</button>
-        </div>
-        <p class="text-xs text-amber-800">ขนาดรวมใช้เป็นข้อมูลอ้างอิงเท่านั้น ขนาดช่องต้องวัด/ยืนยันจริง (รวมความกว้างช่องอาจไม่เท่ากับความกว้างรวมเพราะมีเสากลางและระยะซ้อน)</p>
-        <div class="border rounded-xl bg-amber-50 border-amber-200 p-3 text-sm text-amber-950">V11: กำหนดแต่ละบาน จุดเชื่อม และชุดพับได้อิสระ โครงสร้างนี้ใช้ตรวจสอบแบบก่อนผลิต ไม่คาดเดาจำนวนบานพับ/ลูกล้อจากชนิดบาน ต้องเลือกสูตรช่างที่ตรวจรับแล้วให้ตรงกับโครงสร้างจริง</div>
-        <div id="inv-v10-openings" class="grid gap-2"></div>
-        <div class="flex flex-wrap gap-2"><button type="button" onclick="invV11CopyLayout()" class="rounded-lg bg-teal-700 text-white px-4 py-2">คัดลอกผังบานและจุดเปิด</button><button type="button" onclick="invV11SaveDraft()" class="rounded-lg border px-4 py-2">บันทึกผังร่างในเครื่องนี้</button><button type="button" onclick="invV11LoadDraft()" class="rounded-lg border px-4 py-2">เรียกผังร่างในเครื่องนี้</button></div>
-        <div id="inv-v11-message" class="text-sm" aria-live="polite"></div>
-        <div class="border rounded-xl p-3 space-y-2 bg-sky-50">
-          <strong>กระจก: เพิ่มวัสดุกระจกจากทะเบียน แล้วกำหนดระยะหักจริงต่อช่อง</strong>
-          <p class="text-xs text-slate-600">ช่องกระจกใช้ความกว้าง/สูงจากช่องงาน + ค่าชดเชยที่ช่างกำหนด · ถ้าไม่มีข้อมูลขนาดกระจกจริง ห้ามใช้สั่งตัด</p>
-          <label class="text-xs font-semibold block">เผื่อรอยใบเลื่อยต่อชิ้น (มม.)<input id="inv-v10-kerf" type="number" min="0" max="30" value="3" class="block w-32 border rounded-lg p-2 mt-1"></label>
-        </div>
-        <button type="button" onclick="invV11Calculate()" class="w-full bg-sky-700 text-white rounded-xl p-3 font-bold">คำนวณรายการตัด กระจก และตรวจสต๊อก</button>
-        <div id="inv-v10-result" role="status" aria-live="polite" class="text-sm"></div>
-      </details>
-      </details>
+      </div>
     </section>
 
     <!-- TAB 1: EDITOR -->
