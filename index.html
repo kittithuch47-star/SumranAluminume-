@@ -602,7 +602,24 @@
     .v14-legacy {margin-top:12px;}
     .v14-legacy:not([open]) > :not(summary) {display:none;}
 
-  </style>
+  
+/* V24 navigation-only refresh: no changes to calculations, records, or Firebase */
+#tab-inventory .v24-nav {position:sticky;top:0;z-index:20;background:rgba(248,250,252,.97);backdrop-filter:blur(12px);padding:12px;border:1px solid #dce6eb;border-radius:18px;box-shadow:0 5px 18px rgba(15,23,42,.06)}
+#tab-inventory .v24-nav-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+#tab-inventory .v24-nav-title{font-size:17px;font-weight:800;color:#123047}
+#tab-inventory .v24-nav-sub{font-size:12px;color:#64748b}
+#tab-inventory .v24-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+#tab-inventory .v24-tab{border:1px solid #dce6eb;border-radius:11px;background:white;color:#475569;padding:11px 6px;font-size:13px;font-weight:700;min-height:43px;cursor:pointer}
+#tab-inventory .v24-tab[aria-selected="true"]{background:#0f766e;border-color:#0f766e;color:white;box-shadow:0 3px 9px rgba(15,118,110,.16)}
+#tab-inventory .v24-tab:focus-visible{outline:3px solid #38bdf8;outline-offset:2px}
+#tab-inventory .v24-panel[hidden]{display:none!important}
+#tab-inventory .v24-panel{min-width:0;display:grid;gap:14px;align-content:start}
+#tab-inventory .v24-panel > *{min-width:0}
+#tab-inventory .v24-panel-heading{padding:6px 2px 0;color:#0f172a;font-size:15px;font-weight:800}
+#tab-inventory .v24-panel-description{color:#64748b;font-size:12px;margin-top:-10px;margin-bottom:3px}
+@media(max-width:640px){#tab-inventory .v24-nav{position:sticky;top:0;padding:9px;border-radius:13px}#tab-inventory .v24-tabs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;padding-bottom:3px}#tab-inventory .v24-tab{flex:0 0 auto;min-width:104px;scroll-snap-align:start;padding:10px 9px;font-size:12px}#tab-inventory .v24-nav-title{font-size:15px}#tab-inventory .v24-nav-sub{font-size:11px}#tab-inventory .v24-panel{gap:10px}#tab-inventory .v24-panel > .rounded-2xl,#tab-inventory .v24-panel > .bg-white{border-radius:13px}}
+
+</style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
@@ -750,7 +767,7 @@
       </section>
       <!-- V20: approved change-order production planning, read-only preview -->
       <section id="v20-planner" class="bg-white border rounded-2xl p-4 space-y-3">
-        <div><h3 class="text-lg font-bold text-teal-900">V22 · ตรวจวัสดุเบิกแล้วและแผนตัดงานเพิ่มเติม</h3><p class="text-xs text-slate-600 mt-1">เลือกงานและสูตรที่อนุมัติแล้ว ตรวจประวัติเบิกและยืนยันของจริงที่ยังใช้ได้ ก่อนสรุปยอดที่ต้องจัดหาเพิ่ม (แบบตรวจสอบชั่วคราว ไม่ตัดสต๊อก)</p></div>
+        <div><h3 class="text-lg font-bold text-teal-900">V23 · ตรวจวัสดุจริงและบันทึกผลตรวจถาวร</h3><p class="text-xs text-slate-600 mt-1">เลือกงานและสูตรที่อนุมัติแล้ว ตรวจประวัติเบิกและยืนยันของจริงที่ยังใช้ได้ ก่อนสรุปยอดที่ต้องจัดหาเพิ่ม (แยกโหมดทดลอง/งานจริง บันทึกประวัติผลตรวจ ไม่ตัดสต๊อก)</p></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label class="text-sm font-semibold">งานเพิ่มเติมที่อนุมัติแล้ว<select id="v20-change" class="mt-1 w-full border rounded-lg p-2" onchange="v20Choose()"><option value="">เลือกงานเพิ่มเติม...</option></select></label>
           <label class="text-sm font-semibold">สูตรผลิตที่อนุมัติแล้ว<select id="v20-recipe" class="mt-1 w-full border rounded-lg p-2"><option value="">เลือกสูตร...</option></select></label>
@@ -3986,10 +4003,15 @@
         for(const [key,rows] of groups){
           const variants=invState.items.filter(i=>!i.archived&&[i.name,i.brand,i.sku,i.color].join('|')===key&&Number(i.lengthMm)>0).sort((a,b)=>Number(a.lengthMm)-Number(b.lengthMm));
           const pieces=rows.flatMap(x=>Array.from({length:x.qty},()=>({len:x.len,label:x.label})));
-          const plan=v21Plan(pieces,variants,kerf);
+          // V23: simulate confirmed on-site full bars first, then warehouse bars.
+          // Each inventory item uses its latest real verification for this change only.
+          const onsite=variants.map(v=>({ ...v, quantity:v23Usable(c.id,v.id,v21MovementSummary(c,v).net) })).filter(v=>v.quantity>0);
+          const onsitePlan=v21Plan(pieces,onsite,kerf);
+          const plan=v21Plan(onsitePlan.missing,variants,kerf);
           const matched=variants.filter(v=>v21MovementSummary(c,v).net>0);
           for(const item of matched){const mv=v21MovementSummary(c,item);v22Checks.push({item,net:mv.net,kind:'bar',lengthMm:Number(item.lengthMm)});}
-          html+=`<div class="border rounded-lg p-3 space-y-2"><strong>${invSafe(key.replaceAll('|',' · '))}</strong><p class="text-xs">${rows.map(x=>`${invSafe(x.label)} ${invMeters(x.len)} ม. × ${fmt(x.qty)} ชิ้น`).join(' · ')}</p>`;
+          html+=`<div class="border rounded-lg p-3 space-y-2"><strong>${invSafe(key.replaceAll('|',' · '))}</strong><p class="text-xs">${rows.map(x=>`${invSafe(x.label)} ${invMeters(x.len)} ม. × ${fmt(x.qty)} ชิ้น`).join(' · ')}</p><p class="text-xs text-teal-800 font-semibold">V23: จัดจากเส้นเต็มที่ตรวจยืนยันหน้างาน ${fmt(onsitePlan.bins.length)} เส้น · ต้องจัดจากคลังเพิ่มเติม ${fmt(plan.bins.length)} เส้น · ชิ้นที่ยังจัดไม่ได้ ${fmt(plan.missing.length)} ชิ้น (เป็นแผนจำลอง ยังไม่จอง)</p>`;
+          onsitePlan.bins.forEach((b,i)=>{html+=`<p class="text-xs bg-teal-50 rounded p-2">เส้นหน้างานที่ยืนยัน ${fmt(i+1)} · ${invMeters(b.item.lengthMm)} ม. → ${b.pieces.map(p=>invMeters(p.len)+' ม.').join(' + ')} · เศษ ${invMeters(b.remaining)} ม.</p>`;});
           for(const [id,n] of plan.used){const item=invState.items.find(x=>x.id===id);const mv=v21MovementSummary(c,item);html+=`<p class="text-xs">เส้น ${invMeters(item.lengthMm)} ม. · ใช้ตามแผน ${fmt(n)} เส้น · ในคลัง ${fmt(item.quantity)} เส้น · <strong class="text-teal-700">จัดจากจำนวนคงเหลือได้</strong></p><p class="text-xs text-amber-800">ประวัติงาน ${invSafe(c.sourceDocNo)}: เบิก ${fmt(mv.issued)} · คืน ${fmt(mv.returned)} · เบิกสุทธิ ${fmt(mv.net)} เส้น (${fmt(mv.count)} รายการ) — ยังไม่หักจากความต้องการงานเพิ่ม เพราะอาจเป็นของงานเดิมหรือถูกตัดแล้ว</p>`;}
           plan.bins.forEach((b,i)=>{html+=`<p class="text-xs bg-slate-50 rounded p-2">แผนเส้นที่ ${fmt(i+1)} · ${invMeters(b.item.lengthMm)} ม. → ${b.pieces.map(p=>invMeters(p.len)+' ม.').join(' + ')} · เศษประมาณ ${invMeters(b.remaining)} ม. (หักรอยเลื่อยแล้ว)</p>`;});
           if(plan.missing.length)html+=`<p class="text-xs text-red-700 font-bold">ยังจัดแผนตัดไม่ได้ ${fmt(plan.missing.length)} ชิ้น: เส้นในคลังไม่พอหรือไม่มีความยาวที่เหมาะสม ต้องตรวจสั่งซื้อ/ใช้เศษเส้น</p>`;
@@ -3999,14 +4021,15 @@
         if(glass.length)html+='<div class="border rounded-lg p-3"><strong>กระจก — รอยืนยันขนาดสองด้าน</strong>'+glass.map(x=>`<p class="text-xs">${invSafe(x.label)} · ค่าที่สูตรคำนวณได้ ${fmt(x.len)} มม. × ${fmt(x.qty)} ชิ้น (ยังไม่ใช่ขนาดสั่งตัด)</p>`).join('')+'</div>';
         if(hardware.length)html+='<div class="border rounded-lg p-3"><strong>อุปกรณ์และวัสดุนับชิ้น</strong>'+hardware.map(x=>{const mv=v21MovementSummary(c,x.item);const shortage=Math.max(0,x.qty-Number(x.item.quantity||0));return `<p class="text-xs">${invSafe(x.label)} · ต้องใช้ ${fmt(x.qty)} ${invSafe(x.item.unit)} · คงคลัง ${fmt(x.item.quantity)} · ${shortage?'ขาดอย่างน้อย '+fmt(shortage):'จำนวนในคลังเพียงพอ'} · ประวัติเบิกสุทธิเลขงานเดิม ${fmt(mv.net)} (ยังไม่หักอัตโนมัติ)</p>`;}).join('')+'</div>';
         for(const h of hardware){const mv=v21MovementSummary(c,h.item);if(mv.net>0&&!v22Checks.some(x=>x.item.id===h.item.id))v22Checks.push({item:h.item,net:mv.net,kind:'unit'});}
-        html+='<div class="border rounded-xl p-3 space-y-3 bg-teal-50"><h4 class="font-bold text-teal-900">V22 · ตรวจของที่เคยเบิกสำหรับเลขงานนี้</h4><p class="text-xs text-slate-700">กรอกเฉพาะของที่ช่างตรวจพบจริงว่ายังไม่ตัดและใช้ต่อได้ หรือเป็นเศษที่วัดขนาดแล้ว การเบิกสุทธิเป็นเพียงข้อมูลอ้างอิง ไม่ใช่จำนวนที่พร้อมใช้</p>';
+        html+='<div class="border rounded-xl p-3 space-y-3 bg-teal-50"><h4 class="font-bold text-teal-900">V23 · ตรวจของที่เคยเบิกสำหรับเลขงานนี้</h4><p class="text-xs text-slate-700">กรอกเฉพาะของที่ช่างตรวจพบจริงว่ายังไม่ตัดและใช้ต่อได้ หรือเป็นเศษที่วัดขนาดแล้ว การเบิกสุทธิเป็นเพียงข้อมูลอ้างอิง ไม่ใช่จำนวนที่พร้อมใช้</p>';
         if(!v22Checks.length)html+='<p class="text-xs">ไม่พบวัสดุเบิกสุทธิที่ตรงกับสูตรและรหัสวัสดุนี้ กรุณาตรวจประวัติงานและสูตรก่อนดำเนินการ</p>';
         for(let i=0;i<v22Checks.length;i++){const x=v22Checks[i];html+=`<div class="bg-white border rounded-lg p-3 space-y-2"><strong>${invSafe(x.item.name)} · ${invSafe(x.item.brand)} · ${invSafe(x.item.sku)} · ${invSafe(x.item.color)}</strong><p class="text-xs">ประวัติเบิกสุทธิ ${fmt(x.net)} ${invSafe(x.item.unit)}${x.kind==='bar'?' · เส้นยาว '+invMeters(x.lengthMm)+' ม.':''}</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2"><label class="text-xs">สถานะที่ตรวจพบ<select id="v22-status-${i}" class="w-full border rounded p-2" onchange="v22Recalc()"><option value="unknown">ยังไม่ตรวจ</option><option value="unused">ยังไม่ใช้ / ใช้ต่อได้</option><option value="cut">ตัดแล้ว / ต้องวัดเศษ</option><option value="used">ใช้ประกอบหรือติดตั้งแล้ว</option><option value="returned">คืนคลังแล้ว (นับในคลัง)</option></select></label><label class="text-xs">จำนวนที่ยืนยันว่าใช้ต่อได้<input id="v22-qty-${i}" type="number" min="0" max="${x.net}" step="1" value="0" class="w-full border rounded p-2" oninput="v22Recalc()"/></label><label class="text-xs">หมายเหตุ / ตำแหน่งจัดเก็บ<input id="v22-note-${i}" maxlength="150" class="w-full border rounded p-2" placeholder="ช่างตรวจแล้ว อยู่ที่..." /></label></div><p class="text-xs text-amber-800">${x.kind==='bar'?'นับเฉพาะเส้นเต็มความยาวเดิมที่ยังใช้ได้ เศษเส้นต้องลงทะเบียนความยาวจริงก่อนวางแผนตัด':'ยืนยันจำนวนอุปกรณ์ที่ยังใช้ได้จริง'} · ไม่อนุญาตเกินยอดเบิกสุทธิ</p></div>`;}
-        html+='<div id="v22-summary" class="text-sm font-semibold border-t pt-3">ยังไม่ได้ยืนยันของที่ใช้ต่อได้</div><p class="text-xs text-amber-800">ข้อมูลการตรวจในหน้านี้ไม่บันทึกลง Firebase และจะหายเมื่อรีเฟรช ยังไม่จอง เบิก คืน หรือหักสต๊อก กรุณาตรวจของจริงก่อนใช้ตัดสินใจ</p></div>';
+        html+='<div id="v22-summary" class="text-sm font-semibold border-t pt-3">ยังไม่ได้ยืนยันของที่ใช้ต่อได้</div>';
+        html+='<div class="border-t pt-3 space-y-2"><label class="block text-xs font-bold">ประเภทข้อมูล<select id="v23-mode" class="w-full border rounded-lg p-2 mt-1"><option value="test">ทดลองระบบ (ไม่ใช้วางแผน)</option><option value="real">ตรวจวัสดุจริง (ใช้ประกอบแผนจำลอง)</option></select></label><label class="block text-xs font-bold">ชื่อผู้ตรวจ / ช่าง<input id="v23-inspector" maxlength="100" class="w-full border rounded-lg p-2 mt-1" placeholder="ชื่อผู้ตรวจจริง" /></label><button type="button" onclick="v23Save()" class="bg-teal-700 text-white rounded-lg px-4 py-2 font-semibold">บันทึกผลตรวจ</button><p id="v23-message" class="text-xs" aria-live="polite"></p><div id="v23-history" class="space-y-2"></div><p class="text-xs text-amber-800">บันทึกผลตรวจใน Firebase แยกจากสต๊อก · ข้อมูลทดลองไม่ถูกนำไปวางแผน · ผลตรวจจริงใช้เฉพาะเส้นเต็มที่ยังไม่ใช้ โดยอิงผลตรวจล่าสุดต่อวัสดุหนึ่งรายการ ไม่รวมเศษเส้นหรือกระจก · ไม่จอง ไม่เบิก ไม่คืน ไม่หักสต๊อก</p></div></div>';
         html+='<p class="text-xs text-amber-800">V21 เป็นแผนตัดแบบ best-fit จากเส้นในทะเบียนที่ยังคงเหลือ ไม่รวมเศษเส้นที่ไม่ได้ลงทะเบียน ไม่รับประกันว่าใช้เส้นน้อยที่สุด และยังไม่ตรวจความเข้ากันได้ของกระจกสองมิติ ประวัติเบิกเป็นข้อมูลระดับเลขงาน ไม่ใช่หลักฐานว่าวัสดุใช้กับงานเพิ่มได้ ไม่มีการจองหรือหักสต๊อก</p></div>';
         out.innerHTML=html;
         window.v22Current={checks:v22Checks,changeId:c.id,recipeId:r.id};
-        v22Recalc();
+        v22Recalc();v23RenderHistory();
       }catch(e){out.innerHTML=`<p class="text-red-700 border border-red-200 bg-red-50 p-3 rounded-xl">${invSafe(e.message)}</p>`;}
     }
     function v22Recalc(){
@@ -4024,6 +4047,64 @@
       s.className='text-sm text-teal-900 font-semibold border-t pt-3';
       s.textContent='ยืนยันเบื้องต้น: '+total.toLocaleString('th-TH')+' หน่วย จาก '+checked.toLocaleString('th-TH')+' รายการที่ระบุว่ายังไม่ใช้ · ยังไม่นำไปหักแผนตัดหรือสต๊อก';
     }
+    // V23: append-only, per-change material verification. No inventory mutation.
+    const v23State={rows:[],unsubscribe:null};
+    function v23Subscribe(){
+      if(v23State.unsubscribe){v23State.unsubscribe();v23State.unsubscribe=null;}
+      v23State.rows=[];v23RenderHistory();
+      if(!companyAccessReady)return;
+      v23State.unsubscribe=onSnapshot(cloudCollection('materialVerifications'),snap=>{
+        v23State.rows=snap.docs.map(d=>({id:d.id,...d.data()}));v23RenderHistory();
+      },e=>{const m=document.getElementById('v23-message');if(m)m.textContent='โหลดผลตรวจไม่ได้: '+e.message;});
+    }
+    function v23Latest(changeId,itemId){
+      return v23State.rows.filter(x=>x.changeId===changeId&&x.itemId===itemId&&x.mode==='real')
+        .sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0]||null;
+    }
+    function v23Usable(changeId,itemId,net){
+      const x=v23Latest(changeId,itemId);
+      if(!x||x.status!=='unused'||x.kind!=='bar')return 0;
+      // Never assume an old verification is still available after new movements.
+      const current=invState.moves.filter(m=>m.itemId===itemId&&!m.archived).length;
+      if(current!==x.itemMovementCount)return 0;
+      return Math.max(0,Math.min(Number(net)||0,Number(x.reusableQty)||0));
+    }
+    function v23RenderHistory(){
+      const el=document.getElementById('v23-history');if(!el)return;
+      const id=window.v22Current?.changeId;if(!id){el.textContent='';return;}
+      const rows=v23State.rows.filter(x=>x.changeId===id).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).slice(0,30);
+      el.innerHTML='<h5 class="font-semibold text-sm">ประวัติผลตรวจที่บันทึกแล้ว</h5>'+(rows.length?rows.map(x=>`<div class="bg-white border rounded-lg p-2 text-xs"><strong>${invSafe(x.itemName)}</strong> · ${x.mode==='test'?'ทดลอง (ไม่ใช้คำนวณ)':'ตรวจจริง'} · ${invSafe(x.status)} · ใช้ต่อได้ ${invSafe(x.reusableQty)} ${invSafe(x.unit)}<div class="text-slate-600">${invSafe(x.inspector)} · ${invSafe(x.createdAt)} · ${invSafe(x.note||'')}</div></div>`).join(''):'<p class="text-xs text-slate-600">ยังไม่มีผลตรวจที่บันทึก</p>');
+    }
+    async function v23Save(){
+      const msg=document.getElementById('v23-message');const say=(t,bad=false)=>{if(msg){msg.textContent=t;msg.className='text-xs '+(bad?'text-red-700':'text-teal-800');}};
+      if(!companyAccessReady||!userId||!isOwner())return say('ต้องเข้าสู่ระบบเจ้าของร้านก่อนบันทึกผลตรวจ',true);
+      const cur=window.v22Current;
+      if(!cur?.checks?.length)return say('ไม่มีรายการวัสดุให้ตรวจ',true);
+      const mode=document.getElementById('v23-mode')?.value;
+      const inspector=document.getElementById('v23-inspector')?.value.trim()||'';
+      if(mode!=='test'&&mode!=='real')return say('เลือกประเภทข้อมูล',true);
+      if(mode==='real'&&!inspector)return say('กรุณาระบุชื่อผู้ตรวจจริง',true);
+      const change=v19State.changes.find(c=>c.id===cur.changeId&&c.status==='approved');
+      if(!change)return say('ไม่พบงานเพิ่มเติมที่อนุมัติแล้ว',true);
+      const payloads=[];
+      for(let i=0;i<cur.checks.length;i++){
+        const x=cur.checks[i],status=document.getElementById('v22-status-'+i)?.value||'unknown';
+        const qty=Number(document.getElementById('v22-qty-'+i)?.value||0);
+        const note=document.getElementById('v22-note-'+i)?.value.trim()||'';
+        if(!['unused','cut','used','returned','unknown'].includes(status))return say('สถานะไม่ถูกต้อง',true);
+        if(!Number.isInteger(qty)||qty<0||qty>x.net||(status!=='unused'&&qty!==0))return say('จำนวนใช้ต่อได้ไม่ถูกต้องสำหรับ '+x.item.name,true);
+        if(mode==='real'&&status==='unknown')return say('การตรวจจริงต้องเลือกสถานะให้ครบทุกวัสดุ',true);
+        const movementCount=invState.moves.filter(m=>m.itemId===x.item.id&&!m.archived).length;
+        payloads.push({changeId:cur.changeId,sourceDocNo:change.sourceDocNo,recipeId:cur.recipeId,itemId:x.item.id,itemName:x.item.name,brand:x.item.brand||'',sku:x.item.sku||'',color:x.item.color||'',unit:x.item.unit||'',kind:x.kind,status,reusableQty:qty,netIssuedAtCheck:Number(x.net),lengthMm:Number(x.lengthMm||0),itemMovementCount:movementCount,note,mode,inspector:inspector||'ผู้ทดสอบ',createdByUid:userId,createdAt:new Date().toISOString()});
+      }
+      if(mode==='real'&&!confirm('ยืนยันว่าช่างตรวจวัสดุจริงแล้ว? ระบบจะเก็บผลตรวจเพื่อใช้จำลองแผนตัด แต่ยังไม่หักหรือจองสต๊อก'))return;
+      try{
+        say('กำลังบันทึกผลตรวจ...');
+        for(const p of payloads)await setDoc(doc(cloudCollection('materialVerifications')),p);
+        say('บันทึกผลตรวจ '+payloads.length+' รายการแล้ว · '+(mode==='test'?'ข้อมูลทดลองจะไม่ใช้วางแผน':'ข้อมูลจริงจะใช้ประกอบแผนตัดเมื่อคำนวณใหม่'));
+      }catch(e){say('บันทึกไม่สำเร็จ: '+e.message,true);}
+    }
+    window.v23Save=v23Save;
     window.v22Recalc=v22Recalc;
     window.v20Choose=v20Choose;window.v20Calculate=v20Calculate;
     window.v19ChooseDoc=v19ChooseDoc;window.v19Save=v19Save;window.v19Reset=v19Reset;window.v19SetStatus=v19SetStatus;
@@ -4037,7 +4118,7 @@
     function invMmFromMeters(v){const n=Number(v);return Number.isFinite(n)?Math.round(n*1000):NaN;}
     function invMsg(message,error=false){const el=document.getElementById('inv-alert');el.textContent=message;el.classList.remove('hidden');el.classList.toggle('bg-red-50',error);el.classList.toggle('bg-amber-50',!error);}
     function invCanWrite(){if(!companyAccessReady||!userId){invMsg('กรุณาเข้าสู่ระบบบัญชีร้านก่อน',true);return false;}return true;}
-    function invClearListeners(){v19Subscribe();invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
+    function invClearListeners(){v19Subscribe();v23Subscribe();invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
     function invSubscribe(){invClearListeners();if(!companyAccessReady)return;
       for(const [name,key] of [['inventoryItems','items'],['inventoryMovements','moves'],['inventoryRecipes','recipes']]){
         const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();v20Refresh();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
@@ -4531,5 +4612,72 @@
       });
     }
   </script>
+
+<script>
+/* V24 layout only. Existing DOM nodes are moved, never cloned or replaced.
+   All existing IDs, input values, listeners, Firebase hooks and recipe functions remain intact. */
+(function(){
+  function setupV24Inventory(){
+    const root=document.getElementById('tab-inventory');
+    if(!root || document.getElementById('v24-inventory-nav')) return;
+    const groups=[
+      {id:'jobs',name:'งานลูกค้า',title:'งานลูกค้า · คำนวณและติดตาม',desc:'เลือกเอกสาร ตรวจรายการวัสดุ และดูงานเพิ่มเติม',selectors:['#inv-v4-planner','#v19-change-orders','#v20-planner']},
+      {id:'stock',name:'สต๊อกวัสดุ',title:'สต๊อกวัสดุ',desc:'เพิ่มวัสดุและตรวจยอดคงเหลือได้โดยไม่ต้องมีงานลูกค้า',selectors:['#inv-summary','#inv-items']},
+      {id:'movement',name:'รับ–เบิก–คืน',title:'รับเข้า · เบิกใช้ · คืนของเหลือ',desc:'รายการรับ–เบิก–คืนยังใช้การบันทึกและตรวจสอบแบบเดิม',selectors:['#inv-v3-panel']},
+      {id:'recipes',name:'สูตรผลิต',title:'สูตรการผลิตและการคำนวณ',desc:'คงสูตรเดิมทั้งหมดไว้ ไม่เปลี่ยนวิธีคำนวณ',selectors:['#inv-v12-panel']},
+      {id:'history',name:'ประวัติ',title:'ประวัติการเคลื่อนไหว',desc:'ตรวจสอบรายการรับเข้า เบิกออก และคืนคลัง',selectors:['#inv-history-filter']}
+    ];
+    const nav=document.createElement('div');nav.id='v24-inventory-nav';nav.className='v24-nav';
+    nav.innerHTML='<div class="v24-nav-head"><div><div class="v24-nav-title">คลังสินค้าและงานผลิต</div><div class="v24-nav-sub">เลือกหัวข้อที่ต้องการ ไม่ต้องเลื่อนผ่านทุกฟอร์ม</div></div></div><div class="v24-tabs" role="tablist" aria-label="หมวดคลังสินค้า"></div>';
+    const panels={}, tabs={};
+    for(const g of groups){
+      const btn=document.createElement('button');btn.type='button';btn.className='v24-tab';btn.textContent=g.name;btn.setAttribute('role','tab');btn.id='v24-tab-'+g.id;btn.setAttribute('aria-controls','v24-panel-'+g.id);nav.querySelector('.v24-tabs').appendChild(btn);tabs[g.id]=btn;
+      const panel=document.createElement('div');panel.id='v24-panel-'+g.id;panel.className='v24-panel';panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',btn.id);panel.hidden=true;
+      const h=document.createElement('div');h.className='v24-panel-heading';h.textContent=g.title;panel.appendChild(h);
+      const d=document.createElement('p');d.className='v24-panel-description';d.textContent=g.desc;panel.appendChild(d);
+      panels[g.id]=panel;
+    }
+    // Capture original direct children before inserting any navigation.
+    const children=Array.from(root.children);
+    const findDirect=id=>children.find(el=>el.id===id);
+    // Original stock registry is an unnamed wrapper containing inv-items.
+    const stockWrapper=children.find(el=>el.querySelector && el.querySelector('#inv-items'));
+    // Original history wrapper contains the history filter.
+    const historyWrapper=children.find(el=>el.querySelector && el.querySelector('#inv-history-filter'));
+    const assigned=new Set();
+    function move(el,to){if(el && !assigned.has(el)){panels[to].appendChild(el);assigned.add(el)}}
+    move(findDirect('inv-v4-planner'),'jobs');
+    move(findDirect('v19-change-orders'),'jobs');
+    move(findDirect('v20-planner'),'jobs');
+    move(findDirect('inv-summary'),'stock');
+    move(stockWrapper,'stock');
+    move(findDirect('inv-v3-panel'),'movement');
+    move(findDirect('inv-v12-panel'),'recipes');
+    move(historyWrapper,'history');
+    // Keep all compatibility DOM nodes mounted and queryable, even when hidden.
+    const legacy=findDirect('inv-legacy-compat');if(legacy){legacy.hidden=true;legacy.style.display='none';}
+    // Shared messages visible in stock section, not duplicated.
+    move(findDirect('inv-alert'),'stock');
+    // If a future version adds an unrecognized section, preserve it in the stock view.
+    for(const el of children){if(!assigned.has(el) && el!==legacy && !el.classList.contains('bg-gradient-to-r')) move(el,'stock');}
+    root.prepend(nav);
+    for(const g of groups) root.appendChild(panels[g.id]);
+    function select(id,scroll){
+      if(!panels[id])id='jobs';
+      for(const g of groups){const active=g.id===id;panels[g.id].hidden=!active;tabs[g.id].setAttribute('aria-selected',String(active));tabs[g.id].tabIndex=active?0:-1;}
+      if(scroll && root.getBoundingClientRect().top<0) nav.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    for(const g of groups){tabs[g.id].addEventListener('click',()=>select(g.id,true));}
+    window.v24InventoryOpen=select;
+    select('jobs',false);
+    // Keep a clear path to the relevant section after user opens the existing editor.
+    const observer=new MutationObserver(()=>{if(!root.classList.contains('hidden') && !nav.dataset.shown){nav.dataset.shown='1';}});
+    observer.observe(root,{attributes:true,attributeFilter:['class']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setupV24Inventory);
+  else setupV24Inventory();
+})();
+</script>
+
 </body>
 </html>
