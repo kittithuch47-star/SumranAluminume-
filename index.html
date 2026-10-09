@@ -828,6 +828,27 @@
         <div class="flex flex-wrap gap-2"><button type="button" onclick="invV4Copy()" class="bg-sky-700 text-white rounded-xl px-4 py-3 text-sm font-bold">คัดลอกรายการที่ต้องซื้อ</button><button type="button" onclick="invV4Reset()" class="bg-slate-100 rounded-xl px-4 py-3 text-sm">ล้างรายการคำนวณ</button></div>
         <p class="text-xs text-amber-800">หมายเหตุ: เป็นรายการคำนวณชั่วคราว ยังไม่ใช่สูตรตัดที่อนุมัติ และไม่จอง/ตัดสต๊อก · จำนวนจากแค็ตตาล็อกและน้ำหนักกิโลกรัมในบิลซื้อไม่สามารถแทนจำนวนเส้นโดยอัตโนมัติได้</p>
       </div>
+      <!-- V29: local receipt photo + human verified inventory receiving; photo is NOT uploaded or saved. -->
+      <section id="v29-receipt-panel" class="rounded-2xl border border-sky-200 bg-white p-4 space-y-3">
+        <div><h3 class="font-bold text-lg text-sky-900">V29 · รับของเข้าคลังจากรูปบิลซื้อ</h3><p class="text-xs text-slate-600 mt-1">ถ่ายรูปหรือเลือกรูปบิล → ตรวจรายการจากรูป → เลือกวัสดุและจำนวน → ส่งไปตะกร้ารับเข้า → ยืนยันบันทึก</p></div>
+        <label class="block text-sm font-semibold">รูปบิลซื้อสินค้า (ภาพ JPG/PNG/HEIC ที่เบราว์เซอร์รองรับ)
+          <input id="v29-photo" type="file" accept="image/*" capture="environment" onchange="v29LoadPhoto(this)" class="block w-full mt-2 border rounded-xl p-2 bg-slate-50" />
+        </label>
+        <div id="v29-photo-box" hidden class="rounded-xl border bg-slate-50 p-2"><img id="v29-photo-preview" alt="ภาพบิลสำหรับตรวจรายการด้วยตนเอง" class="w-full max-h-80 object-contain rounded-lg" /></div>
+        <p class="text-xs text-amber-800">รุ่นนี้ยังไม่อ่าน OCR อัตโนมัติ รูปอยู่เฉพาะบนอุปกรณ์ระหว่างเปิดหน้านี้ ไม่ถูกส่งไป Firebase และไม่ถูกเก็บแนบกับประวัติการรับเข้า</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="text-xs font-semibold">ร้านที่ซื้อ / เลขบิล<input id="v29-reference" maxlength="120" placeholder="เช่น ร้านวัสดุ A / INV-001" class="block w-full border rounded-xl p-3 mt-1" /></label>
+          <label class="text-xs font-semibold">ค้นหาวัสดุในทะเบียน<input id="v29-search" oninput="v29RenderOptions()" placeholder="ชื่อ รหัส ยี่ห้อ สี" class="block w-full border rounded-xl p-3 mt-1" /></label>
+        </div>
+        <div class="grid sm:grid-cols-[minmax(0,1fr)_120px_auto] gap-2 items-end">
+          <label class="text-xs font-semibold">วัสดุที่ตรวจจากบิล<select id="v29-item" class="block w-full border rounded-xl p-3 mt-1"><option value="">เลือกวัสดุในทะเบียน...</option></select></label>
+          <label class="text-xs font-semibold">จำนวนรับ<input id="v29-qty" type="number" min="0.001" step="0.001" value="1" class="block w-full border rounded-xl p-3 mt-1" /></label>
+          <button type="button" onclick="v29AddLine()" class="bg-sky-700 text-white rounded-xl px-4 py-3 font-bold">+ เพิ่มรายการ</button>
+        </div>
+        <div id="v29-lines" class="text-sm text-slate-600">ยังไม่มีรายการจากบิล</div>
+        <button type="button" onclick="v29Transfer()" class="w-full rounded-xl p-3 font-bold bg-teal-700 text-white">ตรวจแล้ว · ส่งรายการไปตะกร้ารับเข้า</button>
+        <p id="v29-status" role="status" class="text-xs text-slate-600">การส่งเข้าตะกร้ายังไม่เพิ่มสต๊อก ต้องกดยืนยันรับเข้าในแบบฟอร์มด้านล่างอีกครั้ง</p>
+      </section>
       <div class="rounded-2xl border border-teal-200 bg-gradient-to-br from-sky-50 via-white to-teal-50 p-4 space-y-4" id="inv-v3-panel">
         <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-lg text-slate-900">รายการสต๊อกจริง: ซื้อ/รับของเข้า · เบิกไปใช้ · คืนของเหลือ</h3><p class="text-xs text-slate-600">เลือกหลายวัสดุแล้วบันทึกพร้อมกัน · ออกเลขที่ใบรายการให้อัตโนมัติ</p></div><span class="rounded-full bg-teal-100 text-teal-900 px-3 py-1 text-xs font-bold">ใช้งาน V3</span></div>
         <div class="grid grid-cols-3 gap-2" role="group" aria-label="ประเภทรายการ">
@@ -4136,12 +4157,12 @@
     function invMmFromMeters(v){const n=Number(v);return Number.isFinite(n)?Math.round(n*1000):NaN;}
     function invMsg(message,error=false){const el=document.getElementById('inv-alert');el.textContent=message;el.classList.remove('hidden');el.classList.toggle('bg-red-50',error);el.classList.toggle('bg-amber-50',!error);}
     function invCanWrite(){if(!companyAccessReady||!userId){invMsg('กรุณาเข้าสู่ระบบบัญชีร้านก่อน',true);return false;}return true;}
-    function invClearListeners(){if(v19State.unsubscribe){try{v19State.unsubscribe();}catch(_){ }v19State.unsubscribe=null;}if(v23State.unsubscribe){try{v23State.unsubscribe();}catch(_){ }v23State.unsubscribe=null;}invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
-    function invSubscribe(){invClearListeners();if(!companyAccessReady)return;
+    function invClearListeners(){v30Clear();if(v19State.unsubscribe){try{v19State.unsubscribe();}catch(_){ }v19State.unsubscribe=null;}if(v23State.unsubscribe){try{v23State.unsubscribe();}catch(_){ }v23State.unsubscribe=null;}invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
+    function invSubscribe(){invClearListeners();if(!companyAccessReady)return;v30Subscribe();
       const status=document.getElementById('inv-cloud-status');if(status){status.hidden=false;status.textContent='กำลังโหลดข้อมูลคลังจาก Firebase...';}
       const pending=new Set(['items','moves','recipes']);
       for(const [name,key] of [['inventoryItems','items'],['inventoryMovements','moves'],['inventoryRecipes','recipes']]){
-        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));pending.delete(key);if(status){status.hidden=pending.size===0;if(pending.size)status.textContent='กำลังโหลดข้อมูลคลัง: '+[...pending].join(', ');}renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();v20Refresh();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>{if(status){status.hidden=false;status.textContent='โหลด '+name+' ไม่สำเร็จ ('+String(e.code||'error')+'): '+e.message+' — ตรวจสิทธิ์บัญชีและ Firestore Rules';status.className='rounded-xl border border-red-300 bg-red-50 text-red-800 p-3 text-sm';}invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true);});
+        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));pending.delete(key);if(status){status.hidden=pending.size===0;if(pending.size)status.textContent='กำลังโหลดข้อมูลคลัง: '+[...pending].join(', ');}renderInventory();v30Render();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();v20Refresh();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>{if(status){status.hidden=false;status.textContent='โหลด '+name+' ไม่สำเร็จ ('+String(e.code||'error')+'): '+e.message+' — ตรวจสิทธิ์บัญชีและ Firestore Rules';status.className='rounded-xl border border-red-300 bg-red-50 text-red-800 p-3 text-sm';}invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true);});
         invState.unsubs.push(unsub);
       }
     }
@@ -4159,7 +4180,7 @@
     let invItemPage=0;
     function invPageChange(delta){invItemPage=Math.max(0,invItemPage+delta);renderInventory();}
     function invNorm(v){return String(v||'').toLocaleLowerCase().replace(/\s+/g,'');}
-    function renderInventory(){const root=document.getElementById('inv-items');if(!root)return;
+    function renderInventory(){v29RenderOptions();const root=document.getElementById('inv-items');if(!root)return;
       invRefreshBrands();
       const all=invState.items.filter(i=>!i.archived).slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'th'));
       const q=invNorm(document.getElementById('inv-search')?.value);const filtered=all.filter(i=>[i.name,i.brand,i.sku,i.color].some(v=>invNorm(v).includes(q)));const pages=Math.max(1,Math.ceil(filtered.length/20));invItemPage=Math.min(invItemPage,pages-1);const visibleItems=filtered.slice(invItemPage*20,(invItemPage+1)*20);
@@ -4465,12 +4486,14 @@
     async function invV3Save(){if(!invCanWrite()||invV3.busy)return;const entries=Object.entries(invV3.cart);if(!entries.length)return invMsg('กรุณาเลือกวัสดุ',true);if(entries.length>5)return invMsg('เพื่อรองรับข้อจำกัด Firestore Rules กรุณาบันทึกครั้งละไม่เกิน 5 รายการ',true);
       const type=invV3.type,jobNo=document.getElementById('inv-v3-job').value,reference=document.getElementById('inv-v3-ref').value.trim(),note=document.getElementById('inv-v3-note').value.trim();
       if(type==='issue'&&jobNo){
+        const check=v30CheckIssue(jobNo,entries);if(check)return invMsg(check,true);
         const repeats=entries.filter(([id])=>invV28JobNet(jobNo,id).issued>0);
         if(repeats.length&&!confirm('ตรวจสอบการเบิกซ้ำ: งาน '+jobNo+' เคยเบิกวัสดุ '+repeats.length+' รายการในตะกร้านี้แล้ว\nหากเป็นการเบิกเพิ่มเติมจริงให้กดตกลง มิฉะนั้นกดยกเลิกเพื่อคำนวณยอดคงค้างใหม่'))return;
       }
       const prefix=type==='receive'?'IN':type==='return'?'RET':'ISS';const batchRef=doc(cloudCollection('inventoryMovements'));const batchNo=prefix+'-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+batchRef.id.slice(0,8).toUpperCase();
       const refs=entries.map(([id,qty],idx)=>({id,qty,itemRef:cloudPath('inventoryItems',id),moveRef:idx===0?batchRef:doc(cloudCollection('inventoryMovements'))}));
-      invV3.busy=true;invV3Render();try{await runTransaction(db,async tx=>{const snaps=[];for(const r of refs)snaps.push(await tx.get(r.itemRef));for(let j=0;j<refs.length;j++){const r=refs[j],snap=snaps[j];if(!snap.exists())throw Error('วัสดุบางรายการถูกลบ');const item=snap.data(),old=Number(item.quantity),delta=type==='issue'?-r.qty:r.qty,next=Math.round((old+delta)*1000)/1000;if(!Number.isFinite(old)||old<0||next<0)throw Error('สต๊อกไม่พอ: '+item.name);const movement={itemId:r.id,itemName:item.name,unit:item.unit,type,quantity:r.qty,delta,previousQuantity:old,nextQuantity:next,jobNo,reference,note,documentNo:batchNo,batchId:batchRef.id,actorUid:userId,actorEmail:auth.currentUser?.email||'',actorName:auth.currentUser?.displayName||'',createdAt:new Date().toISOString()};tx.update(r.itemRef,{quantity:next,lastMovementId:r.moveRef.id});tx.set(r.moveRef,movement);}});document.getElementById('inv-v3-document').value=batchNo;invV3.cart={};invMsg('บันทึกสำเร็จ เลขที่รายการ '+batchNo);}
+      invV3.busy=true;invV3Render();try{await runTransaction(db,async tx=>{const snaps=[];for(const r of refs)snaps.push(await tx.get(r.itemRef));if(type==='issue'&&jobNo){const plan=v30Current();const all=new Map(refs.map((r,j)=>[r.id,Number(snaps[j].data()?.quantity||0)]));for(const row of plan.rows){if(!all.has(row.id)){const extra=await tx.get(cloudPath('inventoryItems',row.id));all.set(row.id,extra.exists()?Number(extra.data().quantity||0):NaN);}}const live=v30CheckIssue(jobNo,entries,[...all].map(([id,quantity])=>({id,quantity})));if(live)throw Error(live);}
+      for(let j=0;j<refs.length;j++){const r=refs[j],snap=snaps[j];if(!snap.exists())throw Error('วัสดุบางรายการถูกลบ');const item=snap.data(),old=Number(item.quantity),delta=type==='issue'?-r.qty:r.qty,next=Math.round((old+delta)*1000)/1000;if(!Number.isFinite(old)||old<0||next<0)throw Error('สต๊อกไม่พอ: '+item.name);const movement={itemId:r.id,itemName:item.name,unit:item.unit,type,quantity:r.qty,delta,previousQuantity:old,nextQuantity:next,jobNo,reference,note,documentNo:batchNo,batchId:batchRef.id,actorUid:userId,actorEmail:auth.currentUser?.email||'',actorName:auth.currentUser?.displayName||'',createdAt:new Date().toISOString()};tx.update(r.itemRef,{quantity:next,lastMovementId:r.moveRef.id});tx.set(r.moveRef,movement);}});document.getElementById('inv-v3-document').value=batchNo;invV3.cart={};invMsg('บันทึกสำเร็จ เลขที่รายการ '+batchNo);}
       catch(e){invMsg('บันทึกไม่สำเร็จ: '+e.message,true);}finally{invV3.busy=false;invV3Render();}
     }
 
@@ -4637,9 +4660,104 @@
 
     Object.assign(window,{invV8ToggleRecipeOffset,invV8FilterRecipeItems,invV8MissingMaterial,invRecipeAddLine,invRecipeRemoveLine,invRecipeSaveLine,invRecipeApprove,invRecipeCalculate,invV7CalculateLine,invV7ApplyFixed});
     Object.assign(window,{invV4RefreshDocuments,invV3JobOptions,invV3ChooseJob});
+    // V29 photo-assisted intake. Intentionally no OCR, upload, or photo persistence.
+    const v29Draft={lines:new Map(),photoUrl:null};
+    function v29Status(message,error=false){const el=document.getElementById('v29-status');if(el){el.textContent=message;el.className='text-xs '+(error?'text-red-700':'text-slate-600');}}
+    function v29LoadPhoto(input){
+      if(v29Draft.photoUrl){URL.revokeObjectURL(v29Draft.photoUrl);v29Draft.photoUrl=null;}
+      const f=input.files&&input.files[0],box=document.getElementById('v29-photo-box'),img=document.getElementById('v29-photo-preview');
+      if(!f){box.hidden=true;img.removeAttribute('src');return;}
+      if(!f.type.startsWith('image/')){input.value='';box.hidden=true;return v29Status('กรุณาเลือกไฟล์ภาพที่เบราว์เซอร์รองรับ',true);}
+      if(f.size>15*1024*1024){input.value='';box.hidden=true;return v29Status('ภาพใหญ่เกิน 15 MB กรุณาลดขนาดก่อน',true);}
+      v29Draft.photoUrl=URL.createObjectURL(f);img.src=v29Draft.photoUrl;box.hidden=false;
+      v29Status('เปิดภาพแล้ว กรุณาตรวจชื่อวัสดุและจำนวนจากรูปก่อนเพิ่มรายการ');
+    }
+    function v29RenderOptions(){
+      const sel=document.getElementById('v29-item');if(!sel)return;
+      const old=sel.value,q=invNorm(document.getElementById('v29-search')?.value||'');
+      const matches=invState.items.filter(i=>!i.archived&&(!q||[i.name,i.brand,i.sku,i.color].some(v=>invNorm(v).includes(q)))).slice(0,100);
+      sel.replaceChildren(new Option('เลือกวัสดุในทะเบียน...', ''));
+      for(const i of matches)sel.add(new Option([i.name,i.brand,i.sku,i.color,i.unit].filter(Boolean).join(' · '),i.id));
+      if(matches.some(i=>i.id===old))sel.value=old;
+    }
+    function v29RenderLines(){
+      const el=document.getElementById('v29-lines');if(!el)return;
+      if(!v29Draft.lines.size){el.textContent='ยังไม่มีรายการจากบิล';return;}
+      el.replaceChildren();
+      for(const [id,qty] of v29Draft.lines){
+        const i=invState.items.find(x=>x.id===id);if(!i)continue;
+        const row=document.createElement('div');row.className='flex flex-wrap gap-2 justify-between items-center border rounded-lg p-2 mb-2';
+        const name=document.createElement('span');name.textContent=i.name+' · '+qty+' '+(i.unit||'');
+        const remove=document.createElement('button');remove.type='button';remove.textContent='ลบ';remove.className='text-red-700 border rounded-lg px-3 py-2';remove.addEventListener('click',()=>{v29Draft.lines.delete(id);v29RenderLines();});
+        row.append(name,remove);el.append(row);
+      }
+    }
+    function v29AddLine(){
+      const id=document.getElementById('v29-item')?.value,qty=Number(document.getElementById('v29-qty')?.value);
+      if(!invState.items.some(i=>i.id===id&&!i.archived))return v29Status('กรุณาเลือกวัสดุจากทะเบียนให้ตรงชื่อ รหัส และสี',true);
+      if(!Number.isFinite(qty)||qty<=0||Math.round(qty*1000)!==qty*1000)return v29Status('จำนวนต้องมากกว่า 0 และมีทศนิยมไม่เกิน 3 ตำแหน่ง',true);
+      if(!v29Draft.lines.has(id)&&v29Draft.lines.size>=5)return v29Status('บันทึกครั้งละไม่เกิน 5 รายการตามข้อจำกัดระบบรับเข้าเดิม',true);
+      v29Draft.lines.set(id,Math.round(((v29Draft.lines.get(id)||0)+qty)*1000)/1000);v29RenderLines();v29Status('เพิ่มรายการแล้ว ตรวจชื่อ สี หน่วย และจำนวนให้ตรงบิล');
+    }
+    function v29Transfer(){
+      if(!v29Draft.lines.size)return v29Status('กรุณาเพิ่มรายการจากบิลก่อน',true);
+      if(!invCanWrite())return v29Status('บัญชีนี้ไม่มีสิทธิ์บันทึกคลัง',true);
+      if(Object.keys(invV3.cart).length&&!confirm('ตะกร้ารับ/เบิกมีรายการเดิมอยู่ ต้องการแทนที่ด้วยรายการจากบิลนี้หรือไม่?'))return;
+      invV3SetType('receive');invV3.cart=Object.fromEntries(v29Draft.lines);
+      const ref=document.getElementById('v29-reference').value.trim();document.getElementById('inv-v3-ref').value=ref;
+      invV3Render();v29Status('ส่ง '+v29Draft.lines.size+' รายการไปตะกร้ารับเข้าแล้ว กรุณาตรวจอีกครั้งและกดยืนยันรับเข้า (รูปภาพไม่ถูกบันทึก)');
+      document.getElementById('inv-v3-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    Object.assign(window,{v29LoadPhoto,v29RenderOptions,v29AddLine,v29Transfer});
+    document.addEventListener('DOMContentLoaded',()=>{v29RenderOptions();v29RenderLines();});
     window.invV3SetType=invV3SetType;window.invV3Add=invV3Add;window.invV3Adjust=invV3Adjust;window.invV3ClearCart=invV3ClearCart;window.invV3SetQty=invV3SetQty;window.invV3Save=invV3Save;window.invV3Render=invV3Render;
     Object.assign(window,{invV4Add,invV4Remove,invV4Qty,invV4Render,invV4Copy,invV4Reset});
     window.invPageChange=invPageChange;window.invArchiveVisibleMoves=invArchiveVisibleMoves;window.invEditItem=invEditItem;window.invSaveItemEdit=invSaveItemEdit;window.invCancelEdit=invCancelEdit;window.invDeleteItem=invDeleteItem;window.invArchiveItem=invArchiveItem;window.invArchiveMove=invArchiveMove;window.invDeleteRecipe=invDeleteRecipe;window.invV4PickDocument=invV4PickDocument;window.renderInventory=renderInventory;window.invQuickMove=invQuickMove;window.invRememberBrand=invRememberBrand;window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
+
+
+    // V30: procurement statuses are metadata only; receiving still uses the original
+    // inventory transaction. Never treat "purchased" as received stock.
+    let v30Plan=null,v30Unsub=null,v30Jobs=new Map(),v30Error='';
+    function v30Clear(){if(v30Unsub){try{v30Unsub();}catch(_){}v30Unsub=null;}v30Jobs.clear();v30Plan=null;v30Error='';}
+    function v30Subscribe(){
+      v30Unsub=onSnapshot(cloudCollection('inventoryJobPurchases'),snap=>{
+        v30Jobs=new Map(snap.docs.map(d=>[d.id,d.data()]));v30Error='';v30Render();
+      },e=>{v30Error='อ่านสถานะจัดซื้อไม่ได้: '+e.message;v30Render();});
+    }
+    function v30DocId(job){return encodeURIComponent(job).replace(/%/g,'_').slice(0,350);}
+    function v30Current(){return v30Plan&&v30Plan.jobNo===invV28JobNumber()?v30Plan:null;}
+    function v30CheckIssue(job,entries,liveItems){
+      const p=v30Current();if(!p||p.jobNo!==job)return 'ต้องเลือกบิลและกดคำนวณรวมทั้งบิลใน V30 ก่อนเบิก เพื่อยืนยันความพร้อมของวัสดุทั้งงาน';
+      if(v30Error)return v30Error;
+      if(p.warnings.length||p.glassCount)return 'แผนตัดหรือกระจกยังไม่ผ่านการตรวจทั้งหมด ห้ามเบิกผลิต';
+      const stock=new Map((liveItems||invState.items).map(i=>[i.id,Number(i.quantity||0)]));
+      for(const r of p.rows){if(!Number.isFinite(stock.get(r.id))||stock.get(r.id)<r.remaining)return 'วัสดุในงานยังไม่ครบหรือยอดสต๊อกเปลี่ยน กรุณารับเข้าและคำนวณใหม่';}
+      const planned=new Map(p.rows.map(r=>[r.id,r.remaining]));
+      for(const [id,qty] of entries){if(!planned.has(id)||qty>planned.get(id)+0.0001)return 'ตะกร้าเบิกไม่ตรงยอดคงค้างของบิล กรุณาคำนวณและเตรียมเบิกใหม่';}
+      return '';
+    }
+    function v30Render(){
+      const host=document.getElementById('v30-workflow');if(!host)return;
+      const p=v30Current();if(!p){host.innerHTML='<p class="text-sm text-slate-600">เลือกบิลและสูตร จากนั้นกด “คำนวณรวมทั้งบิลและตรวจสต๊อก” เพื่อดูสถานะความพร้อม</p>';return;}
+      const record=v30Jobs.get(v30DocId(p.jobNo));
+      const missing=p.rows.filter(r=>r.remaining>Number(invState.items.find(i=>i.id===r.id)?.quantity||0));
+      const blockers=p.warnings.length+p.glassCount;
+      const ready=!missing.length&&!blockers&&!v30Error;
+      const status=ready?'พร้อมเบิกผลิต':blockers?'ต้องตรวจสูตร/แผนตัด':'รอสินค้า';
+      const rows=p.rows.map(r=>{const i=invState.items.find(x=>x.id===r.id),stock=Number(i?.quantity||0),short=Math.max(0,r.remaining-stock);return `<tr class="border-b"><td class="p-2">${invSafe(i?.name||r.id)}<div class="text-xs text-slate-500">${invSafe(i?.sku||'')} · ${invSafe(i?.color||'')}</div></td><td class="p-2 text-right">${invMoney(r.remaining)}</td><td class="p-2 text-right">${invMoney(stock)}</td><td class="p-2 text-right ${short?'text-red-700 font-bold':'text-emerald-700'}">${short?invMoney(short)+' ขาด':'ครบ'}</td></tr>`;}).join('');
+      host.innerHTML=`<div class="space-y-3"><div class="flex flex-wrap justify-between gap-2"><strong>V30 · ตรวจความพร้อมทั้งงาน ${invSafe(p.jobNo)}</strong><span class="rounded-lg px-3 py-1 font-bold ${ready?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-900'}">${status}</span></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="bg-slate-100"><th class="p-2 text-left">วัสดุ</th><th class="p-2 text-right">ยังต้องเบิก</th><th class="p-2 text-right">มีในคลัง</th><th class="p-2 text-right">ผล</th></tr></thead><tbody>${rows}</tbody></table></div>${missing.length?'<p class="text-red-700 text-sm">ต้องซื้อเพิ่ม: '+missing.map(r=>{const i=invState.items.find(x=>x.id===r.id);return invSafe(i?.name||r.id)+' '+invMoney(r.remaining-Number(i?.quantity||0))+' '+invSafe(i?.unit||'');}).join(' · ')+'</p>':''}${blockers?'<p class="text-red-700 text-sm">ยังมีรายการกระจกหรือแผนตัดที่ต้องตรวจ ไม่อนุญาตเบิก</p>':''}${v30Error?'<p class="text-red-700">${invSafe(v30Error)}</p>':''}<div class="flex flex-wrap gap-2"><button type="button" onclick="v30SetStatus('ordered')" class="border rounded-xl px-3 py-2 text-sm">ยืนยันจัดซื้อแล้ว</button><button type="button" onclick="v30SetStatus('waiting')" class="border rounded-xl px-3 py-2 text-sm">รอรับสินค้า</button><button type="button" onclick="v30Receive()" class="bg-sky-800 text-white rounded-xl px-3 py-2 text-sm">รับสินค้าที่ซื้อเข้าคลัง</button><button type="button" onclick="v30Recheck()" class="border rounded-xl px-3 py-2 text-sm">ตรวจสต๊อกใหม่</button></div><p class="text-xs text-slate-600">สถานะจัดซื้อ: ${record?.status==='ordered'?'จัดซื้อแล้ว':record?.status==='waiting'?'รอรับสินค้า':'ยังไม่บันทึก'} · กดจัดซื้อแล้วไม่เพิ่มสต๊อก ต้องยืนยันรับเข้าจริง</p><button type="button" onclick="v30Prepare()" ${ready?'':'disabled'} class="w-full rounded-xl px-4 py-3 font-bold ${ready?'bg-teal-700 text-white':'bg-slate-200 text-slate-500 cursor-not-allowed'}">${ready?'เตรียมเบิกผลิต (วัสดุครบทั้งงาน)':'ล็อกการเบิก: วัสดุหรือแผนตัดยังไม่ครบ'}</button><p class="text-xs text-amber-800">ตรวจสต๊อกล่าสุดก่อนเบิกทุกครั้ง · ยังไม่มีระบบจองของข้ามงานหรือการบังคับล็อกใน Firestore Rules</p></div>`;
+    }
+    async function v30SetStatus(status){
+      const p=v30Current();if(!p)return alert('กรุณาคำนวณบิลก่อน');
+      if(v30Error)return alert(v30Error);
+      if(!invCanWrite())return;
+      try{await setDoc(cloudPath('inventoryJobPurchases',v30DocId(p.jobNo)),{jobNo:p.jobNo,status,updatedAt:new Date().toISOString(),updatedByUid:userId},{merge:true});invMsg('บันทึกสถานะจัดซื้อแล้ว');}
+      catch(e){invMsg('บันทึกสถานะจัดซื้อไม่สำเร็จ: '+e.message,true);}
+    }
+    function v30Receive(){const p=v30Current();if(!p)return alert('กรุณาคำนวณบิลก่อน');invV3SetType('receive');document.getElementById('inv-v3-ref').value='จัดซื้อสำหรับ '+p.jobNo;window.v24InventoryOpen?.('movement',true);document.getElementById('inv-v3-panel')?.scrollIntoView({behavior:'smooth'});}
+    function v30Recheck(){invV27PlanBill();}
+    function v30Prepare(){const p=v30Current();if(!p)return alert('กรุณาคำนวณบิลก่อน');const error=v30CheckIssue(p.jobNo,p.rows.filter(r=>r.remaining>0).map(r=>[r.id,r.remaining]));if(error)return alert(error);const pending=p.rows.filter(r=>r.remaining>0);if(!pending.length)return alert('งานนี้เบิกครบตามสูตรแล้ว');if(pending.length>5)return alert('มีมากกว่า 5 รายการ กรุณาแบ่งเบิก แต่ต้องตรวจสต๊อกทั้งงานก่อน');invV4.lines=Object.fromEntries(pending.map(r=>[r.id,r.remaining]));document.getElementById('inv-v4-job').value=p.jobNo;invV4Render();invV25PrepareIssue();}
+    Object.assign(window,{v30SetStatus,v30Receive,v30Recheck,v30Prepare});
 
     // V28: Job-level net issue history (issues less returns), read-only.
     function invV28JobNet(jobNo,itemId){
@@ -4660,6 +4778,7 @@
     // V27: Aggregate approved bill recipes and reconcile actual registered full bars.
     // Planning only: never writes inventory or changes saved recipes/documents.
     function invV27PlanBill(){
+      v30Plan=null;v30Render();
       const host=document.getElementById('inv-v27-result');if(!host)return;
       const fail=m=>{host.innerHTML='<p role="alert" class="text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-3">'+invSafe(m)+'</p>';};
       if(!invV7Selected)return fail('กรุณาเลือกเอกสารลูกค้าก่อน');
@@ -4711,6 +4830,7 @@
         return {item,total,history,remaining};
       });
       const shortages=rows.filter(z=>z.remaining>Number(z.item?.quantity||0));
+      v30Plan={jobNo,rows:rows.map(z=>({id:z.item.id,total:z.total,remaining:z.remaining})),warnings:[...warnings],glassCount:glass.length,calculatedAt:Date.now()};v30Render();
       const lines=rows.map(({item,total,history,remaining})=>`<div class="border-b py-2"><strong>${invSafe(item.name)}</strong><div class="text-xs text-slate-600">${invSafe(item.brand||'')} · ${invSafe(item.sku||'')} · ${invSafe(item.color||'')} · ${invSafe(item.lengthMm?invMoney(item.lengthMm/1000)+' ม.':'อุปกรณ์')}</div><div>ต้องใช้ตามสูตร <b>${invMoney(total)}</b> ${invSafe(item.unit||'')} · เคยเบิก <b>${invMoney(history.issued)}</b> · คืน <b>${invMoney(history.returned)}</b> · เบิกสุทธิ <b>${invMoney(history.net)}</b></div><div>ยังต้องเบิก <b>${invMoney(remaining)}</b> · ในคลัง <b>${invMoney(item.quantity)}</b> · <b class="${remaining>Number(item.quantity)?'text-rose-700':'text-teal-700'}">${remaining>Number(item.quantity)?'ขาด '+invMoney(remaining-Number(item.quantity)):remaining===0?'ครบตามสูตรแล้ว':'เพียงพอ'}</b></div></div>`).join('');
       host.innerHTML='<div class="rounded-xl border border-teal-200 bg-teal-50 p-3 space-y-2"><strong>V28 · สรุปยอดต้องใช้ / เบิกสะสม / คงเหลือที่ต้องเบิก (ยังไม่ตัดสต๊อก)</strong><p class="text-xs">งาน '+invSafe(jobNo)+' · '+sales.length+' รายการสินค้า · '+rows.length+' รหัสวัสดุ · ต้องซื้อเพิ่ม '+shortages.length+' รหัส</p>'+lines+(glass.length?'<p class="text-amber-800">กระจก '+glass.length+' รายการยังต้องตรวจขนาดแผ่นจริง ไม่รวมในยอดเบิกนี้</p>':'')+(warnings.length?'<p role="alert" class="text-rose-800">'+warnings.map(invSafe).join(' / ')+'</p>':'')+'<p class="text-amber-800 text-xs">ยอดเบิกสะสมคำนวณจากประวัติที่ไม่ถูกซ่อนของเลขงานเดียวกัน; หากเคยซ่อนประวัติ หรือเบิกเพื่อใช้งานคนละส่วนของบิล ให้ตรวจด้วยตนเอง · ยังไม่หักยอดจองงานอื่น และแผนตัดต้องตรวจจริง</p><button type="button" id="inv-v27-transfer" class="rounded-lg bg-teal-700 text-white px-4 py-3 font-bold">นำยอดที่ยังต้องเบิกไปตารางตรวจสต๊อก</button></div>';
       document.getElementById('inv-v27-transfer').onclick=()=>{
@@ -4847,6 +4967,7 @@
   const actions=document.createElement('div');actions.id='inv-v25-actions';actions.className='rounded-2xl border border-teal-200 bg-white p-3 sm:p-4';
   actions.innerHTML=`<div class="flex flex-wrap justify-between items-center gap-2 mb-3"><div><strong class="text-teal-900">ทำงานจากบิลเดียวกัน</strong><p class="text-xs text-slate-500">เลือกบิล → จับคู่สูตร → ตรวจสต๊อก → ซื้อที่ขาด หรือเตรียมเบิก</p></div><span class="text-xs text-slate-500">V25</span></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2"><button type="button" id="inv-v25-buy" class="rounded-xl bg-sky-50 border border-sky-200 text-sky-900 font-bold px-3 py-3 text-sm">คัดลอกรายการซื้อที่ขาด</button><button type="button" id="inv-v25-issue" class="rounded-xl bg-teal-700 text-white font-bold px-3 py-3 text-sm">เตรียมเบิกตามบิล</button><button type="button" id="inv-v25-receive" class="rounded-xl bg-white border border-slate-300 text-slate-800 font-bold px-3 py-3 text-sm">รับของที่ซื้อเข้าคลัง</button></div><p class="text-xs text-amber-800 mt-3">การเตรียมเบิกจะนำเฉพาะวัสดุที่อยู่ในรายการตรวจสต๊อกไปใส่ตะกร้า ไม่รวมชิ้นตัดที่ยังไม่ได้แปลงเป็นจำนวนเส้นจริง และไม่ตัดสต๊อกอัตโนมัติ</p>`;
   planner.insertBefore(actions,document.getElementById('inv-v4-totals'));
+  actions.insertAdjacentHTML('beforeend','<section id="v30-workflow" class="mt-3 border-t pt-3" aria-live="polite"></section>');
   actions.insertAdjacentHTML('beforeend','<div class="mt-3 border-t pt-3"><button type="button" onclick="invV27PlanBill()" class="rounded-xl bg-sky-800 text-white px-4 py-3 font-bold w-full">คำนวณรวมทั้งบิลและตรวจสต๊อก (V27)</button><div id="inv-v27-result" class="mt-3 text-sm"></div></div>');
   document.getElementById('inv-v25-buy').addEventListener('click',()=>{if(!window.invV4Copy)return alert('เครื่องมือรายการซื้อยังโหลดไม่เสร็จ');window.invV4Copy();});
   document.getElementById('inv-v25-issue').addEventListener('click',()=>{if(!window.invV25PrepareIssue)return alert('เครื่องมือเบิกวัสดุยังโหลดไม่เสร็จ');window.invV25PrepareIssue();});
