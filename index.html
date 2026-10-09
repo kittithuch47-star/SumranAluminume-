@@ -761,7 +761,31 @@
 #v38-sidebar{top:24px!important}
 @media(min-width:900px){#v38-shell{grid-template-columns:235px minmax(0,1fr)!important;max-width:1440px;margin:auto}#v38-main{max-width:none!important}}
 @media(max-width:760px){#v38-shell{display:block!important}#v38-main #inv-v4-planner{padding:14px!important}#v38-sidebar{min-height:0!important}}
-</style></head>
+</style>
+<style id="v41-style">
+#v38-main #v36-assistant{display:none!important}
+#v41-wizard{background:#fff;border:1px solid #dce9f1;border-radius:23px;overflow:hidden;box-shadow:0 14px 36px #12395a10;margin-bottom:22px;font-family:inherit}
+#v41-wizard .v41-hero{background:linear-gradient(110deg,#10385b,#087e75);color:white;padding:25px 30px}
+#v41-wizard h2{font-size:25px;font-weight:800;margin:0 0 5px}#v41-wizard p{margin:0}
+#v41-wizard .v41-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:20px 25px 4px}
+#v41-wizard .v41-pill{border:1px solid #dce8ef;background:#f6f9fc;border-radius:13px;padding:12px 8px;text-align:center;font-size:12px;color:#56718a;font-weight:700}
+#v41-wizard .v41-pill.active{background:#dff8f1;color:#066c62;border:2px solid #18aa96}#v41-wizard .v41-pill.done{background:#f0fdfa;color:#087e75}
+#v41-wizard .v41-content{padding:22px 26px}#v41-wizard .v41-heading{font-size:20px;font-weight:800;color:#153e57;margin-bottom:6px}
+#v41-wizard .v41-hint{font-size:13px;color:#60768b;margin-bottom:17px}
+#v41-wizard .v41-actions{display:flex;flex-wrap:wrap;gap:10px;border-top:1px solid #e3edf2;padding-top:16px;margin-top:20px}
+#v41-wizard button.v41-next{background:#087e75;color:#fff;border:0;border-radius:12px;padding:13px 23px;font-weight:800;cursor:pointer}
+#v41-wizard button.v41-secondary{border:1px solid #d5e1e9;background:#fff;border-radius:12px;padding:12px 17px;font-weight:700;color:#31536b;cursor:pointer}
+#v41-wizard .v41-status{padding:13px;border-radius:12px;background:#edf8fd;color:#225372;font-size:13px;margin:12px 0}
+#v41-wizard .v41-status.warn{background:#fff5e8;color:#874f15}#v41-wizard .v41-stock{display:grid;gap:9px;margin-top:12px}
+#v41-wizard .v41-stock-row{display:flex;justify-content:space-between;gap:12px;border:1px solid #e1eaf0;border-radius:12px;padding:12px}
+#v41-wizard .v41-stock-row strong{color:#153c56}#v41-wizard .v41-stock-row small{color:#627b90}
+#v41-wizard .v41-pane[hidden]{display:none!important}#v41-wizard .v41-pane #inv-v4-planner{border:0!important;box-shadow:none!important;padding:0!important}
+#v41-wizard #inv-v4-planner>div:first-child,#v41-wizard #inv-v4-planner>p:last-child{display:none}
+#v41-wizard .v41-hide-in-step{display:none!important}
+#v38-main #v24-panel-jobs> #inv-v4-planner{display:none}
+@media(max-width:760px){#v41-wizard .v41-hero{padding:18px}#v41-wizard h2{font-size:20px}#v41-wizard .v41-content{padding:16px}#v41-wizard .v41-track{padding:12px 10px 0;gap:4px}#v41-wizard .v41-pill{padding:10px 3px;font-size:10px}}
+</style>
+</head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
   <header class="bg-gradient-to-r from-sky-800 to-slate-900 text-white shadow-md sticky top-0 z-40 no-print">
@@ -4450,6 +4474,7 @@
     // V3 batch cart. A single Firestore transaction updates all distinct materials.
     // V4 stock planning: intentionally client-side only; does not write or mutate stock.
     const invV4={lines:{}};
+    window.v41ReadRows=()=>Object.entries(invV4.lines).map(([id,qty])=>({item:invState.items.find(i=>i.id===id),qty:Number(qty)})).filter(r=>r.item&&r.qty>0);
     function invV4RefreshDocuments(){
       const el=document.getElementById('inv-v4-doc'),results=document.getElementById('inv-v4-doc-results');if(!el||!results)return;
       const q=invNorm(document.getElementById('inv-v4-doc-search')?.value);
@@ -5344,5 +5369,30 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure);else ensure();
 })();
 </script>
+<script id="v41-script">
+/* V41 guided inventory: reuses original inputs and handlers. No stock mutations in this layer. */
+(function(){
+ let step=0, ready=false;
+ const names=['📄 เลือกบิล','📐 คำนวณวัสดุ','📦 ตรวจสต๊อก','🛒 จัดซื้อ / เบิก'];
+ const labels=['เลือกใบเสนอราคา','ตรวจสูตรและจำนวนที่ต้องใช้','เปรียบเทียบวัสดุกับสต๊อกจริง','ตัดสินใจจัดซื้อหรือเตรียมเบิก'];
+ const hints=['ค้นหาใบเสนอราคาหรือชื่อลูกค้า แล้วคลิกเอกสารที่ต้องการ','จับคู่สูตรที่ช่างอนุมัติให้ครบ แล้วคำนวณรวมทั้งบิล','แสดงยอดคงเหลือจริงตามทะเบียนคลัง ก่อนตัดสินใจ','ถ้าขาดให้บันทึกเข้าศูนย์จัดซื้อ ถ้าครบจึงเตรียมเบิกได้'];
+ const $=id=>document.getElementById(id);
+ function info(message,warn=false){const e=$('v41-message');e.textContent=message;e.className='v41-status'+(warn?' warn':'');}
+ function job(){return String($('inv-v4-doc-selected')?.textContent||'').includes('เลือกแล้ว:')?String($('inv-v4-job')?.value||'').trim():'';}
+ function getRows(){return window.v41ReadRows?.()||[];}
+ function stockRender(){const rows=getRows();const host=$('v41-stock');const no=$('v41-stock-note');host.replaceChildren();if(!rows.length){no.textContent='ยังไม่มีวัสดุที่คำนวณและส่งมาตรวจสต๊อก กรุณาตรวจสูตรแล้วกดคำนวณรวมทั้งบิล';return false;}
+  let short=false;for(const r of rows){const available=Math.max(0,Number(r.item.quantity||0));const missing=Math.max(0,r.qty-available);if(missing>0.0001)short=true;const el=document.createElement('div');el.className='v41-stock-row';const a=document.createElement('div'),b=document.createElement('div');const title=document.createElement('strong');title.textContent=r.item.name||'วัสดุ';const detail=document.createElement('small');detail.textContent='ต้องใช้ '+r.qty+' '+(r.item.unit||'')+' · คลังมี '+available+' '+(r.item.unit||'');a.append(title,document.createElement('br'),detail);b.style.fontWeight='800';b.style.color=missing>0?'#c2410c':'#087e75';b.textContent=missing>0?'ขาด '+Number(missing.toFixed(3)):'เพียงพอ';el.append(a,b);host.appendChild(el);}no.textContent=short?'พบวัสดุขาด ต้องจัดซื้อและรับเข้าจริงก่อนเบิกผลิต':'วัสดุตามรายการตรวจนี้มีเพียงพอ แต่ต้องตรวจยอดจองงานอื่นและประวัติเบิกซ้ำก่อน';return !short;
+ }
+ function show(n){step=Math.max(0,Math.min(3,n));$('v41-track').innerHTML=names.map((name,i)=>'<div class="v41-pill '+(i===step?'active':i<step?'done':'')+'">'+name+'</div>').join('');for(let i=0;i<4;i++)$('v41-pane-'+i).hidden=i!==step;$('v41-title').textContent=labels[step];$('v41-hint').textContent=hints[step];$('v41-prev').hidden=step===0;$('v41-next').textContent=step===3?'เริ่มงานลูกค้าใหม่':'ถัดไป →';const plan=$('inv-v4-planner');if(plan){const blocks=[...plan.children];blocks.forEach((el,i)=>{if(i===0)return;const search=el.querySelector?.('#inv-v4-doc-search');const inStep0=!!search;const visible=step===0?inStep0:step===1?!inStep0: false;el.classList.toggle('v41-hide-in-step',!visible);});}if(step===2||step===3){const enough=stockRender();if(step===3)$('v41-stock-note2').textContent=enough?'วัสดุตามรายการที่คำนวณมีเพียงพอ — ตรวจการเบิกซ้ำก่อนยืนยัน':'มีวัสดุขาด — ต้องบันทึกรอจัดซื้อและรับเข้าจริงก่อน';}info(step===0?'เลือกใบเสนอราคาจริงจากรายการค้นหา เพื่อป้องกันการเบิกซ้ำจากใบเสร็จ':'ตรวจสอบข้อมูลก่อนดำเนินการ');$('v41-wizard').scrollIntoView({behavior:'smooth',block:'start'});}
+ function next(){if(step===0){if(!job()){info('กรุณาค้นหาและคลิกเลือกใบเสนอราคาจากรายการก่อน ไม่ใช่พิมพ์เลขงานเอง',true);return;}show(1);return;}if(step===1){if(!getRows().length){info('ยังไม่มีรายการวัสดุ กรุณาเลือกสูตรและกดคำนวณรวมทั้งบิลในขั้นนี้ก่อน',true);return;}show(2);return;}if(step===2){show(3);return;}if(!confirm('เริ่มเลือกงานลูกค้าใหม่? ระบบจะล้างเฉพาะรายการคำนวณในหน้าจอ ไม่ลบเอกสารหรือประวัติคลัง'))return;window.invV4Reset?.();$('inv-v4-doc-selected').textContent='';$('inv-v4-doc-search').value='';show(0);}
+ function toBuy(){if(!job()||!getRows().length){info('ต้องเลือกบิลและคำนวณวัสดุก่อน',true);return;}if(stockRender()){info('รายการนี้ไม่พบวัสดุขาดตามสต๊อกปัจจุบัน ไม่ควรส่งซื้อซ้ำ',true);return;}if(typeof window.v31SaveDemand!=='function'){info('ยังไม่พร้อมบันทึกศูนย์จัดซื้อ กรุณาตรวจระบบ',true);return;}window.v31SaveDemand();info('ส่งคำสั่งบันทึกรอจัดซื้อแล้ว โปรดตรวจข้อความยืนยันจากระบบ ก่อนออกไปทำงานอื่น');}
+ function toIssue(){if(!stockRender()){info('วัสดุยังไม่ครบ ห้ามเบิก ต้องส่งรอจัดซื้อก่อน',true);return;}if(!job()){info('กรุณาเลือกใบเสนอราคาก่อน',true);return;}if(typeof window.v30Prepare!=='function'){info('ไม่พบระบบตรวจความพร้อมและเตรียมเบิก',true);return;}window.v30Prepare();info('กำลังใช้ระบบเดิมตรวจความพร้อมและประวัติการเบิก หากผ่านจึงจะเตรียมตะกร้าเบิก กรุณาตรวจและยืนยันอีกครั้ง');}
+ function init(){if(ready||!$('v38-main')||!$('v24-panel-jobs')||!$('inv-v4-planner'))return false;ready=true;const host=$('v24-panel-jobs');const wizard=document.createElement('section');wizard.id='v41-wizard';wizard.innerHTML='<div class="v41-hero"><small>SUMRAN ALUMINUM · PRODUCTION</small><h2>จัดการงานผลิตทีละขั้นตอน</h2><p>เลือกงานครั้งเดียว → ตรวจวัสดุ → จัดซื้อหรือเบิกผลิต</p></div><div id="v41-track" class="v41-track"></div><div class="v41-content"><h3 id="v41-title" class="v41-heading"></h3><p id="v41-hint" class="v41-hint"></p><div id="v41-pane-0" class="v41-pane"></div><div id="v41-pane-1" class="v41-pane" hidden></div><div id="v41-pane-2" class="v41-pane" hidden><div id="v41-stock-note" class="v41-status"></div><div id="v41-stock" class="v41-stock"></div><button type="button" class="v41-secondary" id="v41-refresh">↻ ตรวจสต๊อกอีกครั้ง</button></div><div id="v41-pane-3" class="v41-pane" hidden><div id="v41-stock-note2" class="v41-status">ตรวจสต๊อกก่อนดำเนินการ</div><div class="v41-actions"><button type="button" id="v41-buy" class="v41-next">🛒 บันทึกรอจัดซื้อ</button><button type="button" id="v41-issue" class="v41-secondary">📦 ตรวจและเตรียมเบิกผลิต</button></div><p class="v41-hint" style="margin-top:12px">การจัดซื้อและการเบิกจะใช้ระบบตรวจสอบเดิม ไม่ตัดสต๊อกอัตโนมัติ</p></div><div id="v41-message" class="v41-status" role="status"></div><div class="v41-actions"><button id="v41-prev" type="button" class="v41-secondary">← ย้อนกลับ</button><button id="v41-next" type="button" class="v41-next">ถัดไป →</button></div></div>';
+ host.prepend(wizard);$('v41-pane-0').appendChild($('inv-v4-planner')); // Move existing controls, never clone.
+ $('v41-next').onclick=next;$('v41-prev').onclick=()=>show(step-1);$('v41-refresh').onclick=()=>{stockRender();info('อัปเดตตัวเลขจากข้อมูลสต๊อกที่โหลดอยู่ในหน้านี้แล้ว')};$('v41-buy').onclick=toBuy;$('v41-issue').onclick=toIssue;show(0);return true;}
+ let tries=0;function boot(){if(init())return;if(++tries<65)setTimeout(boot,200);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
 </body>
 </html>
+
