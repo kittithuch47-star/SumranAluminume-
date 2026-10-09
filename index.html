@@ -750,7 +750,7 @@
       </section>
       <!-- V20: approved change-order production planning, read-only preview -->
       <section id="v20-planner" class="bg-white border rounded-2xl p-4 space-y-3">
-        <div><h3 class="text-lg font-bold text-teal-900">V21 · แผนตัดและตรวจประวัติเบิกงานเพิ่มเติม</h3><p class="text-xs text-slate-600 mt-1">เลือกงานและสูตรที่อนุมัติแล้ว วางแผนตัดจากความยาวเส้นจริง ตรวจประวัติการเบิกตามเลขงาน และแสดงรายการที่ต้องตรวจหน้างานก่อนเบิกจริง</p></div>
+        <div><h3 class="text-lg font-bold text-teal-900">V22 · ตรวจวัสดุเบิกแล้วและแผนตัดงานเพิ่มเติม</h3><p class="text-xs text-slate-600 mt-1">เลือกงานและสูตรที่อนุมัติแล้ว ตรวจประวัติเบิกและยืนยันของจริงที่ยังใช้ได้ ก่อนสรุปยอดที่ต้องจัดหาเพิ่ม (แบบตรวจสอบชั่วคราว ไม่ตัดสต๊อก)</p></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label class="text-sm font-semibold">งานเพิ่มเติมที่อนุมัติแล้ว<select id="v20-change" class="mt-1 w-full border rounded-lg p-2" onchange="v20Choose()"><option value="">เลือกงานเพิ่มเติม...</option></select></label>
           <label class="text-sm font-semibold">สูตรผลิตที่อนุมัติแล้ว<select id="v20-recipe" class="mt-1 w-full border rounded-lg p-2"><option value="">เลือกสูตร...</option></select></label>
@@ -760,7 +760,7 @@
           <label class="text-sm font-semibold">ระยะรวมที่หักก่อนแบ่งบาน (เมตร)<input id="v20-split" type="number" min="0" step="0.001" value="0" class="mt-1 w-full border rounded-lg p-2"></label>
           <label class="text-sm font-semibold">รอยเลื่อยต่อชิ้น (มม.)<input id="v20-kerf" type="number" min="0" max="30" step="0.1" value="3" class="mt-1 w-full border rounded-lg p-2"></label>
         </div>
-        <button type="button" onclick="v20Calculate()" class="px-4 py-3 bg-teal-700 text-white font-bold rounded-xl">คำนวณแผนตัดและตรวจประวัติเบิก</button>
+        <button type="button" onclick="v20Calculate()" class="px-4 py-3 bg-teal-700 text-white font-bold rounded-xl">คำนวณแผนตัดและตรวจของที่เบิกแล้ว</button>
         <div id="v20-result" aria-live="polite" class="text-sm"></div>
         <p class="text-xs text-amber-800">ผลนี้เป็นแผนอ่านอย่างเดียว ไม่จองหรือหักสต๊อก ประวัติเบิกที่อ้างเลขงานเดิมไม่ได้ยืนยันว่าใช้กับงานเพิ่มได้ ต้องตรวจของจริงก่อนเบิกเพิ่ม กระจกต้องมีขนาดกว้างและสูงที่ช่างยืนยัน</p>
       </section>
@@ -3982,10 +3982,13 @@
         }
         const fmt=n=>Number(n).toLocaleString('th-TH',{maximumFractionDigits:3});
         let html=`<div class="border rounded-xl p-3 space-y-3"><strong>${invSafe(c.title)} · ${invSafe(r.name)}</strong><p class="text-xs">อ้างอิง ${invSafe(c.sourceDocNo)} · ${fmt(S)} ชุด · ${fmt(P)} บาน/ชุด · กว้าง ${invMeters(W)} ม. สูง ${invMeters(H)} ม.</p><p class="text-xs text-amber-800">ตรวจสอบก่อน: ชนิดงานและสูตรต้องตรงกัน รวมถึงสี รหัส และขนาดงานจริง</p>`;
+        const v22Checks=[];
         for(const [key,rows] of groups){
           const variants=invState.items.filter(i=>!i.archived&&[i.name,i.brand,i.sku,i.color].join('|')===key&&Number(i.lengthMm)>0).sort((a,b)=>Number(a.lengthMm)-Number(b.lengthMm));
           const pieces=rows.flatMap(x=>Array.from({length:x.qty},()=>({len:x.len,label:x.label})));
           const plan=v21Plan(pieces,variants,kerf);
+          const matched=variants.filter(v=>v21MovementSummary(c,v).net>0);
+          for(const item of matched){const mv=v21MovementSummary(c,item);v22Checks.push({item,net:mv.net,kind:'bar',lengthMm:Number(item.lengthMm)});}
           html+=`<div class="border rounded-lg p-3 space-y-2"><strong>${invSafe(key.replaceAll('|',' · '))}</strong><p class="text-xs">${rows.map(x=>`${invSafe(x.label)} ${invMeters(x.len)} ม. × ${fmt(x.qty)} ชิ้น`).join(' · ')}</p>`;
           for(const [id,n] of plan.used){const item=invState.items.find(x=>x.id===id);const mv=v21MovementSummary(c,item);html+=`<p class="text-xs">เส้น ${invMeters(item.lengthMm)} ม. · ใช้ตามแผน ${fmt(n)} เส้น · ในคลัง ${fmt(item.quantity)} เส้น · <strong class="text-teal-700">จัดจากจำนวนคงเหลือได้</strong></p><p class="text-xs text-amber-800">ประวัติงาน ${invSafe(c.sourceDocNo)}: เบิก ${fmt(mv.issued)} · คืน ${fmt(mv.returned)} · เบิกสุทธิ ${fmt(mv.net)} เส้น (${fmt(mv.count)} รายการ) — ยังไม่หักจากความต้องการงานเพิ่ม เพราะอาจเป็นของงานเดิมหรือถูกตัดแล้ว</p>`;}
           plan.bins.forEach((b,i)=>{html+=`<p class="text-xs bg-slate-50 rounded p-2">แผนเส้นที่ ${fmt(i+1)} · ${invMeters(b.item.lengthMm)} ม. → ${b.pieces.map(p=>invMeters(p.len)+' ม.').join(' + ')} · เศษประมาณ ${invMeters(b.remaining)} ม. (หักรอยเลื่อยแล้ว)</p>`;});
@@ -3995,10 +3998,33 @@
         }
         if(glass.length)html+='<div class="border rounded-lg p-3"><strong>กระจก — รอยืนยันขนาดสองด้าน</strong>'+glass.map(x=>`<p class="text-xs">${invSafe(x.label)} · ค่าที่สูตรคำนวณได้ ${fmt(x.len)} มม. × ${fmt(x.qty)} ชิ้น (ยังไม่ใช่ขนาดสั่งตัด)</p>`).join('')+'</div>';
         if(hardware.length)html+='<div class="border rounded-lg p-3"><strong>อุปกรณ์และวัสดุนับชิ้น</strong>'+hardware.map(x=>{const mv=v21MovementSummary(c,x.item);const shortage=Math.max(0,x.qty-Number(x.item.quantity||0));return `<p class="text-xs">${invSafe(x.label)} · ต้องใช้ ${fmt(x.qty)} ${invSafe(x.item.unit)} · คงคลัง ${fmt(x.item.quantity)} · ${shortage?'ขาดอย่างน้อย '+fmt(shortage):'จำนวนในคลังเพียงพอ'} · ประวัติเบิกสุทธิเลขงานเดิม ${fmt(mv.net)} (ยังไม่หักอัตโนมัติ)</p>`;}).join('')+'</div>';
+        for(const h of hardware){const mv=v21MovementSummary(c,h.item);if(mv.net>0&&!v22Checks.some(x=>x.item.id===h.item.id))v22Checks.push({item:h.item,net:mv.net,kind:'unit'});}
+        html+='<div class="border rounded-xl p-3 space-y-3 bg-teal-50"><h4 class="font-bold text-teal-900">V22 · ตรวจของที่เคยเบิกสำหรับเลขงานนี้</h4><p class="text-xs text-slate-700">กรอกเฉพาะของที่ช่างตรวจพบจริงว่ายังไม่ตัดและใช้ต่อได้ หรือเป็นเศษที่วัดขนาดแล้ว การเบิกสุทธิเป็นเพียงข้อมูลอ้างอิง ไม่ใช่จำนวนที่พร้อมใช้</p>';
+        if(!v22Checks.length)html+='<p class="text-xs">ไม่พบวัสดุเบิกสุทธิที่ตรงกับสูตรและรหัสวัสดุนี้ กรุณาตรวจประวัติงานและสูตรก่อนดำเนินการ</p>';
+        for(let i=0;i<v22Checks.length;i++){const x=v22Checks[i];html+=`<div class="bg-white border rounded-lg p-3 space-y-2"><strong>${invSafe(x.item.name)} · ${invSafe(x.item.brand)} · ${invSafe(x.item.sku)} · ${invSafe(x.item.color)}</strong><p class="text-xs">ประวัติเบิกสุทธิ ${fmt(x.net)} ${invSafe(x.item.unit)}${x.kind==='bar'?' · เส้นยาว '+invMeters(x.lengthMm)+' ม.':''}</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2"><label class="text-xs">สถานะที่ตรวจพบ<select id="v22-status-${i}" class="w-full border rounded p-2" onchange="v22Recalc()"><option value="unknown">ยังไม่ตรวจ</option><option value="unused">ยังไม่ใช้ / ใช้ต่อได้</option><option value="cut">ตัดแล้ว / ต้องวัดเศษ</option><option value="used">ใช้ประกอบหรือติดตั้งแล้ว</option><option value="returned">คืนคลังแล้ว (นับในคลัง)</option></select></label><label class="text-xs">จำนวนที่ยืนยันว่าใช้ต่อได้<input id="v22-qty-${i}" type="number" min="0" max="${x.net}" step="1" value="0" class="w-full border rounded p-2" oninput="v22Recalc()"/></label><label class="text-xs">หมายเหตุ / ตำแหน่งจัดเก็บ<input id="v22-note-${i}" maxlength="150" class="w-full border rounded p-2" placeholder="ช่างตรวจแล้ว อยู่ที่..." /></label></div><p class="text-xs text-amber-800">${x.kind==='bar'?'นับเฉพาะเส้นเต็มความยาวเดิมที่ยังใช้ได้ เศษเส้นต้องลงทะเบียนความยาวจริงก่อนวางแผนตัด':'ยืนยันจำนวนอุปกรณ์ที่ยังใช้ได้จริง'} · ไม่อนุญาตเกินยอดเบิกสุทธิ</p></div>`;}
+        html+='<div id="v22-summary" class="text-sm font-semibold border-t pt-3">ยังไม่ได้ยืนยันของที่ใช้ต่อได้</div><p class="text-xs text-amber-800">ข้อมูลการตรวจในหน้านี้ไม่บันทึกลง Firebase และจะหายเมื่อรีเฟรช ยังไม่จอง เบิก คืน หรือหักสต๊อก กรุณาตรวจของจริงก่อนใช้ตัดสินใจ</p></div>';
         html+='<p class="text-xs text-amber-800">V21 เป็นแผนตัดแบบ best-fit จากเส้นในทะเบียนที่ยังคงเหลือ ไม่รวมเศษเส้นที่ไม่ได้ลงทะเบียน ไม่รับประกันว่าใช้เส้นน้อยที่สุด และยังไม่ตรวจความเข้ากันได้ของกระจกสองมิติ ประวัติเบิกเป็นข้อมูลระดับเลขงาน ไม่ใช่หลักฐานว่าวัสดุใช้กับงานเพิ่มได้ ไม่มีการจองหรือหักสต๊อก</p></div>';
         out.innerHTML=html;
+        window.v22Current={checks:v22Checks,changeId:c.id,recipeId:r.id};
+        v22Recalc();
       }catch(e){out.innerHTML=`<p class="text-red-700 border border-red-200 bg-red-50 p-3 rounded-xl">${invSafe(e.message)}</p>`;}
     }
+    function v22Recalc(){
+      const s=document.getElementById('v22-summary');if(!s||!window.v22Current)return;
+      let total=0,checked=0,errors=[];
+      window.v22Current.checks.forEach((x,i)=>{
+        const status=document.getElementById('v22-status-'+i)?.value||'unknown';
+        const raw=document.getElementById('v22-qty-'+i)?.value||'0';
+        const q=Number(raw);
+        if(!Number.isInteger(q)||q<0||q>x.net)errors.push(x.item.name+': จำนวนต้องเป็นจำนวนเต็มตั้งแต่ 0 ถึง '+x.net);
+        if(status!=='unused'&&q>0)errors.push(x.item.name+': ระบุจำนวนใช้ต่อได้เฉพาะสถานะยังไม่ใช้เท่านั้น');
+        if(status==='unused'){checked++;total+=q;}
+      });
+      if(errors.length){s.className='text-sm text-red-700 font-semibold border-t pt-3';s.textContent=errors.join(' · ');return;}
+      s.className='text-sm text-teal-900 font-semibold border-t pt-3';
+      s.textContent='ยืนยันเบื้องต้น: '+total.toLocaleString('th-TH')+' หน่วย จาก '+checked.toLocaleString('th-TH')+' รายการที่ระบุว่ายังไม่ใช้ · ยังไม่นำไปหักแผนตัดหรือสต๊อก';
+    }
+    window.v22Recalc=v22Recalc;
     window.v20Choose=v20Choose;window.v20Calculate=v20Calculate;
     window.v19ChooseDoc=v19ChooseDoc;window.v19Save=v19Save;window.v19Reset=v19Reset;window.v19SetStatus=v19SetStatus;
 
