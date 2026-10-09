@@ -757,7 +757,7 @@
         <div><h3 class="font-bold text-lg text-sky-900">ตรวจวัสดุก่อนรับงาน / ทำรายการซื้อ</h3><p class="text-xs text-slate-600">เลือกวัสดุจากทะเบียนจริง ระบุจำนวนที่ช่างยืนยัน ระบบเทียบสต๊อกโดยไม่เบิกออกอัตโนมัติ</p></div>
         <div class="grid sm:grid-cols-2 gap-2">
           <label class="text-xs font-semibold">ชื่องาน / เลขที่ใบเสนอราคา<input id="inv-v4-job" class="w-full border rounded-xl p-3 mt-1" placeholder="เช่น QT-... หรือ งานบ้านคุณ..." maxlength="120"></label>
-          <label class="text-xs font-semibold">ค้นหาเอกสาร (ใบเสนอราคา / ใบเสร็จ / ใบส่งของ)<input id="inv-v4-doc-search" oninput="invV4RefreshDocuments()" class="w-full border rounded-xl p-3 mt-1 mb-2" placeholder="พิมพ์เลขเอกสารหรือชื่อลูกค้า"><select id="inv-v4-doc" onchange="invV4PickDocument(this.value)" class="w-full border rounded-xl p-3 mt-1"><option value="">เลือกเอกสาร (ไม่บังคับ)</option></select></label><label class="text-xs font-semibold">ค้นหาวัสดุจากทะเบียน<input id="inv-v4-find" class="w-full border rounded-xl p-3 mt-1" oninput="invV4Render()" placeholder="ไทยเม็ททอล / รหัสหน้าตัด / ชื่อวัสดุ"></label>
+          <label class="text-xs font-semibold">ค้นหาเอกสาร (พิมพ์แล้วคลิกผลลัพธ์)<input id="inv-v4-doc-search" oninput="invV4RefreshDocuments()" autocomplete="off" class="w-full border rounded-xl p-3 mt-1" placeholder="พิมพ์ QT, DO, เลขเอกสาร หรือชื่อลูกค้า"><div id="inv-v4-doc-results" class="mt-2 max-h-48 overflow-y-auto space-y-1"></div><select id="inv-v4-doc" onchange="invV4PickDocument(this.value)" class="hidden"><option value="">เลือกเอกสาร</option></select><div id="inv-v4-doc-selected" class="text-xs text-teal-800 mt-1"></div></label><label class="text-xs font-semibold">ค้นหาวัสดุจากทะเบียน<input id="inv-v4-find" class="w-full border rounded-xl p-3 mt-1" oninput="invV4Render()" placeholder="ไทยเม็ททอล / รหัสหน้าตัด / ชื่อวัสดุ"></label>
         </div>
         <div class="text-xs text-slate-500">พิมพ์ค้นหาวัสดุก่อน ระบบไม่แสดงทั้งคลังพร้อมกัน</div><div id="inv-v4-candidates" class="grid gap-2 max-h-52 overflow-y-auto"></div>
         <div id="inv-v4-lines" class="grid gap-2"></div>
@@ -773,7 +773,7 @@
           <button type="button" id="inv-v3-type-return" onclick="invV3SetType('return')" class="rounded-xl p-3 border font-bold text-sm bg-white">↩ คืน</button>
         </div>
         <div class="grid sm:grid-cols-2 gap-3">
-          <label class="text-xs font-semibold">ผูกกับงานลูกค้า (ไม่บังคับ — ซื้อเข้าคลังทั่วไปไม่ต้องเลือก)<select id="inv-v3-job" class="w-full border rounded-xl p-3 mt-1 bg-white"><option value="">ใช้งานทั่วไป / ไม่ผูกกับงาน</option></select></label>
+          <label class="text-xs font-semibold">ค้นหางานลูกค้า (ไม่บังคับ)<input id="inv-v3-job-search" oninput="invV3JobOptions()" autocomplete="off" placeholder="พิมพ์เลขเอกสาร หรือชื่อลูกค้า" class="w-full border rounded-xl p-3 mt-1 bg-white"><div id="inv-v3-job-results" class="max-h-40 overflow-y-auto space-y-1 mt-2"></div><select id="inv-v3-job" class="hidden"><option value="">ใช้งานทั่วไป / ไม่ผูกกับงาน</option></select><div id="inv-v3-job-selected" class="text-xs text-teal-800 mt-1">ใช้งานทั่วไป / ไม่ผูกกับงาน</div><button type="button" class="text-xs text-slate-600 underline mt-1" onclick="invV3ChooseJob('','')">ล้างงานที่เลือก</button></label>
           <label class="text-xs font-semibold">เลขที่ใบรายการ<input id="inv-v3-document" readonly value="ระบบออกเลขอัตโนมัติเมื่อบันทึก" class="w-full border rounded-xl p-3 mt-1 bg-slate-100 text-slate-700" /></label>
         </div>
         <div class="grid sm:grid-cols-[1fr_auto] gap-2"><input id="inv-v3-search" oninput="invV3Render()" placeholder="ค้นหาวัสดุ ชื่อ รหัส ยี่ห้อ สี" class="w-full border rounded-xl p-3 bg-white"/><button type="button" onclick="document.getElementById('inv-v3-search').value='';invV3Render()" class="border rounded-xl px-4 py-2 bg-white text-sm">ล้างค้นหา</button></div>
@@ -3894,19 +3894,13 @@
     // V4 stock planning: intentionally client-side only; does not write or mutate stock.
     const invV4={lines:{}};
     function invV4RefreshDocuments(){
-      const el=document.getElementById('inv-v4-doc');if(!el)return;
-      const prev=el.value;
-      const raw=document.getElementById('inv-v4-doc-search')?.value||'';
-      const search=invNorm(raw);
-      const types=['quotation','receipt','delivery','delivery_note','invoice','cashbill','cash_bill'];
-      const docs=(state.history||[]).filter(h=>types.includes(String(h.docType||h.type||'').toLowerCase())&&(h.docNo||h.payload?.docNo))
-        .filter(h=>!search||[h.docNo,h.payload?.docNo,h.customerName,h.payload?.customerName,h.customer?.name,h.payload?.customer?.name,h.jobId,h.payload?.customerPhone].some(v=>invNorm(v).includes(search)))
-        .sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')))
-        .slice(0,40);
-      el.innerHTML='<option value="">'+(search?'ผลการค้นหา '+docs.length+' รายการ — เลือกเอกสาร':'เลือกเอกสาร (ไม่บังคับ)')+'</option>'+docs.map(h=>`<option value="${invSafe(h.id||h.docNo)}">${invSafe(h.docNo||h.payload?.docNo)} · ${invSafe(h.customerName||h.payload?.customerName||h.customer?.name||'ลูกค้า')} · ${invSafe(h.docType||h.type)}</option>`).join('');
-      if([...el.options].some(o=>o.value===prev))el.value=prev;
+      const el=document.getElementById('inv-v4-doc'),results=document.getElementById('inv-v4-doc-results');if(!el||!results)return;
+      const q=invNorm(document.getElementById('inv-v4-doc-search')?.value);
+      const docs=(state.history||[]).filter(h=>h.docNo||h.payload?.docNo).filter(h=>!q||[h.docNo,h.payload?.docNo,h.customerName,h.payload?.customerName,h.customer?.name,h.payload?.customer?.name,h.jobId,h.type,h.docType].some(v=>invNorm(v).includes(q))).slice().reverse().slice(0,30);
+      el.innerHTML='<option value="">ไม่ผูกเอกสาร</option>'+docs.map(h=>`<option value="${invSafe(h.id||h.docNo||h.payload?.docNo)}">${invSafe(h.docNo||h.payload?.docNo)}</option>`).join('');
+      results.innerHTML=!q?'<p class="text-xs text-slate-500">พิมพ์เพื่อค้นหา ไม่แสดงรายการทั้งหมด</p>':docs.length?docs.map(h=>`<button type="button" class="block w-full text-left border rounded-lg p-2 text-sm bg-white hover:bg-sky-50" onclick="invV4PickDocument('${invSafe(h.id||h.docNo||h.payload?.docNo)}')">${invSafe(h.docNo||h.payload?.docNo)} · ${invSafe(h.customerName||h.payload?.customerName||h.customer?.name||'ลูกค้า')} · ${invSafe(h.docType||h.type||'')}</button>`).join(''):'<p class="text-xs text-rose-700">ไม่พบเอกสารที่ตรงกับคำค้น</p>';
     }
-    function invV4PickDocument(id){const h=(state.history||[]).find(x=>String(x.id||x.docNo)===String(id));if(!h)return;document.getElementById('inv-v4-job').value=String(h.docNo||h.jobId||'');invMsg('เลือกเอกสารแล้ว แต่ยังไม่สามารถคำนวณวัสดุจากรายการสินค้าได้จนกว่าจะมีสูตร BOM ที่ช่างยืนยัน กรุณาเลือกวัสดุที่ต้องใช้เองก่อน');}
+    function invV4PickDocument(id){const h=(state.history||[]).find(x=>String(x.id||x.docNo||x.payload?.docNo)===String(id));if(!h)return;const no=String(h.docNo||h.payload?.docNo||h.jobId||'');document.getElementById('inv-v4-job').value=no;document.getElementById('inv-v4-doc-search').value=no;document.getElementById('inv-v4-doc-selected').textContent='เลือกแล้ว: '+no;document.getElementById('inv-v4-doc-results').innerHTML='';invMsg('ผูกเอกสาร '+no+' แล้ว — ยังไม่ได้คำนวณ BOM อัตโนมัติ');}
     let invEditingItemId=null;
     function invCancelEdit(){invEditingItemId=null;document.getElementById('inv-edit-panel')?.classList.add('hidden');}
     function invEditItem(id){
@@ -3962,16 +3956,14 @@
     }
     async function invDeleteRecipe(id){
       if(!invCanWrite()||!isOwner())return invMsg('ลบสูตรได้เฉพาะเจ้าของร้าน',true);
-      const r=invState.recipes.find(x=>x.id===id);if(!r)return;
-      if(r.status!=='draft')return invMsg('สูตรที่ยืนยันแล้วต้องเปลี่ยนกลับเป็นฉบับร่างก่อนลบ',true);
-      if(!confirm('นำสูตรฉบับร่าง "'+r.name+'" ออกจากรายการ? ระบบจะลองลบถาวรก่อน หากสิทธิ์ Firebase ไม่อนุญาต จะลองเก็บเป็นสูตรที่ปิดใช้งานแทน'))return;
-      try{await deleteDoc(cloudPath('inventoryRecipes',id));invMsg('ลบสูตรฉบับร่างถาวรสำเร็จ');}
-      catch(e){
-        try{await updateDoc(cloudPath('inventoryRecipes',id),{archived:true,archivedAt:new Date().toISOString(),archivedByUid:userId,status:'draft'});invMsg('นำสูตรออกจากรายการแล้ว (เก็บข้อมูลไว้ใน Firebase เพราะไม่สามารถลบถาวรได้)');}
-        catch(e2){invMsg('ลบหรือซ่อนสูตรไม่ได้: '+e2.message+' — กรุณาตรวจ Firestore Rules ของ inventoryRecipes',true);}
-      }
+      const r=invState.recipes.find(x=>x.id===id);if(!r)return invMsg('ไม่พบสูตร กรุณารีเฟรช',true);
+      if(!confirm('นำสูตร "'+r.name+'" ออกจากรายการใช้งาน?'))return;
+      try{
+        await updateDoc(cloudPath('inventoryRecipes',id),{archived:true,archivedAt:new Date().toISOString(),archivedByUid:userId,status:'draft'});
+        invState.recipes=invState.recipes.map(x=>x.id===id?{...x,archived:true,status:'draft'}:x);
+        renderInventory();invMsg('นำสูตรออกจากรายการแล้ว บันทึกใน Firebase สำเร็จ');
+      }catch(e){invMsg('ลบสูตรไม่สำเร็จ: '+e.message+' — ตรวจสิทธิ์ update ของ inventoryRecipes ใน Firestore Rules',true);}
     }
-    
     function invV4Add(id){if(!invState.items.some(i=>i.id===id))return;invV4.lines[id]=invV4.lines[id]||1;invV4Render();}
     function invV4Remove(id){delete invV4.lines[id];invV4Render();}
     function invV4Qty(id,value){const n=Number(value);if(!Number.isFinite(n)||n<=0||Math.round(n*1000)!==n*1000)return invMsg('จำนวนต้องมากกว่า 0 และทศนิยมไม่เกิน 3 ตำแหน่ง',true);invV4.lines[id]=n;invV4Render();}
@@ -3990,7 +3982,8 @@
     function invV3Add(id){if(!invState.items.some(i=>i.id===id))return;invV3.cart[id]=(invV3.cart[id]||0)+1;invV3Render();}
     function invV3Adjust(id,d){const n=Math.round(((invV3.cart[id]||0)+d)*1000)/1000;if(n<=0)delete invV3.cart[id];else invV3.cart[id]=n;invV3Render();}
     function invV3ClearCart(){invV3.cart={};invV3Render();}
-    function invV3JobOptions(){const el=document.getElementById('inv-v3-job');if(!el)return;const prev=el.value;const seen=new Set();const docs=(state.history||[]).filter(h=>{const key=String(h.jobId||h.docNo||'');if(!key||seen.has(key))return false;seen.add(key);return true;}).slice(-250).reverse();el.innerHTML='<option value="">ใช้งานทั่วไป / ไม่ผูกกับงาน</option>'+docs.map(h=>`<option value="${invSafe(h.jobId||h.docNo)}">${invSafe(h.docNo||h.jobId)} · ${invSafe(h.customerName||'ลูกค้า')}</option>`).join('');el.value=[...el.options].some(o=>o.value===prev)?prev:'';}
+    function invV3ChooseJob(id,label){const el=document.getElementById('inv-v3-job');if(!el)return;el.innerHTML='<option value="">ทั่วไป</option>';if(id){const o=document.createElement('option');o.value=id;o.textContent=label;o.selected=true;el.appendChild(o);}else el.value='';document.getElementById('inv-v3-job-selected').textContent=id?'เลือกแล้ว: '+label:'ใช้งานทั่วไป / ไม่ผูกกับงาน';document.getElementById('inv-v3-job-results').innerHTML='';document.getElementById('inv-v3-job-search').value=id?label:'';}
+    function invV3JobOptions(){const out=document.getElementById('inv-v3-job-results');if(!out)return;const q=invNorm(document.getElementById('inv-v3-job-search')?.value);if(!q){out.innerHTML='';return;}const seen=new Set();const docs=(state.history||[]).filter(h=>{const key=String(h.jobId||h.docNo||h.payload?.docNo||'');if(!key||seen.has(key))return false;seen.add(key);return [h.docNo,h.payload?.docNo,h.jobId,h.customerName,h.payload?.customerName,h.customer?.name].some(v=>invNorm(v).includes(q));}).slice(-30).reverse();out.innerHTML=docs.length?docs.map(h=>{const no=String(h.jobId||h.docNo||h.payload?.docNo),label=String(h.docNo||h.payload?.docNo||no)+' · '+String(h.customerName||h.payload?.customerName||h.customer?.name||'ลูกค้า');return `<button type="button" class="block w-full text-left border rounded-lg p-2 text-xs bg-white" onclick="invV3ChooseJob('${invSafe(no)}','${invSafe(label)}')">${invSafe(label)}</button>`;}).join(''):'<p class="text-xs text-rose-700">ไม่พบงาน</p>';}
     function invV3Render(){const catalog=document.getElementById('inv-v3-catalog');if(!catalog)return;const q=invNorm(document.getElementById('inv-v3-search')?.value);const items=(q.length?invState.items:[]).filter(i=>!i.archived&&[i.name,i.brand,i.sku,i.color].some(x=>invNorm(x).includes(q))).slice(0,60);catalog.innerHTML=items.length?items.map(i=>`<div class="flex items-center gap-2 rounded-xl border bg-white p-2"><div class="flex-1 min-w-0"><strong class="text-sm">${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)} · เหลือ ${invMoney(i.quantity)} ${invSafe(i.unit)}</div></div><button type="button" class="bg-teal-700 text-white rounded-lg px-3 py-2 text-sm" onclick="invV3Add('${invSafe(i.id)}')">+ เลือก</button></div>`).join(''):'<p class="text-sm text-slate-500">ไม่พบวัสดุ</p>';
       const rows=Object.entries(invV3.cart);document.getElementById('inv-v3-cart').innerHTML=rows.length?rows.map(([id,n])=>{const i=invState.items.find(x=>x.id===id);if(!i)return '';return `<div class="flex gap-2 items-center border-b py-2"><span class="flex-1 text-sm">${invSafe(i.name)} <small class="text-slate-500">${invSafe(i.unit)}</small></span><button type="button" onclick="invV3Adjust('${invSafe(id)}',-1)" class="border rounded px-3 py-1">−</button><input aria-label="จำนวน ${invSafe(i.name)}" type="number" min="0.001" step="0.001" value="${n}" onchange="invV3SetQty('${invSafe(id)}',this.value)" class="w-20 border rounded p-1 text-center"/><button type="button" onclick="invV3Adjust('${invSafe(id)}',1)" class="border rounded px-3 py-1">+</button><button type="button" onclick="invV3Adjust('${invSafe(id)}',-${n})" class="text-red-700 px-1">✕</button></div>`}).join(''):'<p class="text-sm text-slate-500">ยังไม่ได้เลือกวัสดุ</p>';
       for(const t of ['receive','issue','return']){const b=document.getElementById('inv-v3-type-'+t);if(b){b.classList.toggle('bg-teal-700',invV3.type===t);b.classList.toggle('text-white',invV3.type===t);b.classList.toggle('bg-white',invV3.type!==t);}}
