@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sumran Aluminum - ระบบจัดการเอกสารและสูตรการผลิต</title>
+  <title>Sumran Aluminum V33 - ระบบจัดการเอกสารและสูตรการผลิต</title>
   <meta name="theme-color" content="#075985">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -748,7 +748,7 @@
       </div>
 
       <section id="v32-guide" class="rounded-2xl border-2 border-teal-300 bg-white p-4 space-y-4" aria-label="ขั้นตอนงานผลิต V32">
-        <div class="flex justify-between items-center gap-2"><div><h2 class="text-xl font-bold text-teal-900">🧭 งานผลิตลูกค้า — ทำตามขั้นตอน</h2><p class="text-sm text-slate-600">เลือกงาน → ตรวจสูตรและสต๊อก → รอซื้อ/รับเข้า หรือเบิกผลิต</p></div><span class="rounded-xl bg-teal-100 text-teal-800 px-3 py-2 text-xs">V32 ทดลอง</span></div>
+        <div class="flex justify-between items-center gap-2"><div><h2 class="text-xl font-bold text-teal-900">🧭 ศูนย์งานผลิต — เลือกขั้นตอนที่ต้องทำ</h2><p class="text-sm text-slate-600">เลือกงาน → ตรวจสูตรและสต๊อก → รอซื้อ/รับเข้า หรือเบิกผลิต</p></div><span class="rounded-xl bg-teal-100 text-teal-800 px-3 py-2 text-xs">V33 · นำทางงานผลิต</span></div>
         <div id="v32-current" role="status" class="bg-sky-50 border border-sky-200 p-3 rounded-xl text-sm">ขั้นที่ 1 · เลือกใบเสนอราคาของงานด้านล่าง</div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
           <button type="button" onclick="v32Step('choose')" class="rounded-xl border p-3 text-left hover:bg-teal-50">📄 <b>1 เลือกงาน</b><small class="block text-slate-500">ค้นหาใบเสนอราคา</small></button>
@@ -756,7 +756,7 @@
           <button type="button" onclick="v32Step('buy')" class="rounded-xl border p-3 text-left hover:bg-teal-50">🛒 <b>3 จัดซื้อ/รับเข้า</b><small class="block text-slate-500">ถ้าของขาด</small></button>
           <button type="button" onclick="v32Step('issue')" class="rounded-xl border p-3 text-left hover:bg-teal-50">📦 <b>4 เบิกผลิต</b><small class="block text-slate-500">เฉพาะงานที่พร้อม</small></button>
         </div>
-        <p class="text-xs text-amber-800">V32 บล็อกการเบิกจากใบเสร็จ/ใบแจ้งหนี้โดยตรงและเพิ่มล็อกยอดเบิกต่อเลขงานสำหรับรายการใหม่ โปรดทดสอบกับข้อมูลทดลองก่อนใช้งานจริง ยังไม่ใช่การยืนยันว่าทุกกรณีของเอกสารเดิมเชื่อมโยงกันสมบูรณ์</p>
+        <p class="text-xs text-amber-800">เลือกงาน → คำนวณสูตร → ถ้าขาดให้บันทึกรอซื้อ → ซื้อและรับเข้าจริง → ตรวจใหม่ → เบิกผลิต (การจัดซื้อ/รับเข้าเดิมยังอยู่ในรุ่นทดสอบ ห้ามใช้กับสต๊อกจริง)</p>
       </section>
       <!-- V19: Change orders are separate from original quotations and stock movements. -->
       <section id="v19-change-orders" class="bg-white border rounded-2xl p-4 space-y-3">
@@ -4749,15 +4749,17 @@
     window.invPageChange=invPageChange;window.invArchiveVisibleMoves=invArchiveVisibleMoves;window.invEditItem=invEditItem;window.invSaveItemEdit=invSaveItemEdit;window.invCancelEdit=invCancelEdit;window.invDeleteItem=invDeleteItem;window.invArchiveItem=invArchiveItem;window.invArchiveMove=invArchiveMove;window.invDeleteRecipe=invDeleteRecipe;window.invV4PickDocument=invV4PickDocument;window.renderInventory=renderInventory;window.invQuickMove=invQuickMove;window.invRememberBrand=invRememberBrand;window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
 
 
-    // V32 guided navigation: no hidden stock writes, each step calls the existing validated workflow.
+    // V33 guided navigation: no hidden stock writes, each step calls the existing validated workflow.
     function v32Step(step){
+      const section=step==='issue'?'movement':'jobs';
+      if(typeof window.v24InventoryOpen==='function')window.v24InventoryOpen(section,false);
       const dest={choose:'inv-v4-doc-search',check:'inv-v7-document-body',buy:'v31-hub',issue:'inv-v3-panel'}[step];
-      const messages={choose:'ขั้นที่ 1 · ค้นหาและเลือกใบเสนอราคาในส่วนด้านล่าง',check:'ขั้นที่ 2 · เลือกสูตรที่อนุมัติแล้วทุกบรรทัด แล้วกดคำนวณรวมทั้งบิล',buy:'ขั้นที่ 3 · ของขาด: บันทึกรายการเข้าศูนย์จัดซื้อ เลือกบิล ซื้อแล้วจึงรับเข้าคลังตามจำนวนจริง',issue:'ขั้นที่ 4 · ของครบ: ใช้ปุ่มเตรียมเบิกในผลตรวจความพร้อม แล้วตรวจตะกร้าและยืนยัน'};
+      const messages={choose:'ขั้น 1: เลือกใบเสนอราคาของงาน (ไม่ใช่ใบเสร็จ) จากช่องค้นหาด้านล่าง',check:'ขั้น 2: ตรวจรายการสูตรให้ครบทุกบรรทัด แล้วคำนวณวัสดุรวมทั้งงาน',buy:'ขั้น 3: ถ้าขาด ให้บันทึกความต้องการซื้อในศูนย์จัดซื้อ เลือกงานที่ซื้อแล้ว และยืนยันรับของจริงก่อนตรวจใหม่',issue:'ขั้น 4: ตรวจว่าของครบแล้ว เตรียมเบิกจากผลคำนวณ ตรวจตะกร้า แล้วจึงยืนยันหักสต๊อก'};
       const msg=document.getElementById('v32-current');if(msg)msg.textContent=messages[step];
-      const el=document.getElementById(dest);if(!el)return;
+      const el=document.getElementById(dest);
+      if(!el){if(msg)msg.textContent+=' — ยังไม่พบส่วนทำงาน กรุณาโหลดหน้าใหม่';return;}
       for(let parent=el.parentElement;parent;parent=parent.parentElement){if(parent.tagName==='DETAILS')parent.open=true;}
-      el.scrollIntoView({behavior:'smooth',block:'center'});
-      if(step==='choose'&&el.focus)el.focus();
+      requestAnimationFrame(()=>{el.scrollIntoView({behavior:'smooth',block:'center'});if(step==='choose')el.focus({preventScroll:true});});
     }
     window.v32Step=v32Step;
     // V30: procurement statuses are metadata only; receiving still uses the original
@@ -5039,6 +5041,7 @@
     const historyWrapper=children.find(el=>el.querySelector && el.querySelector('#inv-history-filter'));
     const assigned=new Set();
     function move(el,to){if(el && !assigned.has(el)){panels[to].appendChild(el);assigned.add(el)}}
+    move(findDirect('v32-guide'),'jobs');
     move(findDirect('inv-v4-planner'),'jobs');
     move(findDirect('v19-change-orders'),'jobs');
     move(findDirect('v20-planner'),'jobs');
