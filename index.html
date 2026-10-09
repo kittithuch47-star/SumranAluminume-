@@ -760,7 +760,7 @@
           <label class="text-xs font-semibold">ค้นหาเอกสาร (พิมพ์แล้วคลิกผลลัพธ์)<input id="inv-v4-doc-search" oninput="invV4RefreshDocuments()" autocomplete="off" class="w-full border rounded-xl p-3 mt-1" placeholder="พิมพ์ QT, DO, เลขเอกสาร หรือชื่อลูกค้า"><div id="inv-v4-doc-results" class="mt-2 max-h-48 overflow-y-auto space-y-1"></div><select id="inv-v4-doc" onchange="invV4PickDocument(this.value)" class="hidden"><option value="">เลือกเอกสาร</option></select><div id="inv-v4-doc-selected" class="text-xs text-teal-800 mt-1"></div></label><label class="text-xs font-semibold">ค้นหาวัสดุจากทะเบียน<input id="inv-v4-find" class="w-full border rounded-xl p-3 mt-1" oninput="invV4Render()" placeholder="ไทยเม็ททอล / รหัสหน้าตัด / ชื่อวัสดุ"></label>
         </div>
         <div class="text-xs text-slate-500">พิมพ์ค้นหาวัสดุก่อน ระบบไม่แสดงทั้งคลังพร้อมกัน</div><div id="inv-v4-candidates" class="grid gap-2 max-h-52 overflow-y-auto"></div>
-        <div id="inv-v4-lines" class="grid gap-2"></div>
+        <div id="inv-v7-document-items" class="space-y-3 rounded-xl border border-teal-200 bg-teal-50 p-3"><strong class="text-teal-900">V7 · รายการสินค้าในเอกสารและสูตรผลิต</strong><p class="text-xs text-slate-600">เลือกเอกสารด้านบน แล้วจับคู่สูตรที่ช่างยืนยันสำหรับสินค้าแต่ละรายการ ระบบไม่เดาสูตร และไม่ตัดสต๊อกอัตโนมัติ</p><div id="inv-v7-document-body" class="text-sm text-slate-600">ยังไม่ได้เลือกเอกสาร</div></div><div id="inv-v4-lines" class="grid gap-2"></div>
         <div id="inv-v4-totals" class="text-sm rounded-xl bg-sky-50 border border-sky-100 p-3"></div>
         <div class="flex flex-wrap gap-2"><button type="button" onclick="invV4Copy()" class="bg-sky-700 text-white rounded-xl px-4 py-3 text-sm font-bold">คัดลอกรายการที่ต้องซื้อ</button><button type="button" onclick="invV4Reset()" class="bg-slate-100 rounded-xl px-4 py-3 text-sm">ล้างรายการคำนวณ</button></div>
         <p class="text-xs text-amber-800">หมายเหตุ: เป็นรายการคำนวณชั่วคราว ยังไม่ใช่สูตรตัดที่อนุมัติ และไม่จอง/ตัดสต๊อก · จำนวนจากแค็ตตาล็อกและน้ำหนักกิโลกรัมในบิลซื้อไม่สามารถแทนจำนวนเส้นโดยอัตโนมัติได้</p>
@@ -3821,7 +3821,7 @@
     function invClearListeners(){invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
     function invSubscribe(){invClearListeners();if(!companyAccessReady)return;
       for(const [name,key] of [['inventoryItems','items'],['inventoryMovements','moves'],['inventoryRecipes','recipes']]){
-        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
+        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
         invState.unsubs.push(unsub);
       }
     }
@@ -3901,7 +3901,62 @@
       el.innerHTML='<option value="">ไม่ผูกเอกสาร</option>'+docs.map(h=>`<option value="${invSafe(h.id||h.docNo||h.payload?.docNo)}">${invSafe(h.docNo||h.payload?.docNo)}</option>`).join('');
       results.innerHTML=!q?'<p class="text-xs text-slate-500">พิมพ์เพื่อค้นหา ไม่แสดงรายการทั้งหมด</p>':docs.length?docs.map(h=>`<button type="button" class="block w-full text-left border rounded-lg p-2 text-sm bg-white hover:bg-sky-50" onclick="invV4PickDocument('${invSafe(h.id||h.docNo||h.payload?.docNo)}')">${invSafe(h.docNo||h.payload?.docNo)} · ${invSafe(h.customerName||h.payload?.customerName||h.customer?.name||'ลูกค้า')} · ${invSafe(h.docType||h.type||'')}</button>`).join(''):'<p class="text-xs text-rose-700">ไม่พบเอกสารที่ตรงกับคำค้น</p>';
     }
-    function invV4PickDocument(id){const h=(state.history||[]).find(x=>String(x.id||x.docNo||x.payload?.docNo)===String(id));if(!h)return;const no=String(h.docNo||h.payload?.docNo||h.jobId||'');document.getElementById('inv-v4-job').value=no;document.getElementById('inv-v4-doc-search').value=no;document.getElementById('inv-v4-doc-selected').textContent='เลือกแล้ว: '+no;document.getElementById('inv-v4-doc-results').innerHTML='';invMsg('ผูกเอกสาร '+no+' แล้ว — ยังไม่ได้คำนวณ BOM อัตโนมัติ');}
+    function invV4PickDocument(id){const h=(state.history||[]).find(x=>String(x.id||x.docNo||x.payload?.docNo)===String(id));if(!h)return;const no=String(h.docNo||h.payload?.docNo||h.jobId||'');document.getElementById('inv-v4-job').value=no;document.getElementById('inv-v4-doc-search').value=no;document.getElementById('inv-v4-doc-selected').textContent='เลือกแล้ว: '+no;document.getElementById('inv-v4-doc-results').innerHTML='';invV7ShowDocument(h);invMsg('เลือกเอกสาร '+no+' แล้ว · ตรวจสอบรายการสินค้าและจับคู่สูตรได้ด้านล่าง');}
+    // V7: Read actual sales document lines, map each line to a verified recipe.
+    // This calculator never writes Firestore and never deducts inventory.
+    let invV7Selected=null;
+    function invV7SalesLines(h){
+      const payload=h?.payload||{};
+      const raw=Array.isArray(payload.items)?payload.items:[];
+      return raw.filter(x=>x&&typeof x==='object').map((x,k)=>({
+        index:k,name:String(x.name||x.description||x.title||'รายการ '+(k+1)),
+        width:Number(x.width),height:Number(x.height),qty:Number(x.qty??x.quantity??1),
+        color:String(x.aluColor||x.color||''),unit:String(x.unit||'ชุด'),type:String(x.type||'')
+      }));
+    }
+    function invV7ShowDocument(h){
+      invV7Selected=h;
+      const el=document.getElementById('inv-v7-document-body');if(!el)return;
+      const lines=invV7SalesLines(h);
+      if(!lines.length){el.innerHTML='<p class="text-amber-800">เอกสารนี้ไม่มีรายการสินค้าที่ระบบอ่านได้ กรุณาตรวจสอบเอกสารต้นทาง</p>';return;}
+      const approved=invState.recipes.filter(r=>r.status==='approved'&&!r.archived);
+      el.innerHTML='<div class="text-xs text-slate-600 mb-2">'+invSafe(h.docNo||'')+' · '+lines.length+' รายการ · เลือกสูตรที่ตรงกับระบบ/ยี่ห้อ/สีของงานจริง</div>'+lines.map((x,k)=>{
+        const valid=x.width>0&&x.height>0&&Number.isInteger(x.qty)&&x.qty>0;
+        return `<div class="bg-white border rounded-xl p-3 space-y-2"><strong>${k+1}. ${invSafe(x.name)}</strong><div class="text-xs text-slate-600">ขนาด ${valid?invMoney(x.width)+' × '+invMoney(x.height)+' ม.':'ยังไม่มีขนาดถูกต้อง'} · ${invMoney(x.qty)} ${invSafe(x.unit)} · ${invSafe(x.color)}</div><div class="grid md:grid-cols-[1fr_auto] gap-2"><select id="inv-v7-recipe-${k}" class="border rounded-lg p-2 text-sm"><option value="">-- เลือกสูตรที่ช่างยืนยันแล้ว --</option>${approved.map(r=>`<option value="${invSafe(r.id)}">${invSafe(r.name)} · ${invSafe(r.brand)}</option>`).join('')}</select><button type="button" onclick="invV7CalculateLine(${k})" class="bg-teal-700 text-white rounded-lg px-4 py-2 text-sm">คำนวณวัสดุ</button></div><div id="inv-v7-result-${k}" class="text-xs"></div></div>`;
+      }).join('');
+    }
+    function invV7CalculateLine(k){
+      const h=invV7Selected, x=invV7SalesLines(h)[k];if(!x)return invMsg('ไม่พบรายการสินค้า',true);
+      const id=document.getElementById('inv-v7-recipe-'+k)?.value;
+      const r=invState.recipes.find(r=>r.id===id&&r.status==='approved'&&!r.archived);
+      if(!r)return invMsg('กรุณาเลือกสูตรที่ช่างยืนยันแล้ว',true);
+      if(!(x.width>0&&x.height>0&&Number.isInteger(x.qty)&&x.qty>0))return invMsg('รายการนี้ไม่มีขนาดกว้าง/สูงหรือจำนวนที่ถูกต้องในเอกสาร',true);
+      if(!Array.isArray(r.lines)||!r.lines.length)return invMsg('สูตรนี้ยังไม่มีรายการวัสดุ',true);
+      const W=x.width*1000,H=x.height*1000;
+      const result=[];
+      for(const l of r.lines){
+        const item=invState.items.find(i=>i.id===l.itemId&&!i.archived);
+        const qty=Number(l.qty)*x.qty;
+        if(!item||!(qty>0)||!['fixed','W','H'].includes(l.base))return invMsg('สูตรมีรายการวัสดุที่ไม่สมบูรณ์',true);
+        const cut=l.base==='W'?W+Number(l.offsetMm||0):l.base==='H'?H+Number(l.offsetMm||0):null;
+        if(cut!==null&&!(cut>0))return invMsg('สูตรให้ระยะตัดไม่ถูกต้อง',true);
+        result.push({item,qty,cut});
+      }
+      const el=document.getElementById('inv-v7-result-'+k);
+      el.innerHTML='<div class="bg-sky-50 rounded-lg p-3 space-y-1"><strong>ผลคำนวณจากสูตร '+invSafe(r.name)+'</strong>'+result.map(z=>`<div>${invSafe(z.item.name)}: ${invMoney(z.qty)} ${z.cut===null?invSafe(z.item.unit):'ชิ้น · ตัดชิ้นละ '+invMoney(z.cut)+' มม.'}</div>`).join('')+'<p class="text-amber-800">วัสดุตัดตามความยาวยังไม่แปลงเป็นจำนวนเส้นสต๊อก ต้องจัดแผนตัดก่อน</p></div>';
+      const fixed=result.filter(z=>z.cut===null);
+      if(fixed.length)el.innerHTML+=`<button type="button" onclick="invV7ApplyFixed(${k})" class="mt-2 border border-teal-600 text-teal-800 rounded-lg px-3 py-2">นำเฉพาะอุปกรณ์นับจำนวนไปตรวจสต๊อก</button>`;
+    }
+    function invV7ApplyFixed(k){
+      const x=invV7SalesLines(invV7Selected)[k],id=document.getElementById('inv-v7-recipe-'+k)?.value;
+      const r=invState.recipes.find(r=>r.id===id&&r.status==='approved'&&!r.archived);
+      if(!r||!x||!(x.qty>0))return invMsg('สูตรหรือรายการไม่ถูกต้อง',true);
+      const fixed=r.lines.filter(l=>l.base==='fixed');
+      if(!fixed.length)return invMsg('สูตรนี้ไม่มีอุปกรณ์แบบจำนวนคงที่',true);
+      for(const l of fixed){if(!invState.items.some(i=>i.id===l.itemId&&!i.archived)||!(Number(l.qty)>0))return invMsg('วัสดุในสูตรไม่ถูกต้อง',true);}
+      for(const l of fixed)invV4.lines[l.itemId]=Math.round(((invV4.lines[l.itemId]||0)+Number(l.qty)*x.qty)*1000)/1000;
+      invV4Render();invMsg('นำอุปกรณ์จำนวนคงที่ไปตรวจสต๊อกแล้ว · ยังไม่ได้ตัดสต๊อกจริง');
+    }
     let invEditingItemId=null;
     function invCancelEdit(){invEditingItemId=null;document.getElementById('inv-edit-panel')?.classList.add('hidden');}
     function invEditItem(id){
@@ -4001,7 +4056,7 @@
       invV3.busy=true;invV3Render();try{await runTransaction(db,async tx=>{const snaps=[];for(const r of refs)snaps.push(await tx.get(r.itemRef));for(let j=0;j<refs.length;j++){const r=refs[j],snap=snaps[j];if(!snap.exists())throw Error('วัสดุบางรายการถูกลบ');const item=snap.data(),old=Number(item.quantity),delta=type==='issue'?-r.qty:r.qty,next=Math.round((old+delta)*1000)/1000;if(!Number.isFinite(old)||old<0||next<0)throw Error('สต๊อกไม่พอ: '+item.name);const movement={itemId:r.id,itemName:item.name,unit:item.unit,type,quantity:r.qty,delta,previousQuantity:old,nextQuantity:next,jobNo,reference,note,documentNo:batchNo,batchId:batchRef.id,actorUid:userId,actorEmail:auth.currentUser?.email||'',actorName:auth.currentUser?.displayName||'',createdAt:new Date().toISOString()};tx.update(r.itemRef,{quantity:next,lastMovementId:r.moveRef.id});tx.set(r.moveRef,movement);}});document.getElementById('inv-v3-document').value=batchNo;invV3.cart={};invMsg('บันทึกสำเร็จ เลขที่รายการ '+batchNo);}
       catch(e){invMsg('บันทึกไม่สำเร็จ: '+e.message,true);}finally{invV3.busy=false;invV3Render();}
     }
-    Object.assign(window,{invRecipeAddLine,invRecipeRemoveLine,invRecipeSaveLine,invRecipeApprove,invRecipeCalculate});
+    Object.assign(window,{invRecipeAddLine,invRecipeRemoveLine,invRecipeSaveLine,invRecipeApprove,invRecipeCalculate,invV7CalculateLine,invV7ApplyFixed});
     Object.assign(window,{invV4RefreshDocuments,invV3JobOptions,invV3ChooseJob});
     window.invV3SetType=invV3SetType;window.invV3Add=invV3Add;window.invV3Adjust=invV3Adjust;window.invV3ClearCart=invV3ClearCart;window.invV3SetQty=invV3SetQty;window.invV3Save=invV3Save;window.invV3Render=invV3Render;
     Object.assign(window,{invV4Add,invV4Remove,invV4Qty,invV4Render,invV4Copy,invV4Reset});
