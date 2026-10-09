@@ -716,7 +716,7 @@
     <!-- INVENTORY V1: independent of quotation, payments and historical data -->
     <section id="tab-inventory" class="hidden space-y-4 no-print">
       <div class="bg-gradient-to-r from-teal-800 to-slate-900 text-white rounded-2xl p-5">
-        <h2 class="text-xl font-bold">คลังวัสดุ Sumran Aluminum · V3</h2>
+        <h2 class="text-xl font-bold">คลังวัสดุ Sumran Aluminum · V4</h2>
         <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรฉบับร่าง (ไม่ตัดสต๊อกจากใบเสนอราคา)</p>
       </div>
       <div id="inv-alert" role="status" class="hidden rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900"></div>
@@ -736,6 +736,19 @@
         </div>
         <input id="inv-search" oninput="renderInventory()" class="w-full border rounded-xl p-3" placeholder="ค้นหาชื่อ ยี่ห้อ รหัส สี" />
         <div id="inv-items" class="grid gap-3"></div>
+      </div>
+      <!-- V4: read-only stock requirements calculator; no automatic stock deduction -->
+      <div id="inv-v4-planner" class="bg-white rounded-2xl border border-sky-200 p-4 space-y-3">
+        <div><h3 class="font-bold text-lg text-sky-900">V4 · ตรวจวัสดุก่อนรับงาน / ทำรายการซื้อ</h3><p class="text-xs text-slate-600">เลือกวัสดุจากทะเบียนจริง ระบุจำนวนที่ช่างยืนยัน ระบบเทียบสต๊อกโดยไม่เบิกออกอัตโนมัติ</p></div>
+        <div class="grid sm:grid-cols-2 gap-2">
+          <label class="text-xs font-semibold">ชื่องาน / เลขที่ใบเสนอราคา<input id="inv-v4-job" class="w-full border rounded-xl p-3 mt-1" placeholder="เช่น QT-... หรือ งานบ้านคุณ..." maxlength="120"></label>
+          <label class="text-xs font-semibold">ค้นหาวัสดุจากทะเบียน<input id="inv-v4-find" class="w-full border rounded-xl p-3 mt-1" oninput="invV4Render()" placeholder="ไทยเม็ททอล / รหัสหน้าตัด / ชื่อวัสดุ"></label>
+        </div>
+        <div id="inv-v4-candidates" class="grid gap-2 max-h-52 overflow-y-auto"></div>
+        <div id="inv-v4-lines" class="grid gap-2"></div>
+        <div id="inv-v4-totals" class="text-sm rounded-xl bg-sky-50 border border-sky-100 p-3"></div>
+        <div class="flex flex-wrap gap-2"><button type="button" onclick="invV4Copy()" class="bg-sky-700 text-white rounded-xl px-4 py-3 text-sm font-bold">คัดลอกรายการที่ต้องซื้อ</button><button type="button" onclick="invV4Reset()" class="bg-slate-100 rounded-xl px-4 py-3 text-sm">ล้างรายการคำนวณ</button></div>
+        <p class="text-xs text-amber-800">หมายเหตุ: เป็นรายการคำนวณชั่วคราว ยังไม่ใช่สูตรตัดที่อนุมัติ และไม่จอง/ตัดสต๊อก · จำนวนจากแค็ตตาล็อกและน้ำหนักกิโลกรัมในบิลซื้อไม่สามารถแทนจำนวนเส้นโดยอัตโนมัติได้</p>
       </div>
       <div class="rounded-2xl border border-teal-200 bg-gradient-to-br from-sky-50 via-white to-teal-50 p-4 space-y-4" id="inv-v3-panel">
         <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-lg text-slate-900">รับเข้า · เบิก · คืน แบบตะกร้า</h3><p class="text-xs text-slate-600">เลือกหลายวัสดุแล้วบันทึกพร้อมกัน · ออกเลขที่ใบรายการให้อัตโนมัติ</p></div><span class="rounded-full bg-teal-100 text-teal-900 px-3 py-1 text-xs font-bold">ใช้งาน V3</span></div>
@@ -3817,6 +3830,7 @@
       root.innerHTML=filtered.length?filtered.map(i=>`<div class="border rounded-xl p-3 flex flex-wrap gap-2 justify-between items-center"><div><strong>${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)}</div>${isOwner()?`<div class="text-xs text-slate-500">ต้นทุน/หน่วย ฿${invMoney(i.unitCost)}</div>`:''}</div><div class="text-right"><strong class="text-lg ${invNum(i.quantity)<=invNum(i.minStock)?'text-amber-700':'text-teal-700'}">${invMoney(i.quantity)} ${invSafe(i.unit)}</strong><div class="text-xs text-slate-500">ขั้นต่ำ ${invMoney(i.minStock)} ${invSafe(i.unit)}</div><div class="flex gap-1 justify-end mt-2"><button type="button" onclick="invQuickMove('${invSafe(i.id)}','receive')" class="bg-teal-50 text-teal-800 border rounded-lg px-2 py-1 text-xs">+ รับเข้า</button><button type="button" onclick="invQuickMove('${invSafe(i.id)}','issue')" class="bg-sky-50 text-sky-800 border rounded-lg px-2 py-1 text-xs">เบิก</button></div></div></div>`).join(''):'<p class="text-sm text-slate-500">ยังไม่มีรายการวัสดุ</p>';
       // V3 uses the cart UI; the removed V2 inv-move-item select must not be accessed.
       invV3Render();
+      invV4Render();
       const historyFilter=document.getElementById("inv-history-filter")?.value||"all";const moves=invState.moves.filter(m=>historyFilter==="all"||m.type===historyFilter).slice().sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||""))).slice(0,20);
       document.getElementById('inv-movements').innerHTML=moves.length?moves.map(m=>`<div class="border rounded-xl p-3"><strong>${m.type==='receive'?'รับเข้า':m.type==='return'?'คืน':'เบิก'} ${invMoney(m.quantity)} ${invSafe(m.unit)}</strong> — ${invSafe(m.itemName)}<div class="text-xs text-slate-500">งาน ${invSafe(m.jobNo||'-')} · ${invSafe(m.actorName||m.actorEmail)} · ${invSafe(m.createdAt||'')} · ${invSafe(m.reference||'')} ${invSafe(m.note||'')}</div></div>`).join(''):'<p class="text-slate-500">ยังไม่มีประวัติ</p>';
       document.getElementById('inv-recipes').innerHTML=invState.recipes.map(r=>`<div class="border rounded-xl p-3"><div class="flex justify-between gap-2"><strong>${invSafe(r.name)} · ${invSafe(r.brand)}</strong><span class="text-xs text-amber-700">ฉบับร่าง</span></div><textarea aria-label="บันทึกสูตร" id="inv-note-${invSafe(r.id)}" class="w-full border rounded-lg p-2 mt-2 text-sm" rows="2" placeholder="รหัสหน้าตัด/รายการวัสดุ/สูตรที่รอช่างยืนยัน">${invSafe(r.notes||'')}</textarea><button type="button" onclick="invUpdateRecipe('${invSafe(r.id)}')" class="bg-slate-100 px-3 py-2 rounded-lg text-xs mt-1">บันทึกโน้ต</button></div>`).join('')||'<p class="text-slate-500 text-sm">ยังไม่มีสูตร</p>';
@@ -3847,6 +3861,21 @@
     async function invUpdateRecipe(id){if(!invCanWrite()||!isOwner())return invMsg('แก้สูตรได้เฉพาะเจ้าของร้าน',true);const notes=document.getElementById('inv-note-'+id)?.value||'';if(notes.length>5000)return invMsg('โน้ตยาวเกิน 5,000 ตัวอักษร',true);
       try{await updateDoc(cloudPath('inventoryRecipes',id),{notes,updatedAt:new Date().toISOString(),updatedByUid:userId});invMsg('บันทึกโน้ตสูตรแล้ว');}catch(e){invMsg(e.message,true);}}
     // V3 batch cart. A single Firestore transaction updates all distinct materials.
+    // V4 stock planning: intentionally client-side only; does not write or mutate stock.
+    const invV4={lines:{}};
+    function invV4Add(id){if(!invState.items.some(i=>i.id===id))return;invV4.lines[id]=invV4.lines[id]||1;invV4Render();}
+    function invV4Remove(id){delete invV4.lines[id];invV4Render();}
+    function invV4Qty(id,value){const n=Number(value);if(!Number.isFinite(n)||n<=0||Math.round(n*1000)!==n*1000)return invMsg('จำนวนต้องมากกว่า 0 และทศนิยมไม่เกิน 3 ตำแหน่ง',true);invV4.lines[id]=n;invV4Render();}
+    function invV4Rows(){return Object.entries(invV4.lines).map(([id,qty])=>({item:invState.items.find(i=>i.id===id),qty})).filter(x=>x.item);}
+    function invV4Render(){const el=document.getElementById('inv-v4-candidates');if(!el)return;const q=(document.getElementById('inv-v4-find')?.value||'').trim().toLocaleLowerCase();const list=invState.items.filter(i=>[i.name,i.brand,i.sku,i.color].some(v=>String(v||'').toLocaleLowerCase().includes(q))).slice(0,35);
+      el.innerHTML=list.map(i=>`<div class="flex justify-between items-center gap-2 border rounded-xl p-2"><div class="min-w-0"><strong class="text-sm">${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)} · มี ${invMoney(i.quantity)} ${invSafe(i.unit)}</div></div><button type="button" onclick="invV4Add('${invSafe(i.id)}')" class="shrink-0 bg-sky-50 text-sky-800 border rounded-lg px-3 py-2 text-xs">+ ใช้ในงาน</button></div>`).join('')||'<p class="text-sm text-slate-500">ยังไม่มีวัสดุในทะเบียนที่ตรงกับคำค้น</p>';
+      const rows=invV4Rows();document.getElementById('inv-v4-lines').innerHTML=rows.map(({item:i,qty})=>{const available=Math.max(0,invNum(i.quantity)),missing=Math.max(0,Math.round((qty-available)*1000)/1000);return `<div class="border rounded-xl p-3 grid grid-cols-[1fr_auto] gap-2 items-center"><div><strong class="text-sm">${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)} · มี ${invMoney(available)} ${invSafe(i.unit)}</div><div class="text-xs font-bold ${missing?'text-rose-700':'text-emerald-700'}">${missing?'ต้องซื้อเพิ่ม '+invMoney(missing):'วัสดุเพียงพอ'} ${invSafe(i.unit)}</div></div><div class="flex items-center gap-2"><input aria-label="จำนวนที่ต้องใช้" type="number" min="0.001" step="0.001" value="${qty}" onchange="invV4Qty('${invSafe(i.id)}',this.value)" class="w-24 border rounded-lg p-2 text-sm"><button type="button" onclick="invV4Remove('${invSafe(i.id)}')" class="text-red-700 text-xs">ลบ</button></div></div>`}).join('')||'<p class="text-sm text-slate-500">เลือกวัสดุที่ต้องใช้ในงานก่อน</p>';
+      const lacking=rows.filter(({item,qty})=>qty>Math.max(0,invNum(item.quantity)));document.getElementById('inv-v4-totals').textContent=`ตรวจ ${rows.length} รายการ · พอ ${rows.length-lacking.length} รายการ · ต้องซื้อเพิ่ม ${lacking.length} รายการ (ยังไม่หักยอดจองงานอื่น)`;
+    }
+    function invV4ShoppingText(){const job=(document.getElementById('inv-v4-job')?.value||'').trim()||'ไม่ระบุงาน';const rows=invV4Rows().map(({item:i,qty})=>({i,missing:Math.max(0,Math.round((qty-Math.max(0,invNum(i.quantity)))*1000)/1000)})).filter(x=>x.missing>0);return 'รายการซื้อวัสดุ — '+job+'\n'+(rows.length?rows.map(({i,missing},idx)=>`${idx+1}. ${i.name} / ${i.brand||'-'} / ${i.sku||'-'} / ${i.color||'-'} : ${invMoney(missing)} ${i.unit||''}`).join('\n'):'วัสดุในรายการเพียงพอตามยอดคงเหลือปัจจุบัน')+'\nหมายเหตุ: ยังไม่หักยอดจองงานอื่น และจำนวนต้องตรวจสอบกับช่างก่อนสั่งซื้อ';}
+    function invV4Copy(){if(!invV4Rows().length)return invMsg('กรุณาเลือกวัสดุที่ต้องใช้ก่อน',true);const value=invV4ShoppingText();if(navigator.clipboard?.writeText){navigator.clipboard.writeText(value).then(()=>invMsg('คัดลอกรายการซื้อแล้ว')).catch(()=>invV4CopyFallback(value));}else invV4CopyFallback(value);}
+    function invV4CopyFallback(value){const t=document.createElement('textarea');t.value=value;document.body.appendChild(t);t.select();try{document.execCommand('copy');invMsg('คัดลอกรายการซื้อแล้ว');}catch(e){invMsg('ไม่สามารถคัดลอกอัตโนมัติได้',true);}finally{t.remove();}}
+    function invV4Reset(){invV4.lines={};document.getElementById('inv-v4-job').value='';invV4Render();}
     const invV3={type:'issue',cart:{},busy:false};
     function invV3SetType(t){if(!['receive','issue','return'].includes(t))return;invV3.type=t;invV3.cart={};invV3Render();}
     function invV3Add(id){if(!invState.items.some(i=>i.id===id))return;invV3.cart[id]=(invV3.cart[id]||0)+1;invV3Render();}
