@@ -712,7 +712,7 @@
 
 </style>
 <style>
-/* V38 desktop-first dashboard, preserving original form nodes and Firebase listeners */
+/* V39 desktop-first dashboard, preserving original form nodes and Firebase listeners */
 #tab-inventory{--v38-ink:#102b48;--v38-blue:#1267d5;--v38-line:#dce7f2;color:var(--v38-ink)}
 #tab-inventory>.bg-gradient-to-r{display:none!important}
 #v38-shell{display:grid;grid-template-columns:235px minmax(0,1fr);gap:20px;align-items:start}
@@ -5279,7 +5279,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <script>
-/* V38: move existing nodes (never clone inputs) into desktop dashboard */
+/* V39: move existing nodes (never clone inputs) into desktop dashboard */
 (function(){
  function boot(){
  const root=document.getElementById('tab-inventory'),nav=document.getElementById('v24-inventory-nav'),assistant=document.getElementById('v36-assistant');
@@ -5298,7 +5298,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const guide=document.getElementById('v32-guide');if(guide)guide.hidden=true;
  const status=document.getElementById('inv-cloud-status');if(status)main.insertBefore(status,top);
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,250));else setTimeout(boot,250);
+ // V39: wait for V24 to construct navigation instead of assuming it exists after 250ms.
+ let attempts=0;
+ function ensure(){
+   if(document.getElementById('v38-shell'))return;
+   boot();
+   if(!document.getElementById('v38-shell') && ++attempts<35) setTimeout(ensure,200);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure);else ensure();
 })();
 </script>
 </body>
