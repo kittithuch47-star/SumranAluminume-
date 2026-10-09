@@ -4079,12 +4079,21 @@
       if(unit!==i.unit&&(invNum(i.quantity)!==0||invState.moves.some(m=>m.itemId===i.id)))return invMsg('เปลี่ยนหน่วยนับไม่ได้เมื่อมีสต๊อกหรือประวัติแล้ว เพราะต้องแปลงหน่วยให้ถูกต้องก่อน',true);
       const id=invEditingItemId;
       try{
-        await updateDoc(cloudPath('inventoryItems',id),{name,brand,sku,color,unit,lengthMm,minStock,unitCost,updatedAt:new Date().toISOString(),updatedByUid:userId});
+        // ส่งเฉพาะฟิลด์ที่ผู้ใช้แก้จริง ลดความเสี่ยงจากการเขียนฟิลด์ที่ไม่ได้เปลี่ยน
+        const desired={name,brand,sku,color,unit,lengthMm,minStock,unitCost};
+        const changes=Object.fromEntries(Object.entries(desired).filter(([key,value])=>i[key]!==value));
+        if(!Object.keys(changes).length){invCancelEdit();return invMsg('ข้อมูลไม่มีการเปลี่ยนแปลง');}
+        changes.updatedAt=new Date().toISOString();
+        changes.updatedByUid=userId;
+        await updateDoc(cloudPath('inventoryItems',id),changes);
         const verified=await getDoc(cloudPath('inventoryItems',id));
         if(!verified.exists()||verified.data().lengthMm!==lengthMm||verified.data().name!==name)throw Error('ข้อมูลที่อ่านกลับไม่ตรงกับที่บันทึก กรุณาลองใหม่');
         const idx=invState.items.findIndex(x=>x.id===id);if(idx>=0)invState.items[idx]={...invState.items[idx],...verified.data()};
         invCancelEdit();renderInventory();invMsg('บันทึกการแก้ไขสำเร็จ และตรวจสอบข้อมูลที่บันทึกแล้ว (ยอดสต๊อกเดิมไม่เปลี่ยน)');
-      }catch(e){invMsg('แก้ไขทะเบียนไม่สำเร็จ: '+e.message,true);}
+      }catch(e){
+        const denied=e?.code==='permission-denied'||/missing or insufficient permissions/i.test(String(e?.message||''));
+        invMsg(denied?'บันทึกไม่ได้: Firestore Rules ไม่อนุญาตให้แก้ไขทะเบียนวัสดุ กรุณาปรับกฎ inventoryItems ให้เจ้าของร้านแก้รายละเอียดวัสดุได้ (ไม่รวมยอดสต๊อก) — การเปลี่ยน HTML อย่างเดียวไม่สามารถข้ามสิทธิ์ฐานข้อมูลได้':'แก้ไขทะเบียนไม่สำเร็จ: '+e.message,true);
+      }
     }
     async function invDeleteItem(id){
       if(!invCanWrite()||!isOwner())return invMsg('ลบได้เฉพาะเจ้าของร้าน',true);
