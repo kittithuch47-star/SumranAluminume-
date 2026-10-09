@@ -4293,17 +4293,18 @@
       const el=document.getElementById('inv-v7-document-body');if(!el)return;
       const lines=invV7SalesLines(h);
       if(!lines.length){el.innerHTML='<p class="text-amber-800">เอกสารนี้ไม่มีรายการสินค้าที่ระบบอ่านได้ กรุณาตรวจสอบเอกสารต้นทาง</p>';return;}
-      const approved=invState.recipes.filter(r=>r.status==='approved'&&!r.archived&&r.recipeKind!=='standardV12');
+      const approved=invState.recipes.filter(r=>r.status==='approved'&&!r.archived&&((r.recipeKind==='standardV12'&&Array.isArray(r.standardLines)&&r.standardLines.length)||(r.recipeKind!=='standardV12'&&Array.isArray(r.lines)&&r.lines.length)));
       el.innerHTML='<div class="text-xs text-slate-600 mb-2">'+invSafe(h.docNo||'')+' · '+lines.length+' รายการ · เลือกสูตรที่ตรงกับระบบ/ยี่ห้อ/สีของงานจริง</div>'+lines.map((x,k)=>{
         const valid=x.width>0&&x.height>0&&Number.isInteger(x.qty)&&x.qty>0;
-        return `<div class="bg-white border rounded-xl p-3 space-y-2"><strong>${k+1}. ${invSafe(x.name)}</strong><div class="text-xs text-slate-600">ขนาด ${valid?invMoney(x.width)+' × '+invMoney(x.height)+' ม.':'ยังไม่มีขนาดถูกต้อง'} · ${invMoney(x.qty)} ${invSafe(x.unit)} · ${invSafe(x.color)}</div><div class="grid md:grid-cols-[1fr_auto] gap-2"><select id="inv-v7-recipe-${k}" class="border rounded-lg p-2 text-sm"><option value="">-- เลือกสูตรที่ช่างยืนยันแล้ว --</option>${approved.map(r=>`<option value="${invSafe(r.id)}">${invSafe(r.name)} · ${invSafe(r.brand)}</option>`).join('')}</select><button type="button" onclick="invV7CalculateLine(${k})" class="bg-teal-700 text-white rounded-lg px-4 py-2 text-sm">คำนวณวัสดุ</button></div><div id="inv-v7-result-${k}" class="text-xs"></div></div>`;
+        return `<div class="bg-white border rounded-xl p-3 space-y-2"><strong>${k+1}. ${invSafe(x.name)}</strong><div class="text-xs text-slate-600">ขนาด ${valid?invMoney(x.width)+' × '+invMoney(x.height)+' ม.':'ยังไม่มีขนาดถูกต้อง'} · ${invMoney(x.qty)} ${invSafe(x.unit)} · ${invSafe(x.color)}</div><div class="grid md:grid-cols-[1fr_auto] gap-2"><select id="inv-v7-recipe-${k}" class="border rounded-lg p-2 text-sm"><option value="">-- เลือกสูตรที่ช่างยืนยันแล้ว --</option>${approved.map(r=>`<option value="${invSafe(r.id)}">${invSafe(r.name)} · ${invSafe(r.brand)} ${r.recipeKind==='standardV12'?'(สูตรมาตรฐาน)':'(สูตรเดิม)'}</option>`).join('')}</select><button type="button" onclick="invV7CalculateLine(${k})" class="bg-teal-700 text-white rounded-lg px-4 py-2 text-sm">คำนวณวัสดุ</button></div><div id="inv-v7-result-${k}" class="text-xs"></div></div>`;
       }).join('');
     }
     function invV7CalculateLine(k){
       const h=invV7Selected, x=invV7SalesLines(h)[k];if(!x)return invMsg('ไม่พบรายการสินค้า',true);
       const id=document.getElementById('inv-v7-recipe-'+k)?.value;
       const r=invState.recipes.find(r=>r.id===id&&r.status==='approved'&&!r.archived);
-      if(!r)return invMsg('กรุณาเลือกสูตรที่ช่างยืนยันแล้ว',true);
+      if(!r)return invMsg('กรุณาเลือกสูตรที่ช่างยืนยันแล้ว — หากยังไม่มี ให้ไปที่เมนูสูตรการผลิตเพื่อตรวจสอบสถานะสูตร',true);
+      if(r.recipeKind==='standardV12')return invV26CalculateStandard(k,r,x);
       if(!(x.width>0&&x.height>0&&Number.isInteger(x.qty)&&x.qty>0))return invMsg('รายการนี้ไม่มีขนาดกว้าง/สูงหรือจำนวนที่ถูกต้องในเอกสาร',true);
       if(!Array.isArray(r.lines)||!r.lines.length)return invMsg('สูตรนี้ยังไม่มีรายการวัสดุ',true);
       const W=x.width*1000,H=x.height*1000;
@@ -4320,6 +4321,31 @@
       el.innerHTML='<div class="bg-sky-50 rounded-lg p-3 space-y-1"><strong>ผลคำนวณจากสูตร '+invSafe(r.name)+'</strong>'+result.map(z=>`<div>${invSafe(z.item.name)}: ${invMoney(z.qty)} ${z.cut===null?invSafe(z.item.unit):'ชิ้น · ตัดชิ้นละ '+invMoney(z.cut)+' มม.'}</div>`).join('')+'<p class="text-amber-800">วัสดุตัดตามความยาวยังไม่แปลงเป็นจำนวนเส้นสต๊อก ต้องจัดแผนตัดก่อน</p></div>';
       const fixed=result.filter(z=>z.cut===null);
       if(fixed.length)el.innerHTML+=`<button type="button" onclick="invV7ApplyFixed(${k})" class="mt-2 border border-teal-600 text-teal-800 rounded-lg px-3 py-2">นำเฉพาะอุปกรณ์นับจำนวนไปตรวจสต๊อก</button>`;
+    }
+    // V26: Use existing V12 calculation engine for standard recipes, without changing formulas.
+    // Show its verified read-only result alongside the selected quotation line.
+    function invV26CalculateStandard(k,r,x){
+      const output=document.getElementById('inv-v7-result-'+k);
+      if(!output)return;
+      if(!(x.width>0&&x.height>0&&Number.isInteger(x.qty)&&x.qty>0)){
+        output.innerHTML='<p class="text-red-700">บิลนี้ไม่มีขนาดกว้าง/สูงหรือจำนวนที่ถูกต้อง กรุณาตรวจบิลต้นทาง</p>';return;
+      }
+      const pick=document.getElementById('v12-pick');
+      if(!pick||typeof v12Calculate!=='function'){
+        output.innerHTML='<p class="text-red-700">ไม่พบเครื่องคำนวณสูตรมาตรฐานในหน้านี้</p>';return;
+      }
+      const fields={'v12-w':x.width,'v12-h':x.height,'v12-sets':x.qty};
+      for(const [id,value] of Object.entries(fields)){const el=document.getElementById(id);if(el)el.value=String(value);}
+      const panels=document.getElementById('v12-panels');if(panels&&!Number(panels.value))panels.value='1';
+      pick.value=r.id;
+      if(pick.value!==r.id){v12Refresh();pick.value=r.id;}
+      v12Calculate();
+      const result=document.getElementById('v12-result');
+      const html=result?.innerHTML||'';
+      if(!html.trim()){
+        output.innerHTML='<p class="text-red-700">สูตรคำนวณไม่สำเร็จ กรุณาตรวจข้อความแจ้งเตือนในหน้าสูตรการผลิต</p>';return;
+      }
+      output.innerHTML='<div class="mt-2 text-sm"><p class="font-bold text-teal-900 mb-2">ผลคำนวณสูตรมาตรฐานจากบิล (ยังไม่ตัดสต๊อก)</p>'+html+'<p class="text-amber-800 mt-2">ตรวจจำนวนบาน ระยะแบ่งบาน และแผนตัดกับช่างก่อนเบิกจริง รายการนี้ยังไม่ถูกเพิ่มเข้าตะกร้าเบิกอัตโนมัติ</p></div>';
     }
     function invV7ApplyFixed(k){
       const x=invV7SalesLines(invV7Selected)[k],id=document.getElementById('inv-v7-recipe-'+k)?.value;
@@ -4420,7 +4446,7 @@
       const lacking=rows.filter(({item,qty})=>qty>Math.max(0,invNum(item.quantity)));document.getElementById('inv-v4-totals').textContent=`ตรวจ ${rows.length} รายการ · พอ ${rows.length-lacking.length} รายการ · ต้องซื้อเพิ่ม ${lacking.length} รายการ (ยังไม่หักยอดจองงานอื่น)`;
     }
     function invV4ShoppingText(){const job=(document.getElementById('inv-v4-job')?.value||'').trim()||'ไม่ระบุงาน';const rows=invV4Rows().map(({item:i,qty})=>({i,missing:Math.max(0,Math.round((qty-Math.max(0,invNum(i.quantity)))*1000)/1000)})).filter(x=>x.missing>0);return 'รายการซื้อวัสดุ — '+job+'\n'+(rows.length?rows.map(({i,missing},idx)=>`${idx+1}. ${i.name} / ${i.brand||'-'} / ${i.sku||'-'} / ${i.color||'-'} : ${invMoney(missing)} ${i.unit||''}`).join('\n'):'วัสดุในรายการเพียงพอตามยอดคงเหลือปัจจุบัน')+'\nหมายเหตุ: ยังไม่หักยอดจองงานอื่น และจำนวนต้องตรวจสอบกับช่างก่อนสั่งซื้อ';}
-    function invV4Copy(){if(!invV4Rows().length)return invMsg('กรุณาเลือกวัสดุที่ต้องใช้ก่อน',true);const value=invV4ShoppingText();if(navigator.clipboard?.writeText){navigator.clipboard.writeText(value).then(()=>invMsg('คัดลอกรายการซื้อแล้ว')).catch(()=>invV4CopyFallback(value));}else invV4CopyFallback(value);}
+    function invV4Copy(){if(!invV4Rows().length)return alert('ยังไม่มีรายการวัสดุที่นำไปตรวจสต๊อก จึงยังไม่มีรายการซื้อที่ขาด\nกรุณาคำนวณสูตรและตรวจแผนตัดก่อน');const value=invV4ShoppingText();if(navigator.clipboard?.writeText){navigator.clipboard.writeText(value).then(()=>invMsg('คัดลอกรายการซื้อแล้ว')).catch(()=>invV4CopyFallback(value));}else invV4CopyFallback(value);}
     function invV4CopyFallback(value){const t=document.createElement('textarea');t.value=value;document.body.appendChild(t);t.select();try{document.execCommand('copy');invMsg('คัดลอกรายการซื้อแล้ว');}catch(e){invMsg('ไม่สามารถคัดลอกอัตโนมัติได้',true);}finally{t.remove();}}
     function invV4Reset(){invV4.lines={};document.getElementById('inv-v4-job').value='';invV4Render();}
     const invV3={type:'issue',cart:{},busy:false};
@@ -4617,7 +4643,7 @@
       const job=(document.getElementById('inv-v4-job')?.value||'').trim();
       if(!job)return invMsg('เลือกเอกสารลูกค้าหรือระบุเลขงานก่อนเตรียมเบิก',true);
       const rows=invV4Rows();
-      if(!rows.length)return invMsg('ยังไม่มีวัสดุที่คำนวณและนำเข้ารายการตรวจสต๊อก',true);
+      if(!rows.length)return alert('ยังไม่มีรายการวัสดุในตารางตรวจสต๊อก\n\nสูตรมาตรฐานแสดงแผนตัดให้ตรวจสอบก่อน และยังไม่โอนวัสดุตัดเป็นเส้นเข้าตะกร้าอัตโนมัติ เพื่อป้องกันการเบิกผิด');
       if(rows.length>5)return invMsg('ระบบบันทึกได้ครั้งละไม่เกิน 5 รายการ กรุณาแบ่งเบิกเป็นชุด',true);
       for(const {item,qty} of rows){
         if(!item||item.archived||!(qty>0)||!Number.isFinite(qty))return invMsg('มีรายการวัสดุที่ไม่ถูกต้อง กรุณาตรวจสอบ',true);
@@ -4731,8 +4757,8 @@
   const actions=document.createElement('div');actions.id='inv-v25-actions';actions.className='rounded-2xl border border-teal-200 bg-white p-3 sm:p-4';
   actions.innerHTML=`<div class="flex flex-wrap justify-between items-center gap-2 mb-3"><div><strong class="text-teal-900">ทำงานจากบิลเดียวกัน</strong><p class="text-xs text-slate-500">เลือกบิล → จับคู่สูตร → ตรวจสต๊อก → ซื้อที่ขาด หรือเตรียมเบิก</p></div><span class="text-xs text-slate-500">V25</span></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2"><button type="button" id="inv-v25-buy" class="rounded-xl bg-sky-50 border border-sky-200 text-sky-900 font-bold px-3 py-3 text-sm">คัดลอกรายการซื้อที่ขาด</button><button type="button" id="inv-v25-issue" class="rounded-xl bg-teal-700 text-white font-bold px-3 py-3 text-sm">เตรียมเบิกตามบิล</button><button type="button" id="inv-v25-receive" class="rounded-xl bg-white border border-slate-300 text-slate-800 font-bold px-3 py-3 text-sm">รับของที่ซื้อเข้าคลัง</button></div><p class="text-xs text-amber-800 mt-3">การเตรียมเบิกจะนำเฉพาะวัสดุที่อยู่ในรายการตรวจสต๊อกไปใส่ตะกร้า ไม่รวมชิ้นตัดที่ยังไม่ได้แปลงเป็นจำนวนเส้นจริง และไม่ตัดสต๊อกอัตโนมัติ</p>`;
   planner.insertBefore(actions,document.getElementById('inv-v4-totals'));
-  document.getElementById('inv-v25-buy').addEventListener('click',()=>window.invV4Copy?.());
-  document.getElementById('inv-v25-issue').addEventListener('click',()=>window.invV25PrepareIssue?.());
+  document.getElementById('inv-v25-buy').addEventListener('click',()=>{if(!window.invV4Copy)return alert('เครื่องมือรายการซื้อยังโหลดไม่เสร็จ');window.invV4Copy();});
+  document.getElementById('inv-v25-issue').addEventListener('click',()=>{if(!window.invV25PrepareIssue)return alert('เครื่องมือเบิกวัสดุยังโหลดไม่เสร็จ');window.invV25PrepareIssue();});
   document.getElementById('inv-v25-receive').addEventListener('click',()=>{window.v24InventoryOpen?.('movement',true);window.invV3SetType?.('receive');document.getElementById('inv-v3-panel')?.scrollIntoView({behavior:'smooth',block:'start'});});
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
