@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sumran Aluminum - ระบบจัดการเอกสาร</title>
+  <title>Sumran Aluminum - ระบบจัดการเอกสารและสูตรการผลิต</title>
   <meta name="theme-color" content="#075985">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -738,7 +738,7 @@
           <label class="text-xs">รหัส / รุ่น<input id="inv-sku" maxlength="80" class="w-full border p-2 rounded-lg" /></label>
           <label class="text-xs">สี<input id="inv-color" maxlength="80" class="w-full border p-2 rounded-lg" /></label>
           <label class="text-xs">หน่วย<select id="inv-unit" class="w-full border p-2 rounded-lg"><option>เส้น</option><option>ชิ้น</option><option>แผ่น</option><option>หลอด</option><option>กล่อง</option><option>เมตร</option><option>ชุด</option><option>ตัว</option></select></label>
-          <label class="text-xs">ความยาวต่อเส้น (มม., ถ้ามี)<input id="inv-length" type="number" min="0" step="1" class="w-full border p-2 rounded-lg" /></label>
+          <label class="text-xs">ความยาวต่อเส้น (มม., เช่น 6000 = 6 เมตร)<input id="inv-length" type="number" min="0" step="1" class="w-full border p-2 rounded-lg" /></label>
           <label class="text-xs">จุดสั่งซื้อเพิ่ม<input id="inv-min" type="number" min="0" step="0.001" value="0" class="w-full border p-2 rounded-lg" /></label>
           <label class="text-xs">ราคาทุนต่อหน่วย (บาท) — เจ้าของเท่านั้น<input id="inv-cost" type="number" min="0" step="0.01" value="0" class="w-full border p-2 rounded-lg" /></label>
           <div class="flex items-end"><button type="button" onclick="invAddItem()" class="bg-teal-700 text-white px-4 py-3 rounded-xl w-full">บันทึกวัสดุใหม่</button></div>
@@ -752,7 +752,7 @@
             <label class="text-xs">รหัส / รุ่น<input id="inv-edit-sku" maxlength="80" class="w-full border p-2 rounded-lg"></label>
             <label class="text-xs">สี<input id="inv-edit-color" maxlength="80" class="w-full border p-2 rounded-lg"></label>
             <label class="text-xs">หน่วยนับ<select id="inv-edit-unit" class="w-full border p-2 rounded-lg"><option>เส้น</option><option>ชิ้น</option><option>แผ่น</option><option>หลอด</option><option>กล่อง</option><option>เมตร</option><option>ชุด</option><option>ตัว</option><option>กิโลกรัม</option></select></label>
-            <label class="text-xs">ความยาวต่อเส้น (มม.)<input id="inv-edit-length" type="number" min="0" step="1" class="w-full border p-2 rounded-lg"></label>
+            <label class="text-xs">ความยาวต่อเส้น (มม. เช่น 6000 = 6 เมตร)<input id="inv-edit-length" type="number" min="0" step="1" class="w-full border p-2 rounded-lg"></label>
             <label class="text-xs">จุดสั่งซื้อเพิ่ม<input id="inv-edit-min" type="number" min="0" step="0.001" class="w-full border p-2 rounded-lg"></label>
             <label class="text-xs">ต้นทุนต่อหน่วย (บาท)<input id="inv-edit-cost" type="number" min="0" step="0.01" class="w-full border p-2 rounded-lg"></label>
           </div>
@@ -811,7 +811,7 @@
         </div></details>
         <p class="text-xs text-amber-800">ความกว้างบานเบื้องต้น = (กว้างงาน − ระยะรวมที่หัก) ÷ จำนวนบาน · ใช้เฉพาะแบบที่บานกว้างเท่ากัน และช่างต้องยืนยันระยะซ้อน/เสากลางก่อนผลิต</p>
         <button type="button" onclick="v12Calculate()" class="w-full bg-teal-700 text-white font-bold rounded-xl p-3">คำนวณวัสดุสำหรับการผลิต</button>
-        <div id="v12-result" class="text-sm" aria-live="polite"></div>
+        <div id="v12-result" class="text-sm" aria-live="polite"></div><section class="rounded-xl border border-teal-200 bg-teal-50/40 p-3 space-y-2"><div class="flex flex-wrap justify-between gap-2 items-center"><strong class="text-teal-900">ทะเบียนสูตรการผลิต</strong><span id="v15-recipe-count" class="text-xs text-slate-600">กำลังโหลดสูตร...</span></div><input id="v15-recipe-search" oninput="v15RenderRecipes()" class="w-full border rounded-lg p-2 text-sm" placeholder="ค้นหาชื่อสูตร ประเภทงาน หรือยี่ห้อ"><div id="v15-recipe-list" class="grid gap-2"></div></section>
         <details class="border rounded-xl p-3 bg-slate-50" id="v12-editor"><summary class="cursor-pointer font-semibold">จัดการสูตรการผลิต · สร้าง / แก้ไข / คัดลอก</summary>
           <div class="grid sm:grid-cols-2 gap-2 mt-3"><label class="text-xs">ประเภทงาน<select id="v13-category" class="w-full border rounded-lg p-2 mt-1"><option value="door">ประตู</option><option value="window">หน้าต่าง</option><option value="glass">งานกระจก</option><option value="partition">ผนัง / ฉากกั้น</option><option value="other">งานอื่น ๆ</option></select></label><label class="text-xs">ชื่อสูตร<input id="v12-name" class="w-full border rounded-lg p-2 mt-1" placeholder="เช่น บานเลื่อนสลับ 2 บาน"></label><label class="text-xs">ยี่ห้อ / ระบบ<input id="v12-brand" class="w-full border rounded-lg p-2 mt-1" placeholder="เช่น ระบบรางแขวน รุ่น... "></label></div>
           <p class="text-xs mt-2 text-slate-600">เพิ่มวัสดุจากทะเบียน กำหนดฐานคำนวณ ค่าบวก/ลบ และจำนวนต่อชุดหรือต่อบาน · ถ้ากระจกใช้ฐาน กว้างบาน/สูงงาน ให้ใส่ค่าหักกระจกที่ช่างตรวจแล้ว</p>
@@ -3862,7 +3862,7 @@
     function invClearListeners(){invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
     function invSubscribe(){invClearListeners();if(!companyAccessReady)return;
       for(const [name,key] of [['inventoryItems','items'],['inventoryMovements','moves'],['inventoryRecipes','recipes']]){
-        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes')v12Refresh();if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
+        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
         invState.unsubs.push(unsub);
       }
     }
@@ -4073,11 +4073,15 @@
       const lengthMm=Number(v('length')||0),minStock=Number(v('min')||0),unitCost=Number(v('cost')||0);
       if(!name)return invMsg('กรุณากรอกชื่อวัสดุ',true);
       if(![lengthMm,minStock,unitCost].every(n=>Number.isFinite(n)&&n>=0)||!Number.isInteger(lengthMm))return invMsg('ตรวจสอบความยาว ราคา และจำนวนขั้นต่ำ',true);
+      if(unit==='เส้น'&&lengthMm>0&&lengthMm<100&& !confirm('ความยาว '+lengthMm+' มม. สั้นผิดปกติสำหรับอะลูมิเนียมแบบเส้น คุณตั้งใจใส่เป็นมิลลิเมตรใช่ไหม? เช่น 6 เมตร ต้องกรอก 6000'))return;
       if(unit!==i.unit&&(invNum(i.quantity)!==0||invState.moves.some(m=>m.itemId===i.id)))return invMsg('เปลี่ยนหน่วยนับไม่ได้เมื่อมีสต๊อกหรือประวัติแล้ว เพราะต้องแปลงหน่วยให้ถูกต้องก่อน',true);
       const id=invEditingItemId;
       try{
         await updateDoc(cloudPath('inventoryItems',id),{name,brand,sku,color,unit,lengthMm,minStock,unitCost,updatedAt:new Date().toISOString(),updatedByUid:userId});
-        invCancelEdit();invMsg('บันทึกการแก้ไขข้อมูลวัสดุครบทุกช่องแล้ว (ยอดสต๊อกเดิมไม่เปลี่ยน)');
+        const verified=await getDoc(cloudPath('inventoryItems',id));
+        if(!verified.exists()||verified.data().lengthMm!==lengthMm||verified.data().name!==name)throw Error('ข้อมูลที่อ่านกลับไม่ตรงกับที่บันทึก กรุณาลองใหม่');
+        const idx=invState.items.findIndex(x=>x.id===id);if(idx>=0)invState.items[idx]={...invState.items[idx],...verified.data()};
+        invCancelEdit();renderInventory();invMsg('บันทึกการแก้ไขสำเร็จ และตรวจสอบข้อมูลที่บันทึกแล้ว (ยอดสต๊อกเดิมไม่เปลี่ยน)');
       }catch(e){invMsg('แก้ไขทะเบียนไม่สำเร็จ: '+e.message,true);}
     }
     async function invDeleteItem(id){
@@ -4237,7 +4241,7 @@
     function v12El(id){return document.getElementById(id)}
     function v12Msg(t,bad=false){const e=v12El('v12-msg');if(e){e.textContent=t;e.className='text-sm '+(bad?'text-red-700':'text-teal-800')}}
     function v12Recipes(){return invState.recipes.filter(r=>r.recipeKind==='standardV12'&&!r.archived)}
-    function v12Refresh(){const e=v12El('v12-pick');if(!e)return;const selected=e.value; e.innerHTML='<option value="">เลือกสูตร...</option>'+v12Recipes().map(r=>`<option value="${invSafe(r.id)}">${invSafe(({door:'ประตู',window:'หน้าต่าง',glass:'กระจก',partition:'ผนัง/ฉากกั้น',other:'อื่น ๆ'})[r.workCategory]||'สูตรเดิม')} · ${invSafe(r.name)} · ${invSafe(r.brand||'ไม่ระบุระบบ')} ${r.status==='approved'?'✓':'(ร่าง)'}</option>`).join('');if(v12Recipes().some(r=>r.id===selected))e.value=selected}
+    function v12Refresh(){const e=v12El('v12-pick');if(!e)return;const selected=e.value||v12Editing; e.innerHTML='<option value="">เลือกสูตร...</option>'+v12Recipes().map(r=>`<option value="${invSafe(r.id)}">${invSafe(({door:'ประตู',window:'หน้าต่าง',glass:'กระจก',partition:'ผนัง/ฉากกั้น',other:'อื่น ๆ'})[r.workCategory]||'สูตรเดิม')} · ${invSafe(r.name)} · ${invSafe(r.brand||'ไม่ระบุระบบ')} ${r.status==='approved'?'✓':'(ร่าง)'}</option>`).join('');if(v12Recipes().some(r=>r.id===selected))e.value=selected;v15RenderRecipes()}
     function v12New(){v12El('v13-category').value='door';v12Editing='';v12Rows=[];v12El('v12-name').value='';v12El('v12-brand').value='';v12El('v12-pick').value='';v12Draw();v12Msg('เริ่มสูตรใหม่ กรุณาเลือกวัสดุจริงและระยะตัดที่ช่างยืนยัน')}
     function v12Choose(){const r=v12Recipes().find(x=>x.id===v12El('v12-pick').value);if(!r)return;v12Editing=r.id;v12Rows=(r.standardLines||[]).map(x=>({...x}));v12El('v12-name').value=r.name||'';v12El('v12-brand').value=r.brand||'';v12El('v13-category').value=r.workCategory||'other';v12Draw();v12Msg(r.status==='approved'?'เลือกสูตรที่ยืนยันแล้ว':'สูตรนี้ยังเป็นฉบับร่าง ห้ามใช้สั่งตัดจริง')}
     function v12AddLine(row){if(v12Rows.length>=100)return v12Msg('สูตรหนึ่งรองรับไม่เกิน 100 รายการ',true);v12ReadRows();v12Rows.push(row||{label:'',itemId:'',base:'W',offsetMm:0,qty:1,per:'job'});v12Draw()}
@@ -4246,7 +4250,7 @@
     function v12Draw(){const root=v12El('v12-lines');if(!root)return;const items=invState.items.filter(i=>!i.archived);root.innerHTML=v12Rows.map((r,k)=>`<div class="border rounded-xl p-3 bg-white space-y-2"><div class="flex justify-between gap-2"><strong class="text-sm">วัสดุ ${k+1}</strong><button type="button" onclick="v12Remove(${k})" class="text-red-700 text-xs">ลบรายการ</button></div><div class="grid sm:grid-cols-2 gap-2"><label class="text-xs">ชื่อส่วนประกอบ<input class="v12-label border rounded-lg p-2 w-full mt-1" value="${invSafe(r.label)}" placeholder="เช่น เฟรมบน"></label><label class="text-xs">วัสดุจากทะเบียน<select class="v12-item border rounded-lg p-2 w-full mt-1"><option value="">เลือกวัสดุจริง...</option>${items.map(i=>`<option value="${invSafe(i.id)}" ${i.id===r.itemId?'selected':''}>${invSafe(i.name)} · ${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)} · ${invNum(i.lengthMm)||'ไม่ระบุ'} มม.</option>`).join('')}</select></label></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><label class="text-xs">คิดความยาวจาก<select class="v12-base border rounded-lg p-2 w-full mt-1">${v12Bases.map(([v,t])=>`<option value="${v}" ${r.base===v?'selected':''}>${t}</option>`).join('')}</select></label><label class="text-xs">บวก/ลบระยะ (มม.)<input class="v12-offset border rounded-lg p-2 w-full mt-1" type="number" value="${Number(r.offsetMm)||0}"></label><label class="text-xs">จำนวนชิ้น<input class="v12-qty border rounded-lg p-2 w-full mt-1" type="number" min="0.001" step="0.001" value="${Number(r.qty)||1}"></label><label class="text-xs">คิดจำนวนต่อ<select class="v12-per border rounded-lg p-2 w-full mt-1"><option value="job" ${r.per==='job'?'selected':''}>หนึ่งชุดงาน</option><option value="panel" ${r.per==='panel'?'selected':''}>หนึ่งบาน</option></select></label></div></div>`).join('')||'<p class="text-sm text-slate-500">ยังไม่มีวัสดุ กดเพิ่มวัสดุ หรือเลือกหัวข้อตัวอย่าง</p>'}
     function v12Remove(k){v12ReadRows();v12Rows.splice(k,1);v12Draw()}
     function v12Validate(){v12ReadRows();const name=v12El('v12-name').value.trim();if(!name)throw Error('กรุณาตั้งชื่อสูตร');if(!v12Rows.length)throw Error('กรุณาเพิ่มวัสดุ');for(const [k,r] of v12Rows.entries()){if(!r.label||!r.itemId||!invState.items.some(i=>i.id===r.itemId&&!i.archived))throw Error('รายการ '+(k+1)+' ต้องมีชื่อและเลือกวัสดุจากทะเบียน');if(!Number.isFinite(r.qty)||r.qty<=0||!Number.isFinite(r.offsetMm))throw Error('รายการ '+(k+1)+' จำนวน/ค่าหักไม่ถูกต้อง');}return name}
-    async function v12Save(){if(!invCanWrite()||!isOwner())return v12Msg('เฉพาะเจ้าของร้านบันทึกสูตรได้',true);try{const name=v12Validate(),brand=v12El('v12-brand').value.trim(),prior=v12Recipes().find(r=>r.id===v12Editing);const payload={name,brand,workCategory:v12El('v13-category').value,recipeKind:'standardV12',standardLines:v12Rows,status:'draft',version:(prior?.version||0)+1,updatedAt:new Date().toISOString(),updatedByUid:userId,createdAt:prior?.createdAt||new Date().toISOString(),createdByUid:prior?.createdByUid||userId};if(prior)await updateDoc(cloudPath('inventoryRecipes',prior.id),payload);else{const ref=doc(cloudCollection('inventoryRecipes'));await setDoc(ref,payload);v12Editing=ref.id;}v12Msg('บันทึกสูตรฉบับร่างใน Firebase แล้ว · ต้องตรวจและยืนยันก่อนใช้งานจริง');}catch(e){v12Msg('บันทึกไม่ได้: '+e.message,true)}}
+    async function v12Save(){if(!invCanWrite()||!isOwner())return v12Msg('เฉพาะเจ้าของร้านบันทึกสูตรได้',true);try{const name=v12Validate(),brand=v12El('v12-brand').value.trim(),prior=v12Recipes().find(r=>r.id===v12Editing);const payload={name,brand,workCategory:v12El('v13-category').value,recipeKind:'standardV12',standardLines:v12Rows,status:'draft',version:(prior?.version||0)+1,updatedAt:new Date().toISOString(),updatedByUid:userId,createdAt:prior?.createdAt||new Date().toISOString(),createdByUid:prior?.createdByUid||userId};if(prior)await updateDoc(cloudPath('inventoryRecipes',prior.id),payload);else{const ref=doc(cloudCollection('inventoryRecipes'));await setDoc(ref,payload);v12Editing=ref.id;}const check=await getDoc(cloudPath('inventoryRecipes',v12Editing));if(!check.exists()||check.data().name!==name)throw Error('ไม่พบข้อมูลที่บันทึกเมื่ออ่านกลับ');v12El('v12-pick').value=v12Editing;v12Refresh();v15RenderRecipes();v12Msg('บันทึกสูตรการผลิตสำเร็จ ตรวจสอบข้อมูลแล้ว · สูตรอยู่ในทะเบียนสูตรการผลิตด้านบน');}catch(e){v12Msg('บันทึกไม่ได้: '+e.message,true)}}
     async function v12Approve(){if(!invCanWrite()||!isOwner())return v12Msg('เฉพาะเจ้าของร้านยืนยันสูตรได้',true);try{v12Validate();const r=v12Recipes().find(x=>x.id===v12Editing);if(!r)throw Error('กรุณาบันทึกสูตรก่อนยืนยัน');if(JSON.stringify(v12Rows)!==JSON.stringify(r.standardLines)||v12El('v12-name').value.trim()!==r.name||v12El('v13-category').value!==(r.workCategory||'other'))throw Error('มีการแก้ไขที่ยังไม่บันทึก กรุณาบันทึกก่อน');if(!confirm('ยืนยันว่าช่างตรวจระยะตัด จำนวนชิ้น กระจก และอุปกรณ์ครบแล้ว?'))return;await updateDoc(cloudPath('inventoryRecipes',r.id),{status:'approved',approvedAt:new Date().toISOString(),approvedByUid:userId});v12Msg('ยืนยันสูตรแล้ว ใช้คำนวณงานใหม่ได้')}catch(e){v12Msg(e.message,true)}}
     function v12Calculate(){try{const r=v12Recipes().find(x=>x.id===v12El('v12-pick').value);if(!r)throw Error('กรุณาเลือกสูตรที่บันทึกไว้');const W=Number(v12El('v12-w').value),H=Number(v12El('v12-h').value),P=Number(v12El('v12-panels').value),S=Number(v12El('v12-sets').value),split=Number(v12El('v12-split').value),kerf=Number(v12El('v12-kerf').value);if(![W,H,P,S,split,kerf].every(Number.isFinite)||W<=0||H<=0||P<1||P>40||!Number.isInteger(P)||S<1||!Number.isInteger(S)||kerf<0||kerf>30||W-split<=0)throw Error('ตรวจสอบขนาด จำนวนบาน จำนวนชุด ระยะแบ่งบาน และรอยเลื่อย');const PW=(W-split)/P,PH=H, bases={W,H,PW,PH};let cuts=[],hardware=[],glass=[];for(const [k,l] of (r.standardLines||[]).entries()){const item=invState.items.find(i=>i.id===l.itemId&&!i.archived);if(!item)throw Error('วัสดุรายการ '+(k+1)+' ไม่มีในทะเบียนแล้ว');const count=Number(l.qty)*(l.per==='panel'?P:1)*S;if(!(count>0)||!Number.isFinite(count))throw Error('จำนวนชิ้นไม่ถูกต้อง: '+l.label);if(l.base==='fixed'){hardware.push({label:l.label,item,count});continue;}const len=bases[l.base]+Number(l.offsetMm);if(!Number.isFinite(len)||len<=0)throw Error('ความยาวตัดไม่ถูกต้อง: '+l.label);if(!Number.isInteger(count))throw Error('รายการตัดต้องมีจำนวนเต็ม: '+l.label);const row={label:l.label,item,len,count};if(String(item.unit||'').includes('กระจก')||/กระจก|glass/i.test(l.label+' '+item.name))glass.push(row);else cuts.push(row)}
       const groups=new Map();for(const row of cuts){const key=[row.item.brand,row.item.sku,row.item.color,row.item.name].join('|');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)}let plans=[];for(const [key,rows] of groups){const variants=invState.items.filter(i=>!i.archived&&[i.brand,i.sku,i.color,i.name].join('|')===key&&Number(i.lengthMm)>0).sort((a,b)=>Number(a.lengthMm)-Number(b.lengthMm));const pieces=rows.flatMap(row=>Array.from({length:row.count},()=>({length:row.len,label:row.label}))).sort((a,b)=>b.length-a.length);let bins=[],unplanned=[];for(const piece of pieces){let bin=bins.find(b=>b.remaining>=piece.length+kerf);if(!bin){const stock=variants.find(v=>Number(v.lengthMm)>=piece.length+kerf);if(!stock){unplanned.push(piece);continue;}bin={item:stock,remaining:Number(stock.lengthMm),pieces:[]};bins.push(bin)}bin.pieces.push(piece);bin.remaining-=piece.length+kerf}const usage={};for(const b of bins)usage[b.item.id]=(usage[b.item.id]||0)+1;plans.push({key,rows,bins,unplanned,usage})}
@@ -4266,6 +4270,45 @@
       v12El('v12-editor').open=true;
       v12Msg('คัดลอกสูตรแล้ว แก้เฉพาะวัสดุ/จำนวน/ค่าหักที่ต่างกัน จากนั้นบันทึกเป็นสูตรร่างใหม่');
     }
+    function v15RenderRecipes(){
+      const host=document.getElementById('v15-recipe-list'),counter=document.getElementById('v15-recipe-count');if(!host)return;
+      const q=(document.getElementById('v15-recipe-search')?.value||'').toLowerCase().trim();
+      const list=v12Recipes().filter(r=>[r.name,r.brand,r.workCategory].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
+      if(counter)counter.textContent=v12Recipes().length+' สูตร';
+      host.innerHTML=list.map(r=>`<div class="bg-white border rounded-xl p-3 flex flex-wrap items-center justify-between gap-2"><div class="min-w-0"><strong class="text-sm">${invSafe(r.name)}</strong><div class="text-xs text-slate-500">${invSafe(r.brand||'ไม่ระบุยี่ห้อ')} · ${(r.standardLines||[]).length} รายการ · ${r.status==='approved'?'อนุมัติแล้ว':'ฉบับร่าง'}</div></div><div class="flex gap-2"><button type="button" data-recipe-id="${invSafe(r.id)}" class="v15-open border border-teal-400 text-teal-800 px-3 py-2 rounded-lg text-xs font-bold">แก้ไขสูตร</button><button type="button" data-recipe-id="${invSafe(r.id)}" class="v15-use bg-teal-700 text-white px-3 py-2 rounded-lg text-xs font-bold">เลือกคำนวณ</button>${isOwner()?`<button type="button" data-recipe-id="${invSafe(r.id)}" class="v16-delete border border-red-200 bg-red-50 text-red-700 px-3 py-2 rounded-lg text-xs font-bold">${r.status==='approved'?'เลิกใช้สูตร':'ลบสูตร'}</button>`:''}</div></div>`).join('')||'<p class="text-sm text-slate-500 p-2">ยังไม่พบสูตรการผลิตที่บันทึกไว้ หากเพิ่งสร้างสูตรให้กด “บันทึกสูตรการผลิต” ก่อน</p>';
+      host.querySelectorAll('.v15-open').forEach(b=>b.addEventListener('click',()=>v15SelectRecipe(b.dataset.recipeId,true)));
+      host.querySelectorAll('.v15-use').forEach(b=>b.addEventListener('click',()=>v15SelectRecipe(b.dataset.recipeId,false)));
+      host.querySelectorAll('.v16-delete').forEach(b=>b.addEventListener('click',()=>v16DeleteRecipe(b.dataset.recipeId)));
+    }
+    async function v16DeleteRecipe(id){
+      if(!invCanWrite()||!isOwner())return v12Msg('เฉพาะเจ้าของร้านเท่านั้นที่จัดการลบสูตรได้',true);
+      const r=v12Recipes().find(x=>x.id===id);
+      if(!r)return v12Msg('ไม่พบสูตรที่เลือก กรุณารอข้อมูลอัปเดตแล้วลองอีกครั้ง',true);
+      const approved=r.status==='approved';
+      const message=approved
+        ?'เลิกใช้สูตรการผลิต "'+r.name+'"?\nสูตรจะหายจากรายการเลือก แต่ยังเก็บข้อมูลเดิมไว้สำหรับประวัติการผลิต'
+        :'ลบสูตรฉบับร่าง "'+r.name+'" อย่างถาวร?\nการลบนี้ไม่สามารถย้อนกลับได้';
+      if(!confirm(message))return;
+      try{
+        const ref=cloudPath('inventoryRecipes',id);
+        if(approved){
+          await updateDoc(ref,{archived:true,archivedAt:new Date().toISOString(),archivedByUid:userId});
+          const check=await getDoc(ref);
+          if(!check.exists()||check.data().archived!==true)throw Error('ไม่สามารถยืนยันการเลิกใช้สูตรได้');
+        }else{
+          await deleteDoc(ref);
+          const check=await getDoc(ref);
+          if(check.exists())throw Error('ยังพบสูตรในฐานข้อมูลหลังลบ');
+        }
+        invState.recipes=approved?invState.recipes.map(x=>x.id===id?{...x,archived:true}:x):invState.recipes.filter(x=>x.id!==id);
+        if(v12Editing===id){v12New();}
+        else if(v12El('v12-pick')?.value===id)v12El('v12-pick').value='';
+        v12Refresh();v15RenderRecipes();renderInventory();
+        v12Msg(approved?'เลิกใช้สูตรสำเร็จ — เก็บประวัติเดิมไว้':'ลบสูตรฉบับร่างสำเร็จ — ตรวจสอบฐานข้อมูลแล้ว');
+      }catch(e){v12Msg('จัดการสูตรไม่สำเร็จ: '+e.message+' (ตรวจสอบสิทธิ์การลบ/แก้ไข inventoryRecipes)',true);}
+    }
+    function v15SelectRecipe(id,edit){const picker=v12El('v12-pick');picker.value=id;v12Choose();if(edit){v12El('v12-editor').open=true;v12El('v12-editor').scrollIntoView({behavior:'smooth',block:'start'});}else{picker.scrollIntoView({behavior:'smooth',block:'center'});}}
+    window.v15RenderRecipes=v15RenderRecipes;window.v16DeleteRecipe=v16DeleteRecipe;
     Object.assign(window,{v12New,v12Choose,v12AddLine,v12PresetRows,v12Remove,v12Save,v12Approve,v12Calculate,v13Clone});
 
 
