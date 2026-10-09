@@ -1905,6 +1905,7 @@
         state.history=incoming.sort((a,b)=>String(b.savedAt||b.id||'').localeCompare(String(a.savedAt||a.id||'')));
         if(!state.currentHistoryId && !state.docNo) generateAutoDocNo(state.docType);
         renderHistory();
+        if(state.currentTab === 'inventory'){invV4RefreshDocuments();invV3JobOptions();}
         if(state.currentHistoryId){
           const current=state.history.find(h=>h.id===state.currentHistoryId);
           if(current&&!state.liveSyncBusy&&!authGateVisible){
@@ -3843,7 +3844,7 @@
       const all=invState.items.filter(i=>!i.archived).slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'th'));
       const q=invNorm(document.getElementById('inv-search')?.value);const filtered=all.filter(i=>[i.name,i.brand,i.sku,i.color].some(v=>invNorm(v).includes(q)));const pages=Math.max(1,Math.ceil(filtered.length/20));invItemPage=Math.min(invItemPage,pages-1);const visibleItems=filtered.slice(invItemPage*20,(invItemPage+1)*20);
       const low=all.filter(i=>invNum(i.quantity)<=invNum(i.minStock));
-      document.getElementById('inv-summary').innerHTML=[['รายการวัสดุ',all.length],['จำนวนที่ควรสั่งเพิ่ม',low.length],['รายการเบิก/รับเข้า',invState.moves.length],['สูตรฉบับร่าง',invState.recipes.length]].map(([t,v])=>`<div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">${t}</div><strong class="text-2xl">${v}</strong></div>`).join('');
+      document.getElementById('inv-summary').innerHTML=[['รายการวัสดุ',all.length],['จำนวนที่ควรสั่งเพิ่ม',low.length],['รายการเบิก/รับเข้า',invState.moves.length],['สูตรที่ใช้งาน',invState.recipes.filter(r=>!r.archived).length]].map(([t,v])=>`<div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">${t}</div><strong class="text-2xl">${v}</strong></div>`).join('');
       document.getElementById('inv-add-toggle').disabled=!isOwner();
       document.getElementById('inv-cost').disabled=!isOwner();
       root.innerHTML=visibleItems.length?visibleItems.map(i=>`<div class="border rounded-xl p-3 flex flex-wrap gap-2 justify-between items-center"><div><strong>${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)}</div>${isOwner()?`<div class="text-xs text-slate-500">ต้นทุน/หน่วย ฿${invMoney(i.unitCost)}</div>`:''}</div><div class="text-right"><strong class="text-lg ${invNum(i.quantity)<=invNum(i.minStock)?'text-amber-700':'text-teal-700'}">${invMoney(i.quantity)} ${invSafe(i.unit)}</strong><div class="text-xs text-slate-500">ขั้นต่ำ ${invMoney(i.minStock)} ${invSafe(i.unit)}</div><div class="flex gap-1 justify-end mt-2"><button type="button" onclick="invQuickMove('${invSafe(i.id)}','receive')" class="bg-teal-50 text-teal-800 border rounded-lg px-2 py-1 text-xs">+ รับเข้า</button><button type="button" onclick="invQuickMove('${invSafe(i.id)}','issue')" class="bg-sky-50 text-sky-800 border rounded-lg px-2 py-1 text-xs">เบิก</button>${isOwner()?`<button type="button" onclick="invEditItem('${invSafe(i.id)}')" class="border rounded-lg px-2 py-1 text-xs">แก้ไข</button><button type="button" onclick="invDeleteItem('${invSafe(i.id)}')" class="text-red-700 border rounded-lg px-2 py-1 text-xs">ลบวัสดุ</button><button type="button" onclick="invArchiveItem('${invSafe(i.id)}')" class="text-slate-600 border rounded-lg px-2 py-1 text-xs">ซ่อน</button>`:''}</div></div></div>`).join(''):'<p class="text-sm text-slate-500">ยังไม่มีรายการวัสดุ</p>';
@@ -3957,12 +3958,15 @@
     async function invDeleteRecipe(id){
       if(!invCanWrite()||!isOwner())return invMsg('ลบสูตรได้เฉพาะเจ้าของร้าน',true);
       const r=invState.recipes.find(x=>x.id===id);if(!r)return invMsg('ไม่พบสูตร กรุณารีเฟรช',true);
-      if(!confirm('นำสูตร "'+r.name+'" ออกจากรายการใช้งาน?'))return;
+      const draft=r.status!=='approved';
+      const prompt=draft?'ลบสูตรร่าง "'+r.name+'" ถาวรจาก Firebase? การกระทำนี้ย้อนกลับไม่ได้':'ซ่อนสูตรที่ยืนยันแล้ว "'+r.name+'" จากรายการใช้งาน? (เก็บข้อมูลเดิมไว้)';
+      if(!confirm(prompt))return;
       try{
-        await updateDoc(cloudPath('inventoryRecipes',id),{archived:true,archivedAt:new Date().toISOString(),archivedByUid:userId,status:'draft'});
-        invState.recipes=invState.recipes.map(x=>x.id===id?{...x,archived:true,status:'draft'}:x);
-        renderInventory();invMsg('นำสูตรออกจากรายการแล้ว บันทึกใน Firebase สำเร็จ');
-      }catch(e){invMsg('ลบสูตรไม่สำเร็จ: '+e.message+' — ตรวจสิทธิ์ update ของ inventoryRecipes ใน Firestore Rules',true);}
+        if(draft){await deleteDoc(cloudPath('inventoryRecipes',id));}
+        else {await updateDoc(cloudPath('inventoryRecipes',id),{archived:true,archivedAt:new Date().toISOString(),archivedByUid:userId});}
+        invState.recipes= draft?invState.recipes.filter(x=>x.id!==id):invState.recipes.map(x=>x.id===id?{...x,archived:true}:x);
+        renderInventory();invMsg(draft?'ลบสูตรร่างถาวรจาก Firebase สำเร็จ':'ซ่อนสูตรที่ยืนยันแล้วสำเร็จ');
+      }catch(e){invMsg('ลบสูตรไม่สำเร็จ: '+e.message+' — กรุณาตรวจ Firestore Rules สำหรับ inventoryRecipes',true);document.getElementById('inv-alert')?.scrollIntoView({behavior:'smooth',block:'center'});}
     }
     function invV4Add(id){if(!invState.items.some(i=>i.id===id))return;invV4.lines[id]=invV4.lines[id]||1;invV4Render();}
     function invV4Remove(id){delete invV4.lines[id];invV4Render();}
@@ -3998,6 +4002,7 @@
       catch(e){invMsg('บันทึกไม่สำเร็จ: '+e.message,true);}finally{invV3.busy=false;invV3Render();}
     }
     Object.assign(window,{invRecipeAddLine,invRecipeRemoveLine,invRecipeSaveLine,invRecipeApprove,invRecipeCalculate});
+    Object.assign(window,{invV4RefreshDocuments,invV3JobOptions,invV3ChooseJob});
     window.invV3SetType=invV3SetType;window.invV3Add=invV3Add;window.invV3Adjust=invV3Adjust;window.invV3ClearCart=invV3ClearCart;window.invV3SetQty=invV3SetQty;window.invV3Save=invV3Save;window.invV3Render=invV3Render;
     Object.assign(window,{invV4Add,invV4Remove,invV4Qty,invV4Render,invV4Copy,invV4Reset});
     window.invPageChange=invPageChange;window.invArchiveVisibleMoves=invArchiveVisibleMoves;window.invEditItem=invEditItem;window.invSaveItemEdit=invSaveItemEdit;window.invCancelEdit=invCancelEdit;window.invDeleteItem=invDeleteItem;window.invArchiveItem=invArchiveItem;window.invArchiveMove=invArchiveMove;window.invDeleteRecipe=invDeleteRecipe;window.invV4PickDocument=invV4PickDocument;window.renderInventory=renderInventory;window.invQuickMove=invQuickMove;window.invRememberBrand=invRememberBrand;window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
