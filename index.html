@@ -4637,6 +4637,67 @@
     Object.assign(window,{invV4Add,invV4Remove,invV4Qty,invV4Render,invV4Copy,invV4Reset});
     window.invPageChange=invPageChange;window.invArchiveVisibleMoves=invArchiveVisibleMoves;window.invEditItem=invEditItem;window.invSaveItemEdit=invSaveItemEdit;window.invCancelEdit=invCancelEdit;window.invDeleteItem=invDeleteItem;window.invArchiveItem=invArchiveItem;window.invArchiveMove=invArchiveMove;window.invDeleteRecipe=invDeleteRecipe;window.invV4PickDocument=invV4PickDocument;window.renderInventory=renderInventory;window.invQuickMove=invQuickMove;window.invRememberBrand=invRememberBrand;window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
 
+    // V27: Aggregate approved bill recipes and reconcile actual registered full bars.
+    // Planning only: never writes inventory or changes saved recipes/documents.
+    function invV27PlanBill(){
+      const host=document.getElementById('inv-v27-result');if(!host)return;
+      const fail=m=>{host.innerHTML='<p role="alert" class="text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-3">'+invSafe(m)+'</p>';};
+      if(!invV7Selected)return fail('กรุณาเลือกเอกสารลูกค้าก่อน');
+      const sales=invV7SalesLines(invV7Selected),cuts=[],fixed=new Map(),glass=[];
+      if(!sales.length)return fail('บิลนี้ไม่มีรายการสินค้า');
+      for(let k=0;k<sales.length;k++){
+        const x=sales[k],id=document.getElementById('inv-v7-recipe-'+k)?.value;
+        const r=invState.recipes.find(r=>r.id===id&&r.status==='approved'&&!r.archived);
+        if(!r)return fail('รายการที่ '+(k+1)+' ยังไม่ได้เลือกสูตรที่อนุมัติแล้ว');
+        if(r.recipeKind!=='standardV12')return fail('รายการที่ '+(k+1)+' เป็นสูตรรุ่นเก่า กรุณาใช้การตรวจอุปกรณ์คงที่เดิมก่อน (ยังไม่รองรับแผนตัดรวม)');
+        if(!(x.width>0&&x.height>0&&Number.isInteger(x.qty)&&x.qty>0))return fail('ขนาดหรือจำนวนของรายการที่ '+(k+1)+' ไม่ถูกต้อง');
+        const W=x.width*1000,H=x.height*1000;
+        const P=Number(document.getElementById('v12-panels')?.value||1);
+        const split=Number(document.getElementById('v12-split')?.value||0)*1000;
+        const kerf=Number(document.getElementById('v12-kerf')?.value||3);
+        if(!Number.isInteger(P)||P<1||P>40||!Number.isFinite(split)||split<0||W<=split||!Number.isFinite(kerf)||kerf<0||kerf>30)return fail('ตรวจจำนวนบาน ระยะหักแบ่งบาน และรอยเลื่อยในหน้าสูตรก่อน');
+        const bases={W,H,PW:(W-split)/P,PH:H};
+        for(const l of r.standardLines||[]){
+          const item=invState.items.find(i=>i.id===l.itemId&&!i.archived);
+          if(!item)return fail('สูตร '+r.name+' อ้างอิงวัสดุที่ไม่อยู่ในทะเบียน: '+l.label);
+          const count=Number(l.qty)*(l.per==='panel'?P:1)*x.qty;
+          if(!(count>0&&Number.isFinite(count)))return fail('จำนวนชิ้นในสูตรไม่ถูกต้อง: '+l.label);
+          if(l.base==='fixed'){fixed.set(item.id,(fixed.get(item.id)||0)+count);continue;}
+          const len=bases[l.base]+Number(l.offsetMm);
+          if(!(len>0&&Number.isFinite(len)&&Number.isInteger(count)))return fail('ระยะตัด/จำนวนชิ้นไม่ถูกต้อง: '+l.label);
+          if(String(item.unit||'').includes('กระจก')||/กระจก|glass/i.test(l.label+' '+item.name)){glass.push({item,label:l.label,count,len});continue;}
+          if(!(Number(item.lengthMm)>0))return fail('วัสดุ '+item.name+' ยังไม่ได้ระบุความยาวเส้นในทะเบียน');
+          for(let n=0;n<count;n++)cuts.push({item,len,label:l.label,kerf});
+        }
+      }
+      // Only combine pieces of the exact same registered stock item (ID), never merge colors or SKUs.
+      const groups=new Map();for(const c of cuts){if(!groups.has(c.item.id))groups.set(c.item.id,[]);groups.get(c.item.id).push(c);}
+      const required=new Map(fixed),warnings=[];
+      for(const [id,parts] of groups){
+        const item=parts[0].item,stockLen=Number(item.lengthMm),bins=[];
+        for(const piece of parts.sort((a,b)=>b.len-a.len)){
+          const need=piece.len+piece.kerf;
+          if(need>stockLen+1e-7){warnings.push(item.name+': ชิ้น '+Math.round(piece.len)+' มม. ยาวเกินเส้น '+Math.round(stockLen)+' มม.');continue;}
+          let bin=bins.find(b=>b.remaining+1e-7>=need);
+          if(!bin){bin={remaining:stockLen};bins.push(bin);}
+          bin.remaining-=need;
+        }
+        required.set(id,(required.get(id)||0)+bins.length);
+      }
+      const rows=[...required].map(([id,qty])=>({item:invState.items.find(i=>i.id===id),qty}));
+      const shortages=rows.filter(z=>z.qty>Number(z.item?.quantity||0));
+      const lines=rows.map(({item,qty})=>`<div class="border-b py-2"><strong>${invSafe(item.name)}</strong><div class="text-xs text-slate-600">${invSafe(item.brand||'')} · ${invSafe(item.sku||'')} · ${invSafe(item.color||'')} · ${invSafe(item.lengthMm?invMoney(item.lengthMm/1000)+' ม.':'อุปกรณ์')}</div><div>ต้องใช้ <b>${invMoney(qty)}</b> ${invSafe(item.unit||'')} · มี <b>${invMoney(item.quantity)}</b> · <b class="${qty>Number(item.quantity)?'text-rose-700':'text-teal-700'}">${qty>Number(item.quantity)?'ขาด '+invMoney(qty-Number(item.quantity)):'เพียงพอ'}</b></div></div>`).join('');
+      host.innerHTML='<div class="rounded-xl border border-teal-200 bg-teal-50 p-3 space-y-2"><strong>V27 · สรุปวัสดุจากบิลและสต๊อกจริง (ยังไม่เบิก)</strong><p class="text-xs">รวม '+sales.length+' รายการสินค้า · '+rows.length+' รหัสวัสดุ · ขาด '+shortages.length+' รหัส · จัดตัดเบื้องต้นแบบ First Fit Decreasing แยกตามรหัสวัสดุ</p>'+lines+(glass.length?'<p class="text-amber-800">มีกระจก '+glass.length+' รายการตัด ต้องตรวจขนาด 2 มิติและแผ่นจริงแยกต่างหาก ไม่รวมในยอดเบิกนี้</p>':'')+(warnings.length?'<p role="alert" class="text-rose-800">'+warnings.map(invSafe).join(' / ')+'</p>':'')+'<p class="text-amber-800 text-xs">ยังไม่หักยอดจองงานอื่น เศษเส้น และแผนตัดต้องให้ช่างตรวจจริงก่อนอนุมัติเบิก</p><button type="button" id="inv-v27-transfer" class="rounded-lg bg-teal-700 text-white px-4 py-3 font-bold">นำยอดวัสดุที่ตรวจแล้วไปตารางตรวจสต๊อก</button></div>';
+      document.getElementById('inv-v27-transfer').onclick=()=>{
+        if(warnings.length)return fail('มีชิ้นตัดยาวเกินเส้นสต๊อก ต้องแก้แผนตัดก่อนโอนรายการ');
+        if(glass.length&&!confirm('รายการกระจกยังไม่ได้คำนวณเป็นแผ่นจริง ต้องตรวจและเพิ่มแยกต่างหาก ยืนยันโอนเฉพาะอะลูมิเนียมและอุปกรณ์?'))return;
+        if(!confirm('นำจำนวนวัสดุจากผลคำนวณล่าสุดไปตรวจสต๊อก? ระบบจะไม่หักสต๊อกและไม่บันทึกการเบิก'))return;
+        invV4.lines={};for(const [id,qty] of required)invV4.lines[id]=Math.round(qty*1000)/1000;
+        invV4Render();document.getElementById('inv-v4-lines')?.scrollIntoView({behavior:'smooth',block:'center'});
+        invMsg('โอนยอดไปตารางตรวจสต๊อกแล้ว ตรวจแผนตัดและจำนวนอีกครั้งก่อนเตรียมเบิก');
+      };
+    }
+    window.invV27PlanBill=invV27PlanBill;
     // V25: Transfer verified, count-based planned items to the existing issue cart.
     // No stock writes occur here; the existing Firestore transaction remains the sole issue action.
     function invV25PrepareIssue(){
@@ -4757,6 +4818,7 @@
   const actions=document.createElement('div');actions.id='inv-v25-actions';actions.className='rounded-2xl border border-teal-200 bg-white p-3 sm:p-4';
   actions.innerHTML=`<div class="flex flex-wrap justify-between items-center gap-2 mb-3"><div><strong class="text-teal-900">ทำงานจากบิลเดียวกัน</strong><p class="text-xs text-slate-500">เลือกบิล → จับคู่สูตร → ตรวจสต๊อก → ซื้อที่ขาด หรือเตรียมเบิก</p></div><span class="text-xs text-slate-500">V25</span></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2"><button type="button" id="inv-v25-buy" class="rounded-xl bg-sky-50 border border-sky-200 text-sky-900 font-bold px-3 py-3 text-sm">คัดลอกรายการซื้อที่ขาด</button><button type="button" id="inv-v25-issue" class="rounded-xl bg-teal-700 text-white font-bold px-3 py-3 text-sm">เตรียมเบิกตามบิล</button><button type="button" id="inv-v25-receive" class="rounded-xl bg-white border border-slate-300 text-slate-800 font-bold px-3 py-3 text-sm">รับของที่ซื้อเข้าคลัง</button></div><p class="text-xs text-amber-800 mt-3">การเตรียมเบิกจะนำเฉพาะวัสดุที่อยู่ในรายการตรวจสต๊อกไปใส่ตะกร้า ไม่รวมชิ้นตัดที่ยังไม่ได้แปลงเป็นจำนวนเส้นจริง และไม่ตัดสต๊อกอัตโนมัติ</p>`;
   planner.insertBefore(actions,document.getElementById('inv-v4-totals'));
+  actions.insertAdjacentHTML('beforeend','<div class="mt-3 border-t pt-3"><button type="button" onclick="invV27PlanBill()" class="rounded-xl bg-sky-800 text-white px-4 py-3 font-bold w-full">คำนวณรวมทั้งบิลและตรวจสต๊อก (V27)</button><div id="inv-v27-result" class="mt-3 text-sm"></div></div>');
   document.getElementById('inv-v25-buy').addEventListener('click',()=>{if(!window.invV4Copy)return alert('เครื่องมือรายการซื้อยังโหลดไม่เสร็จ');window.invV4Copy();});
   document.getElementById('inv-v25-issue').addEventListener('click',()=>{if(!window.invV25PrepareIssue)return alert('เครื่องมือเบิกวัสดุยังโหลดไม่เสร็จ');window.invV25PrepareIssue();});
   document.getElementById('inv-v25-receive').addEventListener('click',()=>{window.v24InventoryOpen?.('movement',true);window.invV3SetType?.('receive');document.getElementById('inv-v3-panel')?.scrollIntoView({behavior:'smooth',block:'start'});});
