@@ -4611,6 +4611,28 @@
     Object.assign(window,{invV4Add,invV4Remove,invV4Qty,invV4Render,invV4Copy,invV4Reset});
     window.invPageChange=invPageChange;window.invArchiveVisibleMoves=invArchiveVisibleMoves;window.invEditItem=invEditItem;window.invSaveItemEdit=invSaveItemEdit;window.invCancelEdit=invCancelEdit;window.invDeleteItem=invDeleteItem;window.invArchiveItem=invArchiveItem;window.invArchiveMove=invArchiveMove;window.invDeleteRecipe=invDeleteRecipe;window.invV4PickDocument=invV4PickDocument;window.renderInventory=renderInventory;window.invQuickMove=invQuickMove;window.invRememberBrand=invRememberBrand;window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
 
+    // V25: Transfer verified, count-based planned items to the existing issue cart.
+    // No stock writes occur here; the existing Firestore transaction remains the sole issue action.
+    function invV25PrepareIssue(){
+      const job=(document.getElementById('inv-v4-job')?.value||'').trim();
+      if(!job)return invMsg('เลือกเอกสารลูกค้าหรือระบุเลขงานก่อนเตรียมเบิก',true);
+      const rows=invV4Rows();
+      if(!rows.length)return invMsg('ยังไม่มีวัสดุที่คำนวณและนำเข้ารายการตรวจสต๊อก',true);
+      if(rows.length>5)return invMsg('ระบบบันทึกได้ครั้งละไม่เกิน 5 รายการ กรุณาแบ่งเบิกเป็นชุด',true);
+      for(const {item,qty} of rows){
+        if(!item||item.archived||!(qty>0)||!Number.isFinite(qty))return invMsg('มีรายการวัสดุที่ไม่ถูกต้อง กรุณาตรวจสอบ',true);
+        if(Number(item.quantity)<qty)return invMsg('สต๊อกไม่พอ: '+item.name+' · ต้องใช้ '+invMoney(qty)+' แต่มี '+invMoney(item.quantity),true);
+      }
+      if(!confirm('เตรียมรายการเบิก '+rows.length+' รายการ สำหรับงาน '+job+'?\nยังไม่หักสต๊อกจนกว่าจะตรวจสอบและกดยืนยันเบิกในหน้าถัดไป'))return;
+      invV3SetType('issue'); // clears old cart, avoiding accidental mixed-job issues
+      for(const {item,qty} of rows)invV3.cart[item.id]=qty;
+      invV3ChooseJob(job,job);
+      invV3Render();
+      window.v24InventoryOpen?.('movement',true);
+      document.getElementById('inv-v3-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
+      invMsg('เตรียมรายการเบิกจากงาน '+job+' แล้ว ตรวจจำนวนอีกครั้งก่อนกดยืนยัน · ยังไม่หักสต๊อก');
+    }
+    window.invV25PrepareIssue=invV25PrepareIssue;
     // Expose all globals
     window.updateVatSettingsVisibility=updateVatSettingsVisibility; window.handleVatToggleChange=handleVatToggleChange;
     // Inline handlers in the redesigned history view must be exposed from this ES module.
@@ -4700,5 +4722,21 @@
 })();
 </script>
 
+<script>
+/* V25 workflow shortcuts; visual enhancements only. Original calculation and inventory writers unchanged. */
+(function(){
+ function setup(){
+  const planner=document.getElementById('inv-v4-planner');
+  if(!planner||document.getElementById('inv-v25-actions'))return;
+  const actions=document.createElement('div');actions.id='inv-v25-actions';actions.className='rounded-2xl border border-teal-200 bg-white p-3 sm:p-4';
+  actions.innerHTML=`<div class="flex flex-wrap justify-between items-center gap-2 mb-3"><div><strong class="text-teal-900">ทำงานจากบิลเดียวกัน</strong><p class="text-xs text-slate-500">เลือกบิล → จับคู่สูตร → ตรวจสต๊อก → ซื้อที่ขาด หรือเตรียมเบิก</p></div><span class="text-xs text-slate-500">V25</span></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2"><button type="button" id="inv-v25-buy" class="rounded-xl bg-sky-50 border border-sky-200 text-sky-900 font-bold px-3 py-3 text-sm">คัดลอกรายการซื้อที่ขาด</button><button type="button" id="inv-v25-issue" class="rounded-xl bg-teal-700 text-white font-bold px-3 py-3 text-sm">เตรียมเบิกตามบิล</button><button type="button" id="inv-v25-receive" class="rounded-xl bg-white border border-slate-300 text-slate-800 font-bold px-3 py-3 text-sm">รับของที่ซื้อเข้าคลัง</button></div><p class="text-xs text-amber-800 mt-3">การเตรียมเบิกจะนำเฉพาะวัสดุที่อยู่ในรายการตรวจสต๊อกไปใส่ตะกร้า ไม่รวมชิ้นตัดที่ยังไม่ได้แปลงเป็นจำนวนเส้นจริง และไม่ตัดสต๊อกอัตโนมัติ</p>`;
+  planner.insertBefore(actions,document.getElementById('inv-v4-totals'));
+  document.getElementById('inv-v25-buy').addEventListener('click',()=>window.invV4Copy?.());
+  document.getElementById('inv-v25-issue').addEventListener('click',()=>window.invV25PrepareIssue?.());
+  document.getElementById('inv-v25-receive').addEventListener('click',()=>{window.v24InventoryOpen?.('movement',true);window.invV3SetType?.('receive');document.getElementById('inv-v3-panel')?.scrollIntoView({behavior:'smooth',block:'start'});});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
 </body>
 </html>
