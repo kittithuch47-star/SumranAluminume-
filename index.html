@@ -748,6 +748,22 @@
         <p class="text-xs text-amber-800">บันทึกคำขอไม่ได้แก้ใบเสนอราคาเดิม ไม่เพิ่มยอดลูกหนี้ ไม่ตัด/คืนสต๊อก และไม่ถือว่าลูกค้าอนุมัติราคาแล้ว ต้องยืนยันก่อนผลิตเพิ่ม</p>
         <div class="border-t pt-3"><h4 class="font-bold mb-2">ทะเบียนงานเพิ่มเติมและการเปลี่ยนแปลง</h4><div id="v19-list" class="space-y-2 text-sm text-slate-600">กำลังรอข้อมูล...</div></div>
       </section>
+      <!-- V20: approved change-order production planning, read-only preview -->
+      <section id="v20-planner" class="bg-white border rounded-2xl p-4 space-y-3">
+        <div><h3 class="text-lg font-bold text-teal-900">V20 · เตรียมผลิตงานเพิ่มเติมที่อนุมัติแล้ว</h3><p class="text-xs text-slate-600 mt-1">เลือกงานที่อนุมัติแล้วและสูตรการผลิตที่ยืนยันแล้ว เพื่อทดลองคำนวณวัสดุและตรวจสต๊อก โดยไม่แก้เอกสารเดิมหรือเบิกวัสดุอัตโนมัติ</p></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="text-sm font-semibold">งานเพิ่มเติมที่อนุมัติแล้ว<select id="v20-change" class="mt-1 w-full border rounded-lg p-2" onchange="v20Choose()"><option value="">เลือกงานเพิ่มเติม...</option></select></label>
+          <label class="text-sm font-semibold">สูตรผลิตที่อนุมัติแล้ว<select id="v20-recipe" class="mt-1 w-full border rounded-lg p-2"><option value="">เลือกสูตร...</option></select></label>
+          <label class="text-sm font-semibold">ความกว้างงาน (เมตร)<input id="v20-width" type="number" min="0.001" step="0.001" placeholder="เช่น 1.2" class="mt-1 w-full border rounded-lg p-2"></label>
+          <label class="text-sm font-semibold">ความสูงงาน (เมตร)<input id="v20-height" type="number" min="0.001" step="0.001" placeholder="เช่น 2.4" class="mt-1 w-full border rounded-lg p-2"></label>
+          <label class="text-sm font-semibold">จำนวนบานต่อชุด<input id="v20-panels" type="number" min="1" max="40" step="1" value="1" class="mt-1 w-full border rounded-lg p-2"></label>
+          <label class="text-sm font-semibold">ระยะรวมที่หักก่อนแบ่งบาน (เมตร)<input id="v20-split" type="number" min="0" step="0.001" value="0" class="mt-1 w-full border rounded-lg p-2"></label>
+          <label class="text-sm font-semibold">รอยเลื่อยต่อชิ้น (มม.)<input id="v20-kerf" type="number" min="0" max="30" step="0.1" value="3" class="mt-1 w-full border rounded-lg p-2"></label>
+        </div>
+        <button type="button" onclick="v20Calculate()" class="px-4 py-3 bg-teal-700 text-white font-bold rounded-xl">ทดลองคำนวณวัสดุงานเพิ่มเติม</button>
+        <div id="v20-result" aria-live="polite" class="text-sm"></div>
+        <p class="text-xs text-amber-800">ผลนี้เป็นแผนเบื้องต้น ไม่ใช่การจอง เบิก หรือตัดสต๊อก และไม่รวมวัสดุที่เบิกไปแล้ว ต้องตรวจรายการเบิกเดิมก่อนเบิกเพิ่มจริง กระจกต้องตรวจขนาดทั้งสองด้าน</p>
+      </section>
       <div id="inv-alert" role="status" class="hidden rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900"></div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="inv-summary"></div>
       <div class="bg-white rounded-2xl border p-4 space-y-3">
@@ -3911,7 +3927,52 @@
       const rows=[...v19State.changes].sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
       root.innerHTML=rows.length?rows.map(r=>`<div class="border rounded-xl p-3 space-y-1"><div class="flex flex-wrap justify-between gap-2"><strong>${v19Text(r.title)}</strong><span class="text-xs font-bold ${r.status==='approved'?'text-green-700':r.status==='rejected'?'text-red-700':'text-amber-700'}">${r.status==='approved'?'อนุมัติแล้ว':r.status==='rejected'?'ไม่อนุมัติ':'รอพิจารณา'}</span></div><div class="text-xs text-slate-500">${v19Text(r.sourceDocNo)} · ${v19Text(r.customerName)} · ${v19Text(r.kind==='add'?'เพิ่มงาน':r.kind==='reduce'?'ลดงาน':'เปลี่ยนแบบ')} · ${v19Text(r.quantity)} ชุด/บาน</div><div>ราคาส่วนต่าง: ${Number(r.priceDelta||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})} บาท · วัสดุ: ${v19Text(r.materialCondition==='not_checked'?'รอตรวจสอบ':r.materialCondition==='cut_or_used'?'ตัด/ใช้แล้ว':r.materialCondition==='partially_used'?'ใช้ได้บางส่วน':'ใช้ต่อได้')}</div>${r.notes?`<p class="text-xs text-slate-500">${v19Text(r.notes)}</p>`:''}${r.status==='draft'&&isOwner()?`<div class="flex gap-2 pt-1"><button type="button" class="border border-green-500 text-green-800 rounded-lg px-3 py-1" onclick="v19SetStatus('${v19Text(r.id)}','approved')">ยืนยันลูกค้าอนุมัติ</button><button type="button" class="border border-red-300 text-red-700 rounded-lg px-3 py-1" onclick="v19SetStatus('${v19Text(r.id)}','rejected')">ไม่อนุมัติ</button></div>`:''}</div>`).join(''):'<div class="p-3 border rounded-lg text-slate-400">ยังไม่มีงานเพิ่มเติม</div>';
     }
-    function v19Subscribe(){if(v19State.unsubscribe){v19State.unsubscribe();v19State.unsubscribe=null;}v19State.changes=[];v19Render();if(!companyAccessReady)return;v19State.unsubscribe=onSnapshot(cloudCollection('jobChanges'),snap=>{v19State.changes=snap.docs.map(d=>({id:d.id,...d.data()}));v19Render();},e=>v19Message('โหลดงานเพิ่มเติมไม่ได้: '+e.message,true));}
+    function v19Subscribe(){if(v19State.unsubscribe){v19State.unsubscribe();v19State.unsubscribe=null;}v19State.changes=[];v19Render();if(!companyAccessReady)return;v19State.unsubscribe=onSnapshot(cloudCollection('jobChanges'),snap=>{v19State.changes=snap.docs.map(d=>({id:d.id,...d.data()}));v19Render();v20Refresh();},e=>v19Message('โหลดงานเพิ่มเติมไม่ได้: '+e.message,true));}
+    // V20: read-only BOM/stock planning for approved change orders. No inventory writes.
+    function v20El(id){return document.getElementById('v20-'+id);}
+    function v20Refresh(){
+      const c=v20El('change'),r=v20El('recipe');if(!c||!r)return;
+      const old=c.value,oldRecipe=r.value;
+      c.innerHTML='<option value="">เลือกงานเพิ่มเติม...</option>'+v19State.changes.filter(x=>x.status==='approved').map(x=>`<option value="${invSafe(x.id)}">${invSafe(x.sourceDocNo)} · ${invSafe(x.title)} (${invSafe(x.quantity)} ชุด)</option>`).join('');
+      if(v19State.changes.some(x=>x.id===old&&x.status==='approved'))c.value=old;
+      r.innerHTML='<option value="">เลือกสูตร...</option>'+invState.recipes.filter(x=>x.status==='approved'&&!x.archived&&x.recipeKind==='standardV12').map(x=>`<option value="${invSafe(x.id)}">${invSafe(x.name)} · ${invSafe(x.brand||'')}</option>`).join('');
+      if(invState.recipes.some(x=>x.id===oldRecipe&&x.status==='approved'))r.value=oldRecipe;
+    }
+    function v20Choose(){const c=v19State.changes.find(x=>x.id===v20El('change').value);if(!c)return;v20El('result').textContent='';if(c.recipeId&&[...v20El('recipe').options].some(o=>o.value===c.recipeId))v20El('recipe').value=c.recipeId;}
+    function v20Calculate(){
+      const out=v20El('result');try{
+        const c=v19State.changes.find(x=>x.id===v20El('change').value&&x.status==='approved');if(!c)throw Error('เลือกงานเพิ่มเติมที่อนุมัติแล้ว');
+        const r=invState.recipes.find(x=>x.id===v20El('recipe').value&&x.status==='approved'&&x.recipeKind==='standardV12'&&!x.archived);if(!r)throw Error('เลือกสูตรมาตรฐานที่อนุมัติแล้ว');
+        if(c.kind==='reduce')throw Error('งานลด/ยกเลิกต้องตรวจวัสดุเดิมแยกต่างหาก ไม่ควรคำนวณเป็นงานผลิตเพิ่ม');
+        const W=invMmFromMeters(v20El('width').value),H=invMmFromMeters(v20El('height').value),P=Number(v20El('panels').value),S=Number(c.quantity),split=invMmFromMeters(v20El('split').value),kerf=Number(v20El('kerf').value);
+        if(![W,H,P,S,split,kerf].every(Number.isFinite)||W<=0||H<=0||!Number.isInteger(P)||P<1||P>40||!Number.isInteger(S)||S<1||split<0||split>=W||kerf<0||kerf>30)throw Error('ตรวจสอบกว้าง สูง จำนวนบาน จำนวนชุด ระยะแบ่งบาน และรอยเลื่อย (จำนวนชุดต้องเป็นจำนวนเต็ม)');
+        const bases={W,H,PW:(W-split)/P,PH:H},groups=new Map(),hardware=[],glass=[];
+        for(const l of r.standardLines||[]){
+          const item=invState.items.find(x=>x.id===l.itemId&&!x.archived);if(!item)throw Error('ไม่พบวัสดุในทะเบียน: '+l.label);
+          const qty=Number(l.qty)*(l.per==='panel'?P:1)*S;if(!Number.isFinite(qty)||qty<=0)throw Error('จำนวนวัสดุผิดพลาด: '+l.label);
+          if(l.base==='fixed'){hardware.push({label:l.label,item,qty});continue;}
+          const len=bases[l.base]+Number(l.offsetMm);if(!Number.isFinite(len)||len<=0||!Number.isInteger(qty))throw Error('สูตรระยะตัดหรือจำนวนชิ้นไม่ถูกต้อง: '+l.label);
+          const row={label:l.label,item,len,qty};if(/กระจก|glass/i.test(l.label+' '+item.name)){glass.push(row);continue;}
+          const key=[item.name,item.brand,item.sku,item.color].join('|');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);
+        }
+        const fmt=n=>Number(n).toLocaleString('th-TH',{maximumFractionDigits:3});
+        let html=`<div class="border rounded-xl p-3 space-y-3"><strong>${invSafe(c.title)} · ${invSafe(r.name)}</strong><p class="text-xs">อ้างอิง ${invSafe(c.sourceDocNo)} · ${fmt(S)} ชุด · ${fmt(P)} บาน/ชุด · กว้าง ${invMeters(W)} ม. สูง ${invMeters(H)} ม.</p>`;
+        for(const [key,rows] of groups){
+          const variants=invState.items.filter(i=>!i.archived&&[i.name,i.brand,i.sku,i.color].join('|')===key&&Number(i.lengthMm)>0).sort((a,b)=>Number(a.lengthMm)-Number(b.lengthMm));
+          const pieces=rows.flatMap(x=>Array.from({length:x.qty},()=>({len:x.len,label:x.label}))).sort((a,b)=>b.len-a.len);
+          const bins=[],missing=[];for(const piece of pieces){let b=bins.find(x=>x.remaining>=piece.len+kerf);if(!b){const variant=variants.find(x=>Number(x.lengthMm)>=piece.len+kerf);if(!variant){missing.push(piece);continue;}b={item:variant,remaining:Number(variant.lengthMm),pieces:[]};bins.push(b);}b.remaining-=piece.len+kerf;b.pieces.push(piece);}
+          const usage=new Map();for(const b of bins)usage.set(b.item.id,(usage.get(b.item.id)||0)+1);
+          html+=`<div class="border rounded-lg p-3"><strong>${invSafe(key.replaceAll('|',' · '))}</strong><p class="text-xs mt-1">${rows.map(x=>`${invSafe(x.label)} ${invMeters(x.len)} ม. × ${fmt(x.qty)} ชิ้น`).join(' · ')}</p>`;
+          for(const [id,n] of usage){const item=invState.items.find(x=>x.id===id);const stock=Number(item.quantity)||0;html+=`<p class="text-xs mt-1">เส้นยาว ${invMeters(item.lengthMm)} ม. · ต้องใช้ประมาณ ${fmt(n)} เส้น · คงเหลือในทะเบียน ${fmt(stock)} เส้น · <strong class="${stock<n?'text-red-700':'text-teal-700'}">${stock<n?'ขาดอย่างน้อย '+fmt(n-stock)+' เส้น':'จำนวนในทะเบียนเพียงพอ (ยังไม่หักยอดจอง)'}</strong></p>`;}
+          if(missing.length)html+=`<p class="text-xs text-red-700">จัดตัดไม่ได้ ${fmt(missing.length)} ชิ้น: ไม่มีเส้นยาวพอหรือไม่ได้บันทึกความยาว</p>`;
+          html+='</div>';
+        }
+        if(glass.length)html+='<div class="border rounded-lg p-3"><strong>กระจก — ต้องตรวจขนาด 2 มิติ</strong>'+glass.map(x=>`<p class="text-xs">${invSafe(x.label)} · ค่าตามสูตร ${fmt(x.len)} มม. × ${fmt(x.qty)} ชิ้น (ยังไม่ใช่ขนาดสั่งตัดสมบูรณ์)</p>`).join('')+'</div>';
+        if(hardware.length)html+='<div class="border rounded-lg p-3"><strong>อุปกรณ์</strong>'+hardware.map(x=>`<p class="text-xs">${invSafe(x.label)} · ${invSafe(x.item.name)} ${fmt(x.qty)} ${invSafe(x.item.unit)} · คงเหลือ ${fmt(x.item.quantity)} ${invSafe(x.item.unit)}</p>`).join('')+'</div>';
+        html+='<p class="text-xs text-amber-800">แผนตัด first-fit เบื้องต้น ไม่คิดเศษเส้น ไม่รับประกันการใช้เส้นต่ำสุด และยังไม่หักวัสดุที่เบิกไปแล้ว</p></div>';out.innerHTML=html;
+      }catch(e){out.innerHTML=`<p class="text-red-700 border border-red-200 bg-red-50 p-3 rounded-xl">${invSafe(e.message)}</p>`;}
+    }
+    window.v20Choose=v20Choose;window.v20Calculate=v20Calculate;
     window.v19ChooseDoc=v19ChooseDoc;window.v19Save=v19Save;window.v19Reset=v19Reset;window.v19SetStatus=v19SetStatus;
 
     // Inventory V1. Independent collections; no changes to quotations or finance.
@@ -3926,7 +3987,7 @@
     function invClearListeners(){v19Subscribe();invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
     function invSubscribe(){invClearListeners();if(!companyAccessReady)return;
       for(const [name,key] of [['inventoryItems','items'],['inventoryMovements','moves'],['inventoryRecipes','recipes']]){
-        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
+        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();v20Refresh();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
         invState.unsubs.push(unsub);
       }
     }
