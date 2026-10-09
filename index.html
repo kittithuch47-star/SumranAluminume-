@@ -735,6 +735,32 @@
 #v38-legacy{display:none!important}#v38-sidebar .v24-tabs button{cursor:pointer}
 @media(max-width:1050px){#v38-shell{grid-template-columns:190px minmax(0,1fr)}#v38-shortcuts{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){#v38-shell{display:block}#v38-sidebar{position:static;min-height:0;padding:14px;margin-bottom:15px;border-radius:16px}#v38-sidebar h2,#v38-sidebar p{display:none}#v38-sidebar .v24-tabs{display:flex!important;flex-direction:row!important;overflow-x:auto!important;gap:5px!important}#v38-sidebar .v24-tab{white-space:nowrap!important;min-width:max-content!important;width:auto!important;font-size:11px!important;padding:10px!important}#v38-topbar h2{font-size:22px}#v38-shortcuts{grid-template-columns:repeat(2,1fr);gap:8px}.v38-shortcut{padding:12px}#v38-main .v36-progress{overflow-x:auto}#v38-main .v36-step{min-width:75px}}
+
+#v38-main details.v40-advanced{border:1px solid #dce7f0;background:white;border-radius:16px;margin:14px 0;overflow:hidden}
+#v38-main details.v40-advanced>summary{cursor:pointer;padding:17px 20px;font-weight:700;color:#244c65;list-style-position:inside}
+#v38-main details.v40-advanced[open]>summary{border-bottom:1px solid #dce7f0;background:#f3f9fc}
+/* V40: clean desktop/mobile production workspace. Keep legacy inputs mounted. */
+#v38-main #v24-panel-jobs > #v36-assistant{display:block!important;margin:0 0 20px!important}
+#v38-main #v24-panel-stock #v36-assistant{display:none!important}
+#v38-main #v24-panel-jobs #v32-guide{display:none!important}
+#v38-main .v24-panel[hidden]{display:none!important}
+#v38-main .v24-panel{padding:0!important}
+#v38-main .v24-panel-heading{font-size:21px!important;letter-spacing:-.03em;margin:0 0 4px!important}
+#v38-main .v24-panel-description{font-size:12px!important;margin-bottom:18px!important;color:#60738a!important}
+#v38-main #inv-v4-planner{background:#fff!important;border:1px solid #dce8f3!important;box-shadow:0 8px 28px #173c5a0a!important;border-radius:20px!important;padding:22px!important}
+#v38-main #inv-v4-planner input,#v38-main #inv-v4-planner select{background:#f9fcff!important;border-color:#d9e5ee!important}
+#v38-main #v24-panel-jobs #v19-change-orders,#v38-main #v24-panel-jobs #v20-planner{margin-top:14px!important}
+#v38-main #v24-panel-jobs .text-amber-800,#v38-main #v24-panel-jobs .text-orange-800{color:#667b90!important;font-size:11px!important}
+#v38-main #v29-receipt-panel{margin-top:18px!important}
+#v38-main .v37-hero{background:linear-gradient(112deg,#0c355c,#116e83)!important}
+#v38-main .v36-step[aria-current=step]{background:#e4f7f3!important;color:#006e63!important;border-color:#21aa98!important}
+#v38-main .v36-main{background:#087c70!important}
+#v38-main #v38-shortcuts{display:none!important}
+#v38-main #v24-panel-jobs #v36-assistant .v36-compact{display:none!important}
+#v38-main #v24-panel-jobs #v36-assistant .v36-note{font-size:11px!important;color:#667b90!important}
+#v38-sidebar{top:24px!important}
+@media(min-width:900px){#v38-shell{grid-template-columns:235px minmax(0,1fr)!important;max-width:1440px;margin:auto}#v38-main{max-width:none!important}}
+@media(max-width:760px){#v38-shell{display:block!important}#v38-main #inv-v4-planner{padding:14px!important}#v38-sidebar{min-height:0!important}}
 </style></head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
@@ -5172,6 +5198,7 @@
     const historyWrapper=children.find(el=>el.querySelector && el.querySelector('#inv-history-filter'));
     const assigned=new Set();
     function move(el,to){if(el && !assigned.has(el)){panels[to].appendChild(el);assigned.add(el)}}
+    move(findDirect('v36-assistant'),'jobs');
     move(findDirect('v32-guide'),'jobs');
     move(findDirect('inv-v4-planner'),'jobs');
     move(findDirect('v19-change-orders'),'jobs');
@@ -5179,6 +5206,7 @@
     move(findDirect('inv-summary'),'stock');
     move(stockWrapper,'stock');
     move(findDirect('inv-v3-panel'),'movement');
+    move(findDirect('v29-receipt-panel'),'movement');
     move(findDirect('inv-v12-panel'),'recipes');
     move(historyWrapper,'history');
     // Keep all compatibility DOM nodes mounted and queryable, even when hidden.
@@ -5291,9 +5319,17 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const shortcuts=document.createElement('div');shortcuts.id='v38-shortcuts';
  const tiles=[['📋','งานลูกค้า','เลือกใบเสนอราคา','jobs'],['🛒','ศูนย์จัดซื้อ','ติดตามของที่ต้องซื้อ','buy'],['📥','รับ–เบิก–คืน','บันทึกการเคลื่อนไหว','movement'],['🕘','ประวัติ','ตรวจสอบย้อนหลัง','history']];
  tiles.forEach(([ico,title,sub,key])=>{const b=document.createElement('button');b.type='button';b.className='v38-shortcut';b.innerHTML='<span class="v38-ico">'+ico+'</span><strong>'+title+'</strong><small>'+sub+'</small>';b.addEventListener('click',()=>{if(key==='buy'&&window.v35OpenPurchase)window.v35OpenPurchase();else window.v24InventoryOpen?.(key,false);setTimeout(()=>document.getElementById(key==='buy'?'v31-hub':'v24-panel-'+key)?.scrollIntoView({behavior:'smooth',block:'start'}),50)});shortcuts.appendChild(b)});
- root.insertBefore(shell,assistant);shell.append(side,main);side.appendChild(nav);main.append(top,shortcuts,assistant);
+ root.insertBefore(shell,nav);shell.append(side,main);side.appendChild(nav);main.append(top,shortcuts);
  // Keep existing panels within same visual workspace; no change to input IDs or event handlers.
  const panels=['jobs','stock','movement','recipes','history'];panels.forEach(k=>{const el=document.getElementById('v24-panel-'+k);if(el)main.appendChild(el)});
+ const jobs=document.getElementById('v24-panel-jobs');if(jobs){jobs.prepend(assistant);
+  for(const [id,label] of [['v19-change-orders','งานเพิ่มเติมและเปลี่ยนแปลง'],['v20-planner','ตรวจแผนงานเพิ่มเติม']]){
+   const el=document.getElementById(id);if(!el||el.closest('details[data-v40]'))continue;
+   const wrap=document.createElement('details');wrap.dataset.v40=id;wrap.className='v40-advanced';
+   const summary=document.createElement('summary');summary.textContent=label+' (กดเพื่อเปิด)';wrap.appendChild(summary);el.parentNode.insertBefore(wrap,el);wrap.appendChild(el);
+  }
+ }
+ const movement=document.getElementById('v24-panel-movement');const photo=document.getElementById('v29-receipt-panel');if(movement&&photo&&photo.parentElement!==movement)movement.appendChild(photo);
  const old=document.getElementById('v35-dashboard');if(old)old.hidden=true;
  const guide=document.getElementById('v32-guide');if(guide)guide.hidden=true;
  const status=document.getElementById('inv-cloud-status');if(status)main.insertBefore(status,top);
