@@ -619,6 +619,49 @@
 #tab-inventory .v24-panel-description{color:#64748b;font-size:12px;margin-top:-10px;margin-bottom:3px}
 @media(max-width:640px){#tab-inventory .v24-nav{position:sticky;top:0;padding:9px;border-radius:13px}#tab-inventory .v24-tabs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;padding-bottom:3px}#tab-inventory .v24-tab{flex:0 0 auto;min-width:104px;scroll-snap-align:start;padding:10px 9px;font-size:12px}#tab-inventory .v24-nav-title{font-size:15px}#tab-inventory .v24-nav-sub{font-size:11px}#tab-inventory .v24-panel{gap:10px}#tab-inventory .v24-panel > .rounded-2xl,#tab-inventory .v24-panel > .bg-white{border-radius:13px}}
 
+
+/* V35 inventory workspace: quiet, responsive, existing IDs and data retained */
+#tab-inventory{--v35-ink:#183248;--v35-teal:#0f766e;--v35-line:#e2e8f0;color:var(--v35-ink)}
+#tab-inventory .v24-nav{position:relative;top:auto;background:#fff;border:1px solid var(--v35-line);border-radius:22px;padding:17px 18px;box-shadow:0 5px 22px #0f172a08}
+#tab-inventory .v24-nav-title{font-size:20px;letter-spacing:-.03em}
+#tab-inventory .v24-nav-sub{font-size:12px;margin-top:3px}
+#tab-inventory .v24-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:13px}
+#tab-inventory .v24-tab{border:1px solid #e2e8f0;border-radius:13px;background:#f8fafc;color:#334155;min-height:50px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px}
+#tab-inventory .v24-tab[aria-selected=true]{background:#0f766e;color:#fff;border-color:#0f766e}
+#tab-inventory .v24-panel{gap:14px!important}
+#tab-inventory .v24-panel-heading{font-size:19px!important;letter-spacing:-.025em;margin-top:4px}
+#tab-inventory .v24-panel-description{font-size:12px;margin:0 0 4px}
+#tab-inventory .v24-panel>section,#tab-inventory .v24-panel>div:not(.v24-panel-heading):not(.v24-panel-description){max-width:100%}
+#tab-inventory .v35-dashboard{border:1px solid #dbe7e5;background:linear-gradient(135deg,#f0fdfa,#fff 72%);padding:17px;border-radius:20px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+#tab-inventory .v35-dashboard h2{font-size:17px;font-weight:800;color:#115e59}
+#tab-inventory .v35-dashboard p{font-size:12px;color:#64748b;margin-top:4px}
+#tab-inventory .v35-quick{display:flex;flex-wrap:wrap;gap:8px}
+#tab-inventory .v35-quick button{background:white;border:1px solid #99d5ce;color:#115e59;padding:10px 13px;border-radius:12px;font-size:12px;font-weight:700}
+#tab-inventory .v35-quick button:hover{background:#ccfbf1}
+#tab-inventory .v35-group{border:1px solid #e2e8f0;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 3px 12px #0f172a05}
+#tab-inventory .v35-group>summary{list-style:none;cursor:pointer;padding:16px 18px;font-weight:800;color:#1e3a4a;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#tab-inventory .v35-group>summary::-webkit-details-marker{display:none}
+#tab-inventory .v35-group>summary:after{content:'⌄';font-size:22px;color:#64748b}
+#tab-inventory .v35-group[open]>summary{border-bottom:1px solid #e2e8f0}
+#tab-inventory .v35-group[open]>summary:after{transform:rotate(180deg)}
+#tab-inventory .v35-group>.v35-group-body{padding:14px;display:grid;gap:12px}
+#tab-inventory .v35-group-body>section,#tab-inventory .v35-group-body>div{min-width:0}
+#tab-inventory .v35-note{font-size:12px;color:#64748b;line-height:1.6}
+#tab-inventory .v35-hubbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+#tab-inventory .v35-hubtabs{display:flex;gap:7px;flex-wrap:wrap}
+#tab-inventory .v35-hubtabs button{border:1px solid #cbd5e1;background:#fff;color:#475569;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700}
+#tab-inventory .v35-hubtabs button[aria-pressed=true]{background:#0f766e;border-color:#0f766e;color:#fff}
+#tab-inventory .v35-purchase-scroll{max-height:360px;overflow:auto;border:1px solid #e2e8f0;border-radius:12px}
+#tab-inventory .v35-purchase-card{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}
+#tab-inventory .v35-purchase-card strong{font-size:13px}
+#tab-inventory .v35-purchase-card small{font-size:11px;color:#64748b}
+#tab-inventory .v35-hubactions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#tab-inventory .v35-hubactions button{border-radius:11px;padding:11px 14px;font-size:12px;font-weight:700}
+#tab-inventory .v35-hubactions button:disabled{opacity:.45;cursor:not-allowed}
+#tab-inventory input,#tab-inventory select,#tab-inventory textarea{max-width:100%}
+@media(max-width:780px){#tab-inventory .v24-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}#tab-inventory .v24-tab{min-width:0;min-height:48px;font-size:11px;padding:8px 5px}#tab-inventory .v35-dashboard{grid-template-columns:1fr}#tab-inventory .v35-quick button{flex:1}#tab-inventory .v35-group>.v35-group-body{padding:10px}#tab-inventory .v24-nav{padding:12px;border-radius:16px}#tab-inventory .v35-hubactions button{flex:1 1 145px}}
+@media(max-width:420px){#tab-inventory .v24-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#tab-inventory .v35-quick{display:grid;grid-template-columns:1fr 1fr}#tab-inventory .v35-quick button{font-size:11px}}
+
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -4835,16 +4878,23 @@
         out.push({docId,jobNo:record.jobNo,id:line.id,qty,ordered,received,item,need:v31Round(Math.max(0,qty-ordered))});
       }}return out;
     }
+    let v35PurchaseView='active',v35HistoryPage=0;
+    function v35SetPurchaseView(view){v35PurchaseView=view;v35HistoryPage=0;v31Render();}
+    function v35NextPurchasePage(step){v35HistoryPage=Math.max(0,v35HistoryPage+step);v31Render();}
     function v31Render(){
       const host=document.getElementById('v31-hub');if(!host)return;
       if(v30Error){host.textContent=v30Error;return;}
-      const rows=v31Rows();const pending=rows.filter(r=>r.need>0);
-      const groups=new Map();for(const r of pending){let g=groups.get(r.id);if(!g){g={item:r.item,qty:0,jobs:[]};groups.set(r.id,g);}g.qty=v31Round(g.qty+r.need);g.jobs.push(r.jobNo+' '+invMoney(r.need));}
-      const grouped=[...groups.values()].map(g=>'<div class="border rounded-lg p-2 bg-white"><strong>'+invSafe(g.item.name)+'</strong> <b class="text-rose-700">'+invMoney(g.qty)+' '+invSafe(g.item.unit||'')+'</b><div class="text-xs text-slate-600">'+invSafe(g.jobs.join(' · '))+'</div></div>').join('');
-      const detail=rows.map(r=>{const key=r.docId+'|'+r.id;return '<label class="flex items-center gap-2 border-b p-2"><input type="checkbox" class="v31-check" data-key="'+invSafe(key)+'" '+(v31Selected.has(key)?'checked':'')+' '+(r.need<=0?'disabled':'')+'><span class="flex-1 text-sm"><b>'+invSafe(r.jobNo)+'</b> · '+invSafe(r.item.name)+'<small class="block text-slate-500">ต้องการ '+invMoney(r.qty)+' · ซื้อแล้ว '+invMoney(r.ordered)+' · รับแล้วตามทะเบียน '+invMoney(r.received)+' · ยังรอซื้อ '+invMoney(r.need)+' '+invSafe(r.item.unit||'')+'</small></span></label>';}).join('');
-      host.innerHTML='<div class="space-y-3"><div class="flex flex-wrap justify-between gap-2"><strong class="text-teal-900">V31 · ศูนย์จัดซื้อรวมหลายใบเสนอราคา</strong><span class="text-xs text-slate-500">'+rows.length+' รายการจาก '+new Set(rows.map(r=>r.jobNo)).size+' งาน</span></div><p class="text-xs text-amber-800">รายการนี้บันทึกตามเลขงานแยกกัน ซื้อรวมได้ แต่การซื้อไม่ใช่การรับเข้า และยังไม่มีระบบจองสต๊อกข้ามงาน</p><div class="grid sm:grid-cols-2 gap-2">'+(grouped||'<p class="text-sm text-slate-500">ยังไม่มีรายการรอซื้อ กดบันทึกงานเข้าศูนย์จัดซื้อจากผลคำนวณก่อน</p>')+'</div><div class="border rounded-lg max-h-72 overflow-auto">'+(detail||'<p class="p-3 text-sm text-slate-500">ยังไม่มีงานในศูนย์จัดซื้อ</p>')+'</div><div class="flex flex-wrap gap-2"><button type="button" onclick="v31Copy()" class="rounded-lg border px-3 py-2 text-sm">คัดลอกรายการรอซื้อรวม</button><button type="button" onclick="v31Purchase()" class="rounded-lg bg-teal-700 text-white px-3 py-2 text-sm">ยืนยันซื้อรายการที่เลือก</button><button type="button" onclick="v31Receive()" class="rounded-lg bg-sky-800 text-white px-3 py-2 text-sm">นำรายการซื้อแล้วไปรับเข้าคลัง</button></div><p class="text-xs text-slate-600">เลือกรายการของแต่ละบิลแล้วกดยืนยันซื้อพร้อมกันได้ หากรับสินค้าไม่ครบ ให้แก้จำนวนในตะกร้ารับเข้าตามจำนวนจริงก่อนยืนยัน</p></div>';
+      const rows=v31Rows();const buy=rows.filter(r=>r.need>0.0001),waiting=rows.filter(r=>r.ordered>r.received+0.0001),completed=rows.filter(r=>r.ordered>0&&r.received>=r.ordered-0.0001&&r.need<=0.0001);
+      const active=v35PurchaseView==='buy'?buy:v35PurchaseView==='receive'?waiting:v35PurchaseView==='history'?completed:rows.filter(r=>r.need>0.0001||r.ordered>r.received+0.0001);
+      const maxPage=Math.max(0,Math.ceil(active.length/15)-1);v35HistoryPage=Math.min(v35HistoryPage,maxPage);
+      const shown=active.slice(v35HistoryPage*15,v35HistoryPage*15+15);
+      const tab=(key,label,count)=>`<button type="button" aria-pressed="${v35PurchaseView===key}" onclick="v35SetPurchaseView('${key}')">${label} (${count})</button>`;
+      const cards=shown.map(r=>{const key=r.docId+'|'+r.id,open=r.need>0.0001;return `<label class="v35-purchase-card flex items-center gap-3"><input type="checkbox" class="v31-check" data-key="${invSafe(key)}" ${v31Selected.has(key)?'checked':''} ${open?'':'disabled'}><span class="flex-1 min-w-0"><strong>${invSafe(r.item.name)}</strong><small class="block">งาน ${invSafe(r.jobNo)} · ต้องการ ${invMoney(r.qty)} · สั่ง ${invMoney(r.ordered)} · รับตามทะเบียน ${invMoney(r.received)} ${invSafe(r.item.unit||'')}</small></span><span class="text-xs font-bold ${open?'text-rose-700':'text-teal-700'}">${open?'รอซื้อ '+invMoney(r.need):r.ordered>r.received?'ค้างรับ '+invMoney(r.ordered-r.received):'รับครบ'}</span></label>`;}).join('');
+      const groups=new Map();for(const r of buy){const g=groups.get(r.id)||{item:r.item,qty:0};g.qty=v31Round(g.qty+r.need);groups.set(r.id,g);}
+      host.innerHTML=`<div class="v35-hubbar"><div><strong class="text-teal-900">ศูนย์จัดซื้อรวม</strong><p class="v35-note">แสดงงานค้างก่อน · รายการที่รับครบเก็บในประวัติ</p></div><span class="text-xs text-slate-500">รอซื้อ ${buy.length} · ค้างรับ ${waiting.length}</span></div><div class="v35-hubtabs">${tab('active','งานค้าง',rows.filter(r=>r.need>0.0001||r.ordered>r.received+0.0001).length)}${tab('buy','รอซื้อ',buy.length)}${tab('receive','รอรับ',waiting.length)}${tab('history','รับครบแล้ว',completed.length)}</div><div class="mt-3 grid sm:grid-cols-2 gap-2">${v35PurchaseView==='buy'||v35PurchaseView==='active'?[...groups.values()].slice(0,6).map(g=>`<div class="v35-purchase-card"><strong>${invSafe(g.item.name)}</strong><div class="text-xs text-rose-700">ต้องซื้อ ${invMoney(g.qty)} ${invSafe(g.item.unit||'')}</div></div>`).join(''):''}</div><div class="v35-purchase-scroll mt-3"><div class="grid gap-2 p-2">${cards||'<p class="p-4 text-center text-sm text-slate-500">ไม่มีรายการในสถานะนี้</p>'}</div></div><div class="flex justify-between items-center mt-2 text-xs text-slate-500"><span>หน้า ${v35HistoryPage+1} / ${maxPage+1} · ${active.length} รายการ</span><div class="flex gap-2"><button type="button" class="border rounded-lg px-3 py-2" ${v35HistoryPage===0?'disabled':''} onclick="v35NextPurchasePage(-1)">ก่อนหน้า</button><button type="button" class="border rounded-lg px-3 py-2" ${v35HistoryPage>=maxPage?'disabled':''} onclick="v35NextPurchasePage(1)">ถัดไป</button></div></div><div class="v35-hubactions"><button type="button" onclick="v31Copy()" class="border bg-white">คัดลอกรายการรอซื้อ</button><button type="button" onclick="v31Purchase()" class="bg-teal-700 text-white">ยืนยันซื้อที่เลือก</button><button type="button" onclick="v31Receive()" class="bg-sky-800 text-white">เตรียมรับเข้าคลัง</button></div><p class="v35-note mt-2">การรับเข้าคลังเดิมยังไม่กระทบยอดทะเบียนจัดซื้ออัตโนมัติ อย่ารับรายการเดิมซ้ำ ต้องตรวจยอดจริงก่อนทุกครั้ง</p>`;
       host.querySelectorAll('.v31-check').forEach(c=>c.addEventListener('change',()=>{if(c.checked)v31Selected.add(c.dataset.key);else v31Selected.delete(c.dataset.key);}));
     }
+    Object.assign(window,{v35SetPurchaseView,v35NextPurchasePage});
     function v31Copy(){
       const pending=v31Rows().filter(r=>r.need>0);if(!pending.length)return alert('ไม่มีรายการรอซื้อในศูนย์จัดซื้อ');
       const groups=new Map();for(const r of pending){const g=groups.get(r.id)||{item:r.item,qty:0,jobs:[]};g.qty=v31Round(g.qty+r.need);g.jobs.push(r.jobNo+': '+invMoney(r.need));groups.set(r.id,g);}
@@ -5095,6 +5145,35 @@
   window.v31Render?.();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
+
+<script>
+/* V35 visual workspace: reorganizes existing DOM without cloning form fields or rewriting Firebase */
+(function(){
+function ready(){
+ const root=document.getElementById('tab-inventory'),nav=document.getElementById('v24-inventory-nav');if(!root||!nav||document.getElementById('v35-dashboard'))return;
+ const dashboard=document.createElement('div');dashboard.id='v35-dashboard';dashboard.className='v35-dashboard';dashboard.innerHTML='<div><h2>จัดการงานผลิตให้จบในขั้นตอนเดียว</h2><p>เลือกงาน → ตรวจวัสดุ → จัดซื้อและรับเข้า → ตรวจความพร้อม → เบิกผลิต</p></div><div class="v35-quick"><button type="button" data-v35="jobs">งานลูกค้า</button><button type="button" data-v35="buy">ศูนย์จัดซื้อ</button><button type="button" data-v35="movement">รับ–เบิก–คืน</button><button type="button" data-v35="history">ประวัติ</button></div>';
+ nav.insertAdjacentElement('afterend',dashboard);
+ const names={jobs:'งานลูกค้า',stock:'สต๊อกวัสดุ',movement:'รับ–เบิก–คืน',recipes:'สูตรผลิต',history:'ประวัติ'};
+ const icons={jobs:'📋',stock:'📦',movement:'↔️',recipes:'📐',history:'🕘'};
+ Object.entries(names).forEach(([id,label])=>{const tab=document.getElementById('v24-tab-'+id);if(tab)tab.textContent=icons[id]+' '+label;});
+ dashboard.querySelectorAll('[data-v35]').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.v35;if(id==='buy'){window.v24InventoryOpen?.('jobs',false);document.getElementById('v31-hub')?.scrollIntoView({behavior:'smooth',block:'center'});}else{window.v24InventoryOpen?.(id,false);nav.scrollIntoView({behavior:'smooth',block:'start'});}}));
+ const jobs=document.getElementById('v24-panel-jobs');if(jobs){
+   const changes=jobs.querySelector('#v19-change-orders'),extra=jobs.querySelector('#v20-planner');
+   const wrap=(el,title,open)=>{if(!el||el.closest('.v35-group'))return;const d=document.createElement('details');d.className='v35-group';d.open=!!open;const sum=document.createElement('summary');sum.textContent=title;const body=document.createElement('div');body.className='v35-group-body';el.before(d);d.append(sum,body);body.append(el);};
+   wrap(changes,'งานเพิ่มเติม / เปลี่ยนแปลงงาน',false);wrap(extra,'แผนงานและการคำนวณเพิ่มเติม',false);
+   const planner=jobs.querySelector('#inv-v4-planner');if(planner){
+     const actions=planner.querySelector('#inv-v25-actions');if(actions){const hub=actions.querySelector('#v31-hub');if(hub){const d=document.createElement('details');d.className='v35-group';d.open=false;d.id='v35-purchase-section';const sm=document.createElement('summary');sm.textContent='ศูนย์จัดซื้อรวม · รายการค้างและประวัติ';const body=document.createElement('div');body.className='v35-group-body';hub.before(d);d.append(sm,body);body.append(hub);}}
+   }
+ }
+ const recipes=document.getElementById('v24-panel-recipes');if(recipes){recipes.querySelectorAll('details').forEach((d,i)=>{if(i>0)d.open=false;});}
+ const history=document.getElementById('v24-panel-history');if(history){const note=document.createElement('p');note.className='v35-note';note.textContent='ค้นหาและตรวจสอบย้อนหลังได้โดยไม่ต้องแสดงประวัติทั้งหมดในหน้าจองานลูกค้า';history.insertBefore(note,history.children[2]||null);}
+ window.v35OpenPurchase=function(){window.v24InventoryOpen?.('jobs',false);const d=document.getElementById('v35-purchase-section');if(d)d.open=true;setTimeout(()=>d?.scrollIntoView({behavior:'smooth',block:'center'}),0);};
+ const oldStep=window.v32Step;if(typeof oldStep==='function')window.v32Step=function(step){if(step==='buy'){window.v35OpenPurchase();return;}return oldStep(step);};
+ window.v31Render?.();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(ready,0));else setTimeout(ready,0);
 })();
 </script>
 </body>
