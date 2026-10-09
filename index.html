@@ -750,7 +750,7 @@
       </section>
       <!-- V20: approved change-order production planning, read-only preview -->
       <section id="v20-planner" class="bg-white border rounded-2xl p-4 space-y-3">
-        <div><h3 class="text-lg font-bold text-teal-900">V20 · เตรียมผลิตงานเพิ่มเติมที่อนุมัติแล้ว</h3><p class="text-xs text-slate-600 mt-1">เลือกงานที่อนุมัติแล้วและสูตรการผลิตที่ยืนยันแล้ว เพื่อทดลองคำนวณวัสดุและตรวจสต๊อก โดยไม่แก้เอกสารเดิมหรือเบิกวัสดุอัตโนมัติ</p></div>
+        <div><h3 class="text-lg font-bold text-teal-900">V21 · แผนตัดและตรวจประวัติเบิกงานเพิ่มเติม</h3><p class="text-xs text-slate-600 mt-1">เลือกงานและสูตรที่อนุมัติแล้ว วางแผนตัดจากความยาวเส้นจริง ตรวจประวัติการเบิกตามเลขงาน และแสดงรายการที่ต้องตรวจหน้างานก่อนเบิกจริง</p></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label class="text-sm font-semibold">งานเพิ่มเติมที่อนุมัติแล้ว<select id="v20-change" class="mt-1 w-full border rounded-lg p-2" onchange="v20Choose()"><option value="">เลือกงานเพิ่มเติม...</option></select></label>
           <label class="text-sm font-semibold">สูตรผลิตที่อนุมัติแล้ว<select id="v20-recipe" class="mt-1 w-full border rounded-lg p-2"><option value="">เลือกสูตร...</option></select></label>
@@ -760,9 +760,9 @@
           <label class="text-sm font-semibold">ระยะรวมที่หักก่อนแบ่งบาน (เมตร)<input id="v20-split" type="number" min="0" step="0.001" value="0" class="mt-1 w-full border rounded-lg p-2"></label>
           <label class="text-sm font-semibold">รอยเลื่อยต่อชิ้น (มม.)<input id="v20-kerf" type="number" min="0" max="30" step="0.1" value="3" class="mt-1 w-full border rounded-lg p-2"></label>
         </div>
-        <button type="button" onclick="v20Calculate()" class="px-4 py-3 bg-teal-700 text-white font-bold rounded-xl">ทดลองคำนวณวัสดุงานเพิ่มเติม</button>
+        <button type="button" onclick="v20Calculate()" class="px-4 py-3 bg-teal-700 text-white font-bold rounded-xl">คำนวณแผนตัดและตรวจประวัติเบิก</button>
         <div id="v20-result" aria-live="polite" class="text-sm"></div>
-        <p class="text-xs text-amber-800">ผลนี้เป็นแผนเบื้องต้น ไม่ใช่การจอง เบิก หรือตัดสต๊อก และไม่รวมวัสดุที่เบิกไปแล้ว ต้องตรวจรายการเบิกเดิมก่อนเบิกเพิ่มจริง กระจกต้องตรวจขนาดทั้งสองด้าน</p>
+        <p class="text-xs text-amber-800">ผลนี้เป็นแผนอ่านอย่างเดียว ไม่จองหรือหักสต๊อก ประวัติเบิกที่อ้างเลขงานเดิมไม่ได้ยืนยันว่าใช้กับงานเพิ่มได้ ต้องตรวจของจริงก่อนเบิกเพิ่ม กระจกต้องมีขนาดกว้างและสูงที่ช่างยืนยัน</p>
       </section>
       <div id="inv-alert" role="status" class="hidden rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900"></div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="inv-summary"></div>
@@ -3939,13 +3939,38 @@
       if(invState.recipes.some(x=>x.id===oldRecipe&&x.status==='approved'))r.value=oldRecipe;
     }
     function v20Choose(){const c=v19State.changes.find(x=>x.id===v20El('change').value);if(!c)return;v20El('result').textContent='';if(c.recipeId&&[...v20El('recipe').options].some(o=>o.value===c.recipeId))v20El('recipe').value=c.recipeId;}
+    // V21: read-only cutting and movement reconciliation; no database writes.
+    function v21Plan(pieces,variants,kerf){
+      const bins=[],missing=[],used=new Map();
+      const sorted=[...pieces].sort((a,b)=>b.len-a.len);
+      for(const piece of sorted){
+        let candidate=null;
+        for(const b of bins){if(b.remaining+1e-7>=piece.len+kerf&&(!candidate||b.remaining<candidate.remaining))candidate=b;}
+        if(!candidate){
+          const options=variants.filter(v=>Number(v.lengthMm)>=piece.len+kerf&&Number(v.quantity)> (used.get(v.id)||0));
+          options.sort((a,b)=>Number(a.lengthMm)-Number(b.lengthMm));
+          const chosen=options[0];
+          if(!chosen){missing.push(piece);continue;}
+          candidate={item:chosen,remaining:Number(chosen.lengthMm),pieces:[]};bins.push(candidate);used.set(chosen.id,(used.get(chosen.id)||0)+1);
+        }
+        candidate.remaining=Math.max(0,candidate.remaining-piece.len-kerf);
+        candidate.pieces.push(piece);
+      }
+      return {bins,missing,used};
+    }
+    function v21MovementSummary(c,item){
+      const same=invState.moves.filter(m=>!m.archived&&m.itemId===item.id&&String(m.jobNo||'').trim()===String(c.sourceDocNo||'').trim());
+      const issued=same.filter(m=>m.type==='issue').reduce((a,m)=>a+Number(m.quantity||0),0);
+      const returned=same.filter(m=>m.type==='return').reduce((a,m)=>a+Number(m.quantity||0),0);
+      return {issued,returned,net:Math.max(0,issued-returned),count:same.length};
+    }
     function v20Calculate(){
       const out=v20El('result');try{
         const c=v19State.changes.find(x=>x.id===v20El('change').value&&x.status==='approved');if(!c)throw Error('เลือกงานเพิ่มเติมที่อนุมัติแล้ว');
         const r=invState.recipes.find(x=>x.id===v20El('recipe').value&&x.status==='approved'&&x.recipeKind==='standardV12'&&!x.archived);if(!r)throw Error('เลือกสูตรมาตรฐานที่อนุมัติแล้ว');
-        if(c.kind==='reduce')throw Error('งานลด/ยกเลิกต้องตรวจวัสดุเดิมแยกต่างหาก ไม่ควรคำนวณเป็นงานผลิตเพิ่ม');
+        if(c.kind==='reduce')throw Error('งานลดหรือยกเลิกต้องตรวจวัสดุที่ใช้ไปแล้ว ไม่สามารถคำนวณเป็นงานเพิ่มได้');
         const W=invMmFromMeters(v20El('width').value),H=invMmFromMeters(v20El('height').value),P=Number(v20El('panels').value),S=Number(c.quantity),split=invMmFromMeters(v20El('split').value),kerf=Number(v20El('kerf').value);
-        if(![W,H,P,S,split,kerf].every(Number.isFinite)||W<=0||H<=0||!Number.isInteger(P)||P<1||P>40||!Number.isInteger(S)||S<1||split<0||split>=W||kerf<0||kerf>30)throw Error('ตรวจสอบกว้าง สูง จำนวนบาน จำนวนชุด ระยะแบ่งบาน และรอยเลื่อย (จำนวนชุดต้องเป็นจำนวนเต็ม)');
+        if(![W,H,P,S,split,kerf].every(Number.isFinite)||W<=0||H<=0||!Number.isInteger(P)||P<1||P>40||!Number.isInteger(S)||S<1||split<0||split>=W||kerf<0||kerf>30)throw Error('ตรวจสอบขนาด จำนวนบาน จำนวนชุด ระยะแบ่งบาน และรอยเลื่อย');
         const bases={W,H,PW:(W-split)/P,PH:H},groups=new Map(),hardware=[],glass=[];
         for(const l of r.standardLines||[]){
           const item=invState.items.find(x=>x.id===l.itemId&&!x.archived);if(!item)throw Error('ไม่พบวัสดุในทะเบียน: '+l.label);
@@ -3956,20 +3981,22 @@
           const key=[item.name,item.brand,item.sku,item.color].join('|');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);
         }
         const fmt=n=>Number(n).toLocaleString('th-TH',{maximumFractionDigits:3});
-        let html=`<div class="border rounded-xl p-3 space-y-3"><strong>${invSafe(c.title)} · ${invSafe(r.name)}</strong><p class="text-xs">อ้างอิง ${invSafe(c.sourceDocNo)} · ${fmt(S)} ชุด · ${fmt(P)} บาน/ชุด · กว้าง ${invMeters(W)} ม. สูง ${invMeters(H)} ม.</p>`;
+        let html=`<div class="border rounded-xl p-3 space-y-3"><strong>${invSafe(c.title)} · ${invSafe(r.name)}</strong><p class="text-xs">อ้างอิง ${invSafe(c.sourceDocNo)} · ${fmt(S)} ชุด · ${fmt(P)} บาน/ชุด · กว้าง ${invMeters(W)} ม. สูง ${invMeters(H)} ม.</p><p class="text-xs text-amber-800">ตรวจสอบก่อน: ชนิดงานและสูตรต้องตรงกัน รวมถึงสี รหัส และขนาดงานจริง</p>`;
         for(const [key,rows] of groups){
           const variants=invState.items.filter(i=>!i.archived&&[i.name,i.brand,i.sku,i.color].join('|')===key&&Number(i.lengthMm)>0).sort((a,b)=>Number(a.lengthMm)-Number(b.lengthMm));
-          const pieces=rows.flatMap(x=>Array.from({length:x.qty},()=>({len:x.len,label:x.label}))).sort((a,b)=>b.len-a.len);
-          const bins=[],missing=[];for(const piece of pieces){let b=bins.find(x=>x.remaining>=piece.len+kerf);if(!b){const variant=variants.find(x=>Number(x.lengthMm)>=piece.len+kerf);if(!variant){missing.push(piece);continue;}b={item:variant,remaining:Number(variant.lengthMm),pieces:[]};bins.push(b);}b.remaining-=piece.len+kerf;b.pieces.push(piece);}
-          const usage=new Map();for(const b of bins)usage.set(b.item.id,(usage.get(b.item.id)||0)+1);
-          html+=`<div class="border rounded-lg p-3"><strong>${invSafe(key.replaceAll('|',' · '))}</strong><p class="text-xs mt-1">${rows.map(x=>`${invSafe(x.label)} ${invMeters(x.len)} ม. × ${fmt(x.qty)} ชิ้น`).join(' · ')}</p>`;
-          for(const [id,n] of usage){const item=invState.items.find(x=>x.id===id);const stock=Number(item.quantity)||0;html+=`<p class="text-xs mt-1">เส้นยาว ${invMeters(item.lengthMm)} ม. · ต้องใช้ประมาณ ${fmt(n)} เส้น · คงเหลือในทะเบียน ${fmt(stock)} เส้น · <strong class="${stock<n?'text-red-700':'text-teal-700'}">${stock<n?'ขาดอย่างน้อย '+fmt(n-stock)+' เส้น':'จำนวนในทะเบียนเพียงพอ (ยังไม่หักยอดจอง)'}</strong></p>`;}
-          if(missing.length)html+=`<p class="text-xs text-red-700">จัดตัดไม่ได้ ${fmt(missing.length)} ชิ้น: ไม่มีเส้นยาวพอหรือไม่ได้บันทึกความยาว</p>`;
+          const pieces=rows.flatMap(x=>Array.from({length:x.qty},()=>({len:x.len,label:x.label})));
+          const plan=v21Plan(pieces,variants,kerf);
+          html+=`<div class="border rounded-lg p-3 space-y-2"><strong>${invSafe(key.replaceAll('|',' · '))}</strong><p class="text-xs">${rows.map(x=>`${invSafe(x.label)} ${invMeters(x.len)} ม. × ${fmt(x.qty)} ชิ้น`).join(' · ')}</p>`;
+          for(const [id,n] of plan.used){const item=invState.items.find(x=>x.id===id);const mv=v21MovementSummary(c,item);html+=`<p class="text-xs">เส้น ${invMeters(item.lengthMm)} ม. · ใช้ตามแผน ${fmt(n)} เส้น · ในคลัง ${fmt(item.quantity)} เส้น · <strong class="text-teal-700">จัดจากจำนวนคงเหลือได้</strong></p><p class="text-xs text-amber-800">ประวัติงาน ${invSafe(c.sourceDocNo)}: เบิก ${fmt(mv.issued)} · คืน ${fmt(mv.returned)} · เบิกสุทธิ ${fmt(mv.net)} เส้น (${fmt(mv.count)} รายการ) — ยังไม่หักจากความต้องการงานเพิ่ม เพราะอาจเป็นของงานเดิมหรือถูกตัดแล้ว</p>`;}
+          plan.bins.forEach((b,i)=>{html+=`<p class="text-xs bg-slate-50 rounded p-2">แผนเส้นที่ ${fmt(i+1)} · ${invMeters(b.item.lengthMm)} ม. → ${b.pieces.map(p=>invMeters(p.len)+' ม.').join(' + ')} · เศษประมาณ ${invMeters(b.remaining)} ม. (หักรอยเลื่อยแล้ว)</p>`;});
+          if(plan.missing.length)html+=`<p class="text-xs text-red-700 font-bold">ยังจัดแผนตัดไม่ได้ ${fmt(plan.missing.length)} ชิ้น: เส้นในคลังไม่พอหรือไม่มีความยาวที่เหมาะสม ต้องตรวจสั่งซื้อ/ใช้เศษเส้น</p>`;
+          if(!plan.bins.length&&!plan.missing.length)html+='<p class="text-xs">ไม่มีชิ้นตัด</p>';
           html+='</div>';
         }
-        if(glass.length)html+='<div class="border rounded-lg p-3"><strong>กระจก — ต้องตรวจขนาด 2 มิติ</strong>'+glass.map(x=>`<p class="text-xs">${invSafe(x.label)} · ค่าตามสูตร ${fmt(x.len)} มม. × ${fmt(x.qty)} ชิ้น (ยังไม่ใช่ขนาดสั่งตัดสมบูรณ์)</p>`).join('')+'</div>';
-        if(hardware.length)html+='<div class="border rounded-lg p-3"><strong>อุปกรณ์</strong>'+hardware.map(x=>`<p class="text-xs">${invSafe(x.label)} · ${invSafe(x.item.name)} ${fmt(x.qty)} ${invSafe(x.item.unit)} · คงเหลือ ${fmt(x.item.quantity)} ${invSafe(x.item.unit)}</p>`).join('')+'</div>';
-        html+='<p class="text-xs text-amber-800">แผนตัด first-fit เบื้องต้น ไม่คิดเศษเส้น ไม่รับประกันการใช้เส้นต่ำสุด และยังไม่หักวัสดุที่เบิกไปแล้ว</p></div>';out.innerHTML=html;
+        if(glass.length)html+='<div class="border rounded-lg p-3"><strong>กระจก — รอยืนยันขนาดสองด้าน</strong>'+glass.map(x=>`<p class="text-xs">${invSafe(x.label)} · ค่าที่สูตรคำนวณได้ ${fmt(x.len)} มม. × ${fmt(x.qty)} ชิ้น (ยังไม่ใช่ขนาดสั่งตัด)</p>`).join('')+'</div>';
+        if(hardware.length)html+='<div class="border rounded-lg p-3"><strong>อุปกรณ์และวัสดุนับชิ้น</strong>'+hardware.map(x=>{const mv=v21MovementSummary(c,x.item);const shortage=Math.max(0,x.qty-Number(x.item.quantity||0));return `<p class="text-xs">${invSafe(x.label)} · ต้องใช้ ${fmt(x.qty)} ${invSafe(x.item.unit)} · คงคลัง ${fmt(x.item.quantity)} · ${shortage?'ขาดอย่างน้อย '+fmt(shortage):'จำนวนในคลังเพียงพอ'} · ประวัติเบิกสุทธิเลขงานเดิม ${fmt(mv.net)} (ยังไม่หักอัตโนมัติ)</p>`;}).join('')+'</div>';
+        html+='<p class="text-xs text-amber-800">V21 เป็นแผนตัดแบบ best-fit จากเส้นในทะเบียนที่ยังคงเหลือ ไม่รวมเศษเส้นที่ไม่ได้ลงทะเบียน ไม่รับประกันว่าใช้เส้นน้อยที่สุด และยังไม่ตรวจความเข้ากันได้ของกระจกสองมิติ ประวัติเบิกเป็นข้อมูลระดับเลขงาน ไม่ใช่หลักฐานว่าวัสดุใช้กับงานเพิ่มได้ ไม่มีการจองหรือหักสต๊อก</p></div>';
+        out.innerHTML=html;
       }catch(e){out.innerHTML=`<p class="text-red-700 border border-red-200 bg-red-50 p-3 rounded-xl">${invSafe(e.message)}</p>`;}
     }
     window.v20Choose=v20Choose;window.v20Calculate=v20Calculate;
