@@ -728,6 +728,26 @@
         <h2 class="text-xl font-bold">คลังวัสดุและการผลิต</h2>
         <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรการผลิตมาตรฐาน</p>
       </div>
+
+      <!-- V19: Change orders are separate from original quotations and stock movements. -->
+      <section id="v19-change-orders" class="bg-white border rounded-2xl p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="text-lg font-bold text-teal-900">งานเพิ่มเติม / เปลี่ยนแปลงงาน</h3><p class="text-xs text-slate-500">เชื่อมกับเอกสารเดิม เก็บประวัติราคาและวัสดุ ไม่แก้ยอดเบิกสต๊อกย้อนหลัง</p></div><span class="text-xs rounded-lg bg-teal-50 text-teal-800 px-3 py-2">V19 · ทะเบียนงานเปลี่ยนแปลง</span></div>
+        <div id="v19-message" role="status" class="hidden text-sm rounded-lg p-3 bg-amber-50 border border-amber-200"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="text-sm font-semibold">เอกสารอ้างอิง<select id="v19-doc" class="mt-1 w-full border rounded-lg p-2" onchange="v19ChooseDoc()"><option value="">เลือกใบเสนอราคาหรือเอกสารงาน...</option></select></label>
+          <label class="text-sm font-semibold">ประเภทการเปลี่ยนแปลง<select id="v19-kind" class="mt-1 w-full border rounded-lg p-2"><option value="add">เพิ่มงาน</option><option value="modify">เปลี่ยนแบบ / ขนาด / วัสดุ</option><option value="reduce">ลดงาน / ยกเลิกบางส่วน</option></select></label>
+          <label class="text-sm font-semibold">รายการในเอกสารเดิม (ถ้ามี)<select id="v19-line" class="mt-1 w-full border rounded-lg p-2"><option value="">งานใหม่ / ไม่อ้างอิงรายการเดิม</option></select></label>
+          <label class="text-sm font-semibold">รายละเอียดงานที่เปลี่ยน<input id="v19-title" maxlength="180" class="mt-1 w-full border rounded-lg p-2" placeholder="เช่น เพิ่มหน้าต่างบานกระทุ้ง 1 ชุด"/></label>
+          <label class="text-sm font-semibold">จำนวนชุด / บาน<input id="v19-qty" type="number" min="0.001" step="0.001" value="1" class="mt-1 w-full border rounded-lg p-2"/></label>
+          <label class="text-sm font-semibold">ราคาส่วนต่าง (บาท; ลดงานใส่ค่าติดลบ)<input id="v19-price" type="number" step="0.01" value="0" class="mt-1 w-full border rounded-lg p-2"/></label>
+          <label class="text-sm font-semibold">สูตรผลิตที่เกี่ยวข้อง<select id="v19-recipe" class="mt-1 w-full border rounded-lg p-2"><option value="">ยังไม่เลือกสูตร / ตรวจสอบภายหลัง</option></select></label>
+          <label class="text-sm font-semibold">สถานะวัสดุที่เบิกไปแล้ว<select id="v19-material" class="mt-1 w-full border rounded-lg p-2"><option value="not_checked">ยังไม่ได้ตรวจสอบ</option><option value="reusable">วัสดุเดิมนำไปใช้ต่อได้</option><option value="partially_used">ใช้ต่อได้บางส่วน</option><option value="cut_or_used">ตัด / ใช้งานไปแล้ว ต้องตรวจหน้างาน</option></select></label>
+        </div>
+        <label class="text-sm font-semibold block">หมายเหตุการเปลี่ยนแปลง / เหตุผล<textarea id="v19-notes" rows="2" maxlength="1200" class="mt-1 w-full border rounded-lg p-2" placeholder="ลูกค้าขอเปลี่ยนแบบหลังเบิกวัสดุ... "></textarea></label>
+        <div class="flex flex-wrap gap-2"><button type="button" onclick="v19Save()" class="px-4 py-2 rounded-xl bg-teal-700 text-white font-bold">บันทึกคำขอเปลี่ยนแปลง</button><button type="button" onclick="v19Reset()" class="px-4 py-2 rounded-xl border">ล้างแบบฟอร์ม</button></div>
+        <p class="text-xs text-amber-800">บันทึกคำขอไม่ได้แก้ใบเสนอราคาเดิม ไม่เพิ่มยอดลูกหนี้ ไม่ตัด/คืนสต๊อก และไม่ถือว่าลูกค้าอนุมัติราคาแล้ว ต้องยืนยันก่อนผลิตเพิ่ม</p>
+        <div class="border-t pt-3"><h4 class="font-bold mb-2">ทะเบียนงานเพิ่มเติมและการเปลี่ยนแปลง</h4><div id="v19-list" class="space-y-2 text-sm text-slate-600">กำลังรอข้อมูล...</div></div>
+      </section>
       <div id="inv-alert" role="status" class="hidden rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900"></div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="inv-summary"></div>
       <div class="bg-white rounded-2xl border p-4 space-y-3">
@@ -2282,7 +2302,7 @@
       });
       if (tab === 'preview') renderPreview();
       else if (tab === 'history') renderHistory();
-      else if (tab === 'inventory') { renderInventory(); invV3JobOptions(); }
+      else if (tab === 'inventory') { renderInventory(); invV3JobOptions(); v19RefreshOptions(); }
       if(window.lucide) window.lucide.createIcons();
       window.scrollTo(0, 0);
     }
@@ -3852,6 +3872,48 @@
     }
 
 
+
+    // V19 - append-only change requests; original document and inventory movements remain unchanged.
+    const v19State={changes:[],unsubscribe:null,editing:null};
+    function v19El(id){return document.getElementById('v19-'+id);}
+    function v19Text(value){return escapeHtml(String(value??''));}
+    function v19Message(t,error=false){const el=v19El('message');if(!el)return;el.classList.remove('hidden');el.classList.toggle('text-red-700',error);el.textContent=t;}
+    function v19DocRows(){return (state.history||[]).filter(h=>h?.id&&h?.payload&&['quotation','invoice','delivery','receipt'].includes(h.payload.docType||h.docType));}
+    function v19RefreshOptions(){
+      const sel=v19El('doc');if(!sel)return;const old=sel.value;
+      sel.innerHTML='<option value="">เลือกใบเสนอราคาหรือเอกสารงาน...</option>'+v19DocRows().map(h=>`<option value="${v19Text(h.id)}">${v19Text(h.docNo||h.payload?.docNo||h.id)} · ${v19Text(h.payload?.customer?.name||'ไม่ระบุลูกค้า')}</option>`).join('');
+      if(v19DocRows().some(h=>h.id===old))sel.value=old;
+      const rec=v19El('recipe');if(rec){const prev=rec.value;rec.innerHTML='<option value="">ยังไม่เลือกสูตร / ตรวจสอบภายหลัง</option>'+(invState.recipes||[]).filter(r=>r.status==='approved'&&!r.archived).map(r=>`<option value="${v19Text(r.id)}">${v19Text(r.name)} · ${v19Text(r.brand||'')}</option>`).join('');rec.value=[...rec.options].some(o=>o.value===prev)?prev:'';}
+      v19ChooseDoc();
+    }
+    function v19ChooseDoc(){const h=v19DocRows().find(h=>h.id===v19El('doc')?.value);const sel=v19El('line');if(!sel)return;const previous=sel.value;sel.innerHTML='<option value="">งานใหม่ / ไม่อ้างอิงรายการเดิม</option>'+(h?.payload?.items||[]).map((it,i)=>`<option value="${i}">${i+1}. ${v19Text(it.name||it.description||it.title||'รายการ')} · ${v19Text(it.width||'')} × ${v19Text(it.height||'')}</option>`).join('');if([...sel.options].some(o=>o.value===previous))sel.value=previous;}
+    function v19Reset(){v19State.editing=null;['title','notes'].forEach(id=>{if(v19El(id))v19El(id).value='';});v19El('qty').value='1';v19El('price').value='0';v19El('kind').value='add';v19El('material').value='not_checked';v19El('recipe').value='';}
+    async function v19Save(){
+      if(!companyAccessReady||!userId)return v19Message('กรุณาเข้าสู่ระบบก่อน',true);
+      if(!isOwner())return v19Message('การสร้างคำขอเปลี่ยนแปลงจำกัดเฉพาะเจ้าของร้าน',true);
+      const h=v19DocRows().find(h=>h.id===v19El('doc').value);if(!h)return v19Message('กรุณาเลือกเอกสารเดิม',true);
+      const title=v19El('title').value.trim(),qty=Number(v19El('qty').value),priceDelta=Number(v19El('price').value);
+      if(!title||!Number.isFinite(qty)||qty<=0||!Number.isFinite(priceDelta))return v19Message('กรุณากรอกรายละเอียด จำนวน และราคาส่วนต่างให้ถูกต้อง',true);
+      const idx=v19El('line').value;const originalItem=idx===''?null:(h.payload.items||[])[Number(idx)];
+      const recipe=invState.recipes.find(r=>r.id===v19El('recipe').value);
+      const payload={sourceHistoryId:h.id,sourceDocNo:String(h.docNo||h.payload.docNo||''),customerName:String(h.payload?.customer?.name||''),sourceItemIndex:idx===''?-1:Number(idx),sourceItemSnapshot:originalItem?JSON.stringify(originalItem).slice(0,5000):'',kind:v19El('kind').value,title,quantity:qty,priceDelta,recipeId:recipe?.id||'',recipeName:recipe?.name||'',materialCondition:v19El('material').value,notes:v19El('notes').value.trim(),status:'draft',createdByUid:userId,createdAt:new Date().toISOString()};
+      try{const ref=doc(cloudCollection('jobChanges'));await setDoc(ref,payload);v19Message('บันทึกคำขอเปลี่ยนแปลงแล้ว — ยังไม่กระทบยอดเงินและสต๊อก');v19Reset();}
+      catch(e){v19Message('บันทึกไม่ได้: '+e.message,true);}
+    }
+    async function v19SetStatus(id,status){
+      if(!isOwner())return v19Message('เฉพาะเจ้าของร้านอนุมัติได้',true);
+      const row=v19State.changes.find(c=>c.id===id);if(!row)return;
+      if(row.status!=='draft')return v19Message('รายการที่ผ่านการพิจารณาแล้วไม่สามารถเปลี่ยนสถานะย้อนหลังได้',true);
+      if(!confirm(status==='approved'?'ยืนยันว่าลูกค้าอนุมัติรายการและราคาส่วนต่างแล้ว? ระบบจะบันทึกสถานะเท่านั้น ไม่ตัดสต๊อกหรือเพิ่มลูกหนี้อัตโนมัติ':'ยืนยันปฏิเสธคำขอนี้?'))return;
+      try{await updateDoc(cloudPath('jobChanges',id),{status,reviewedByUid:userId,reviewedAt:new Date().toISOString()});v19Message('บันทึกสถานะเรียบร้อย');}catch(e){v19Message('เปลี่ยนสถานะไม่สำเร็จ: '+e.message,true);}
+    }
+    function v19Render(){const root=v19El('list');if(!root)return;
+      const rows=[...v19State.changes].sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+      root.innerHTML=rows.length?rows.map(r=>`<div class="border rounded-xl p-3 space-y-1"><div class="flex flex-wrap justify-between gap-2"><strong>${v19Text(r.title)}</strong><span class="text-xs font-bold ${r.status==='approved'?'text-green-700':r.status==='rejected'?'text-red-700':'text-amber-700'}">${r.status==='approved'?'อนุมัติแล้ว':r.status==='rejected'?'ไม่อนุมัติ':'รอพิจารณา'}</span></div><div class="text-xs text-slate-500">${v19Text(r.sourceDocNo)} · ${v19Text(r.customerName)} · ${v19Text(r.kind==='add'?'เพิ่มงาน':r.kind==='reduce'?'ลดงาน':'เปลี่ยนแบบ')} · ${v19Text(r.quantity)} ชุด/บาน</div><div>ราคาส่วนต่าง: ${Number(r.priceDelta||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})} บาท · วัสดุ: ${v19Text(r.materialCondition==='not_checked'?'รอตรวจสอบ':r.materialCondition==='cut_or_used'?'ตัด/ใช้แล้ว':r.materialCondition==='partially_used'?'ใช้ได้บางส่วน':'ใช้ต่อได้')}</div>${r.notes?`<p class="text-xs text-slate-500">${v19Text(r.notes)}</p>`:''}${r.status==='draft'&&isOwner()?`<div class="flex gap-2 pt-1"><button type="button" class="border border-green-500 text-green-800 rounded-lg px-3 py-1" onclick="v19SetStatus('${v19Text(r.id)}','approved')">ยืนยันลูกค้าอนุมัติ</button><button type="button" class="border border-red-300 text-red-700 rounded-lg px-3 py-1" onclick="v19SetStatus('${v19Text(r.id)}','rejected')">ไม่อนุมัติ</button></div>`:''}</div>`).join(''):'<div class="p-3 border rounded-lg text-slate-400">ยังไม่มีงานเพิ่มเติม</div>';
+    }
+    function v19Subscribe(){if(v19State.unsubscribe){v19State.unsubscribe();v19State.unsubscribe=null;}v19State.changes=[];v19Render();if(!companyAccessReady)return;v19State.unsubscribe=onSnapshot(cloudCollection('jobChanges'),snap=>{v19State.changes=snap.docs.map(d=>({id:d.id,...d.data()}));v19Render();},e=>v19Message('โหลดงานเพิ่มเติมไม่ได้: '+e.message,true));}
+    window.v19ChooseDoc=v19ChooseDoc;window.v19Save=v19Save;window.v19Reset=v19Reset;window.v19SetStatus=v19SetStatus;
+
     // Inventory V1. Independent collections; no changes to quotations or finance.
     const invState={items:[],moves:[],recipes:[],unsubs:[],busy:false};
     function invSafe(s){return escapeHtml(String(s??''));}
@@ -3861,10 +3923,10 @@
     function invMmFromMeters(v){const n=Number(v);return Number.isFinite(n)?Math.round(n*1000):NaN;}
     function invMsg(message,error=false){const el=document.getElementById('inv-alert');el.textContent=message;el.classList.remove('hidden');el.classList.toggle('bg-red-50',error);el.classList.toggle('bg-amber-50',!error);}
     function invCanWrite(){if(!companyAccessReady||!userId){invMsg('กรุณาเข้าสู่ระบบบัญชีร้านก่อน',true);return false;}return true;}
-    function invClearListeners(){invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
+    function invClearListeners(){v19Subscribe();invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
     function invSubscribe(){invClearListeners();if(!companyAccessReady)return;
       for(const [name,key] of [['inventoryItems','items'],['inventoryMovements','moves'],['inventoryRecipes','recipes']]){
-        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
+        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
         invState.unsubs.push(unsub);
       }
     }
