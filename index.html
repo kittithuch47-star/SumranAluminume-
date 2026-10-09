@@ -4792,16 +4792,17 @@
       const ready=!missing.length&&!blockers&&!v30Error;
       const status=ready?'พร้อมเบิกผลิต':blockers?'ต้องตรวจสูตร/แผนตัด':'รอสินค้า';
       const rows=p.rows.map(r=>{const i=invState.items.find(x=>x.id===r.id),stock=Number(i?.quantity||0),short=Math.max(0,r.remaining-stock);return `<tr class="border-b"><td class="p-2">${invSafe(i?.name||r.id)}<div class="text-xs text-slate-500">${invSafe(i?.sku||'')} · ${invSafe(i?.color||'')}</div></td><td class="p-2 text-right">${invMoney(r.remaining)}</td><td class="p-2 text-right">${invMoney(stock)}</td><td class="p-2 text-right ${short?'text-red-700 font-bold':'text-emerald-700'}">${short?invMoney(short)+' ขาด':'ครบ'}</td></tr>`;}).join('');
-      host.innerHTML=`<div class="space-y-3"><div class="flex flex-wrap justify-between gap-2"><strong>V31 · ตรวจความพร้อมทั้งงาน ${invSafe(p.jobNo)}</strong><span class="rounded-lg px-3 py-1 font-bold ${ready?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-900'}">${status}</span></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="bg-slate-100"><th class="p-2 text-left">วัสดุ</th><th class="p-2 text-right">ยังต้องเบิก</th><th class="p-2 text-right">มีในคลัง</th><th class="p-2 text-right">ผล</th></tr></thead><tbody>${rows}</tbody></table></div>${missing.length?'<p class="text-red-700 text-sm">ต้องซื้อเพิ่ม: '+missing.map(r=>{const i=invState.items.find(x=>x.id===r.id);return invSafe(i?.name||r.id)+' '+invMoney(r.remaining-Number(i?.quantity||0))+' '+invSafe(i?.unit||'');}).join(' · ')+'</p>':''}${blockers?'<p class="text-red-700 text-sm">ยังมีรายการกระจกหรือแผนตัดที่ต้องตรวจ ไม่อนุญาตเบิก</p>':''}${v30Error?'<p class="text-red-700">${invSafe(v30Error)}</p>':''}<div class="flex flex-wrap gap-2"><button type="button" onclick="v30SetStatus('ordered')" class="border rounded-xl px-3 py-2 text-sm">ยืนยันจัดซื้อแล้ว</button><button type="button" onclick="v30SetStatus('waiting')" class="border rounded-xl px-3 py-2 text-sm">รอรับสินค้า</button><button type="button" onclick="v30Receive()" class="bg-sky-800 text-white rounded-xl px-3 py-2 text-sm">รับสินค้าที่ซื้อเข้าคลัง</button><button type="button" onclick="v30Recheck()" class="border rounded-xl px-3 py-2 text-sm">ตรวจสต๊อกใหม่</button></div><p class="text-xs text-slate-600">สถานะจัดซื้อ: ${record?.status==='ordered'?'จัดซื้อแล้ว':record?.status==='waiting'?'รอรับสินค้า':'ยังไม่บันทึก'} · กดจัดซื้อแล้วไม่เพิ่มสต๊อก ต้องยืนยันรับเข้าจริง</p><button type="button" onclick="v30Prepare()" ${ready?'':'disabled'} class="w-full rounded-xl px-4 py-3 font-bold ${ready?'bg-teal-700 text-white':'bg-slate-200 text-slate-500 cursor-not-allowed'}">${ready?'เตรียมเบิกผลิต (วัสดุครบทั้งงาน)':'ล็อกการเบิก: วัสดุหรือแผนตัดยังไม่ครบ'}</button><p class="text-xs text-amber-800">ตรวจสต๊อกล่าสุดก่อนเบิกทุกครั้ง · ยังไม่มีระบบจองของข้ามงานหรือการบังคับล็อกใน Firestore Rules</p></div>`;
+      host.innerHTML=`<div class="space-y-3"><div class="flex flex-wrap justify-between gap-2"><strong>V31 · ตรวจความพร้อมทั้งงาน ${invSafe(p.jobNo)}</strong><span class="rounded-lg px-3 py-1 font-bold ${ready?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-900'}">${status}</span></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="bg-slate-100"><th class="p-2 text-left">วัสดุ</th><th class="p-2 text-right">ยังต้องเบิก</th><th class="p-2 text-right">มีในคลัง</th><th class="p-2 text-right">ผล</th></tr></thead><tbody>${rows}</tbody></table></div>${missing.length?'<p class="text-red-700 text-sm">ต้องซื้อเพิ่ม: '+missing.map(r=>{const i=invState.items.find(x=>x.id===r.id);return invSafe(i?.name||r.id)+' '+invMoney(r.remaining-Number(i?.quantity||0))+' '+invSafe(i?.unit||'');}).join(' · ')+'</p>':''}${blockers?'<p class="text-red-700 text-sm">ยังมีรายการกระจกหรือแผนตัดที่ต้องตรวจ ไม่อนุญาตเบิก</p>':''}${v30Error?'<p class="text-red-700">${invSafe(v30Error)}</p>':''}<div class="flex flex-wrap gap-2"><button type="button" onclick="v32Step('buy')" class="border rounded-xl px-3 py-2 text-sm">🛒 ไปศูนย์จัดซื้อ</button><button type="button" onclick="v31SaveDemand()" class="border rounded-xl px-3 py-2 text-sm">📥 ส่งรายการของขาดเข้าศูนย์จัดซื้อ</button><button type="button" onclick="v30Receive()" class="bg-sky-800 text-white rounded-xl px-3 py-2 text-sm">📦 เตรียมรับของที่ซื้อแล้ว</button><button type="button" onclick="v30Recheck()" class="border rounded-xl px-3 py-2 text-sm">ตรวจสต๊อกใหม่</button></div><p class="text-xs text-slate-600">สถานะจัดซื้อ: ${record?.status==='ordered'?'จัดซื้อแล้ว':record?.status==='waiting'?'รอรับสินค้า':'ยังไม่บันทึก'} · กดจัดซื้อแล้วไม่เพิ่มสต๊อก ต้องยืนยันรับเข้าจริง</p><button type="button" onclick="v30Prepare()" ${ready?'':'disabled'} class="w-full rounded-xl px-4 py-3 font-bold ${ready?'bg-teal-700 text-white':'bg-slate-200 text-slate-500 cursor-not-allowed'}">${ready?'เตรียมเบิกผลิต (วัสดุครบทั้งงาน)':'ล็อกการเบิก: วัสดุหรือแผนตัดยังไม่ครบ'}</button><p class="text-xs text-amber-800">ตรวจสต๊อกล่าสุดก่อนเบิกทุกครั้ง · ยังไม่มีระบบจองของข้ามงานหรือการบังคับล็อกใน Firestore Rules</p></div>`;
     }
     async function v30SetStatus(status){
       const p=v30Current();if(!p)return alert('กรุณาคำนวณบิลก่อน');
       if(v30Error)return alert(v30Error);
-      if(!invCanWrite())return;
+      if(!invCanWrite())return alert('บัญชีนี้ไม่มีสิทธิ์บันทึกคลัง');
+      if(status==='waiting'&&!v30Jobs.get(v30DocId(p.jobNo))?.lines?.length){return v31SaveDemand();}
       try{await setDoc(cloudPath('inventoryJobPurchases',v30DocId(p.jobNo)),{jobNo:p.jobNo,status,updatedAt:new Date().toISOString(),updatedByUid:userId},{merge:true});invMsg('บันทึกสถานะจัดซื้อแล้ว');}
       catch(e){invMsg('บันทึกสถานะจัดซื้อไม่สำเร็จ: '+e.message,true);}
     }
-    function v30Receive(){v31Receive();}
+    function v30Receive(){const p=v30Current();if(!p)return alert('เลือกและคำนวณบิลก่อน');const r=v30Jobs.get(v30DocId(p.jobNo));if(!r?.lines?.some(l=>Number(l.orderedQty||0)>Number(l.receivedQty||0)))return alert('งานนี้ยังไม่มีรายการซื้อแล้วที่ค้างรับ กรุณาบันทึกเข้าศูนย์จัดซื้อและยืนยันซื้อก่อน');v31Receive();}
     function v30Recheck(){invV27PlanBill();}
     function v30Prepare(){const p=v30Current();if(!p)return alert('กรุณาคำนวณบิลก่อน');const error=v30CheckIssue(p.jobNo,p.rows.filter(r=>r.remaining>0).map(r=>[r.id,r.remaining]));if(error)return alert(error);const pending=p.rows.filter(r=>r.remaining>0);if(!pending.length)return alert('งานนี้เบิกครบตามสูตรแล้ว');if(pending.length>5)return alert('มีมากกว่า 5 รายการ กรุณาแบ่งเบิก แต่ต้องตรวจสต๊อกทั้งงานก่อน');invV4.lines=Object.fromEntries(pending.map(r=>[r.id,r.remaining]));document.getElementById('inv-v4-job').value=p.jobNo;invV4Render();invV25PrepareIssue();}
     Object.assign(window,{v30SetStatus,v30Receive,v30Recheck,v30Prepare});
@@ -4814,14 +4815,14 @@
     async function v31SaveDemand(){
       const p=v30Current();if(!p)return alert('เลือกใบเสนอราคาและกดคำนวณรวมทั้งบิลก่อน');
       if(p.warnings.length||p.glassCount)return alert('ยังมีแผนตัดหรือกระจกที่ต้องตรวจ ไม่สามารถยืนยันรายการจัดซื้อได้');
-      if(!invCanWrite())return;
+      if(!invCanWrite())return alert('บัญชีนี้ไม่มีสิทธิ์บันทึกคลัง กรุณาตรวจสิทธิ์บัญชี');
       const lines=v31PlanLines(p);if(!lines.length)return alert('บิลนี้ไม่มีวัสดุค้างเบิกตามสูตร');
       const id=v30DocId(p.jobNo),previous=v30Jobs.get(id);
       if(previous?.lines?.some(l=>Number(l.orderedQty||0)>0)&&!confirm('บิลนี้มีรายการจัดซื้อเดิม การอัปเดตจะรักษายอดที่เคยสั่งซื้อไว้ และอาจต้องตรวจจำนวนอีกครั้ง ยืนยันหรือไม่?'))return;
       const old=new Map((previous?.lines||[]).map(l=>[l.id,l]));
-      const next=lines.map(l=>({id:l.id,qty:l.qty,orderedQty:v31Round(old.get(l.id)?.orderedQty||0)}));
+      const next=lines.map(l=>({id:l.id,qty:l.qty,orderedQty:v31Round(old.get(l.id)?.orderedQty||0),receivedQty:v31Round(old.get(l.id)?.receivedQty||0)}));
       for(const l of previous?.lines||[]){if(!next.some(n=>n.id===l.id)&&Number(l.orderedQty)>0)next.push({...l,qty:0});}
-      try{await setDoc(cloudPath('inventoryJobPurchases',id),{jobNo:p.jobNo,status:'waiting',lines:next,updatedAt:new Date().toISOString(),updatedByUid:userId});invMsg('บันทึกรายการวัสดุของงาน '+p.jobNo+' ในศูนย์จัดซื้อแล้ว');}
+      try{await setDoc(cloudPath('inventoryJobPurchases',id),{jobNo:p.jobNo,status:'waiting',lines:next,updatedAt:new Date().toISOString(),updatedByUid:userId});invMsg('บันทึกรายการวัสดุของงาน '+p.jobNo+' ในศูนย์จัดซื้อแล้ว');v31Render();v32Step('buy');}
       catch(e){invMsg('บันทึกรายการจัดซื้อไม่สำเร็จ: '+e.message,true);}
     }
     function v31Rows(){
@@ -4829,9 +4830,9 @@
       for(const [docId,record] of v30Jobs){for(const line of record.lines||[]){
         const item=invState.items.find(i=>i.id===line.id);
         if(!item||item.archived)continue;
-        const qty=Number(line.qty||0),ordered=Number(line.orderedQty||0);
+        const qty=Number(line.qty||0),ordered=Number(line.orderedQty||0),received=Number(line.receivedQty||0);
         if(!(qty>=0&&ordered>=0))continue;
-        out.push({docId,jobNo:record.jobNo,id:line.id,qty,ordered,item,need:v31Round(Math.max(0,qty-ordered))});
+        out.push({docId,jobNo:record.jobNo,id:line.id,qty,ordered,received,item,need:v31Round(Math.max(0,qty-ordered))});
       }}return out;
     }
     function v31Render(){
@@ -4840,7 +4841,7 @@
       const rows=v31Rows();const pending=rows.filter(r=>r.need>0);
       const groups=new Map();for(const r of pending){let g=groups.get(r.id);if(!g){g={item:r.item,qty:0,jobs:[]};groups.set(r.id,g);}g.qty=v31Round(g.qty+r.need);g.jobs.push(r.jobNo+' '+invMoney(r.need));}
       const grouped=[...groups.values()].map(g=>'<div class="border rounded-lg p-2 bg-white"><strong>'+invSafe(g.item.name)+'</strong> <b class="text-rose-700">'+invMoney(g.qty)+' '+invSafe(g.item.unit||'')+'</b><div class="text-xs text-slate-600">'+invSafe(g.jobs.join(' · '))+'</div></div>').join('');
-      const detail=rows.map(r=>{const key=r.docId+'|'+r.id;return '<label class="flex items-center gap-2 border-b p-2"><input type="checkbox" class="v31-check" data-key="'+invSafe(key)+'" '+(v31Selected.has(key)?'checked':'')+' '+(r.need<=0?'disabled':'')+'><span class="flex-1 text-sm"><b>'+invSafe(r.jobNo)+'</b> · '+invSafe(r.item.name)+'<small class="block text-slate-500">ต้องการ '+invMoney(r.qty)+' · ซื้อแล้ว '+invMoney(r.ordered)+' · ยังรอซื้อ '+invMoney(r.need)+' '+invSafe(r.item.unit||'')+'</small></span></label>';}).join('');
+      const detail=rows.map(r=>{const key=r.docId+'|'+r.id;return '<label class="flex items-center gap-2 border-b p-2"><input type="checkbox" class="v31-check" data-key="'+invSafe(key)+'" '+(v31Selected.has(key)?'checked':'')+' '+(r.need<=0?'disabled':'')+'><span class="flex-1 text-sm"><b>'+invSafe(r.jobNo)+'</b> · '+invSafe(r.item.name)+'<small class="block text-slate-500">ต้องการ '+invMoney(r.qty)+' · ซื้อแล้ว '+invMoney(r.ordered)+' · รับแล้วตามทะเบียน '+invMoney(r.received)+' · ยังรอซื้อ '+invMoney(r.need)+' '+invSafe(r.item.unit||'')+'</small></span></label>';}).join('');
       host.innerHTML='<div class="space-y-3"><div class="flex flex-wrap justify-between gap-2"><strong class="text-teal-900">V31 · ศูนย์จัดซื้อรวมหลายใบเสนอราคา</strong><span class="text-xs text-slate-500">'+rows.length+' รายการจาก '+new Set(rows.map(r=>r.jobNo)).size+' งาน</span></div><p class="text-xs text-amber-800">รายการนี้บันทึกตามเลขงานแยกกัน ซื้อรวมได้ แต่การซื้อไม่ใช่การรับเข้า และยังไม่มีระบบจองสต๊อกข้ามงาน</p><div class="grid sm:grid-cols-2 gap-2">'+(grouped||'<p class="text-sm text-slate-500">ยังไม่มีรายการรอซื้อ กดบันทึกงานเข้าศูนย์จัดซื้อจากผลคำนวณก่อน</p>')+'</div><div class="border rounded-lg max-h-72 overflow-auto">'+(detail||'<p class="p-3 text-sm text-slate-500">ยังไม่มีงานในศูนย์จัดซื้อ</p>')+'</div><div class="flex flex-wrap gap-2"><button type="button" onclick="v31Copy()" class="rounded-lg border px-3 py-2 text-sm">คัดลอกรายการรอซื้อรวม</button><button type="button" onclick="v31Purchase()" class="rounded-lg bg-teal-700 text-white px-3 py-2 text-sm">ยืนยันซื้อรายการที่เลือก</button><button type="button" onclick="v31Receive()" class="rounded-lg bg-sky-800 text-white px-3 py-2 text-sm">นำรายการซื้อแล้วไปรับเข้าคลัง</button></div><p class="text-xs text-slate-600">เลือกรายการของแต่ละบิลแล้วกดยืนยันซื้อพร้อมกันได้ หากรับสินค้าไม่ครบ ให้แก้จำนวนในตะกร้ารับเข้าตามจำนวนจริงก่อนยืนยัน</p></div>';
       host.querySelectorAll('.v31-check').forEach(c=>c.addEventListener('change',()=>{if(c.checked)v31Selected.add(c.dataset.key);else v31Selected.delete(c.dataset.key);}));
     }
@@ -4851,7 +4852,7 @@
       if(navigator.clipboard?.writeText)navigator.clipboard.writeText(message).then(()=>invMsg('คัดลอกรายการรอซื้อรวมแล้ว')).catch(()=>invV4CopyFallback(message));else invV4CopyFallback(message);
     }
     async function v31Purchase(){
-      if(!invCanWrite())return;const chosen=v31Rows().filter(r=>r.need>0&&v31Selected.has(r.docId+'|'+r.id));
+      if(!invCanWrite())return alert('บัญชีนี้ไม่มีสิทธิ์บันทึกคลัง');const chosen=v31Rows().filter(r=>r.need>0&&v31Selected.has(r.docId+'|'+r.id));
       if(!chosen.length)return alert('เลือกวัสดุของบิลที่ต้องการซื้อก่อน');
       if(!confirm('ยืนยันว่าจัดซื้อ '+chosen.length+' รายการแล้ว?\nการยืนยันนี้ยังไม่เพิ่มสต๊อก'))return;
       const byDoc=new Map();for(const r of chosen){const a=byDoc.get(r.docId)||[];a.push(r);byDoc.set(r.docId,a);}
@@ -4860,9 +4861,9 @@
       }catch(e){invMsg('บันทึกจัดซื้อไม่ครบทุกงาน: '+e.message+' กรุณาตรวจสถานะก่อนลองอีกครั้ง',true);}
     }
     function v31Receive(){
-      const ordered=v31Rows().filter(r=>r.ordered>0);
-      if(!ordered.length)return alert('ยังไม่มีรายการที่ยืนยันซื้อแล้ว');
-      const groups=new Map();for(const r of ordered)groups.set(r.id,v31Round((groups.get(r.id)||0)+r.ordered));
+      const ordered=v31Rows().filter(r=>r.ordered>r.received+0.0001);
+      if(!ordered.length)return alert('ไม่มีรายการซื้อแล้วที่ยังค้างรับ (หากเคยรับของในรุ่นก่อน โปรดตรวจยอดจริงก่อนรับซ้ำ)');
+      const groups=new Map();for(const r of ordered)groups.set(r.id,v31Round((groups.get(r.id)||0)+r.ordered-r.received));
       if(groups.size>5)return alert('มีวัสดุ '+groups.size+' ชนิด กรุณารับเข้าทีละไม่เกิน 5 ชนิดตามข้อจำกัด Firestore Rules ปัจจุบัน');
       if(Object.keys(invV3.cart).length&&!confirm('แทนที่รายการเดิมในตะกร้ารับเข้าหรือไม่?'))return;
       invV3SetType('receive');invV3.cart=Object.fromEntries(groups);
