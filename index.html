@@ -4464,6 +4464,10 @@
     function invV3SetQty(id,value){const n=Number(value);if(!Number.isFinite(n)||n<=0||Math.round(n*1000)!==n*1000){invMsg('จำนวนต้องมากกว่า 0 และทศนิยมไม่เกิน 3 ตำแหน่ง',true);invV3Render();return;}invV3.cart[id]=n;invV3Render();}
     async function invV3Save(){if(!invCanWrite()||invV3.busy)return;const entries=Object.entries(invV3.cart);if(!entries.length)return invMsg('กรุณาเลือกวัสดุ',true);if(entries.length>5)return invMsg('เพื่อรองรับข้อจำกัด Firestore Rules กรุณาบันทึกครั้งละไม่เกิน 5 รายการ',true);
       const type=invV3.type,jobNo=document.getElementById('inv-v3-job').value,reference=document.getElementById('inv-v3-ref').value.trim(),note=document.getElementById('inv-v3-note').value.trim();
+      if(type==='issue'&&jobNo){
+        const repeats=entries.filter(([id])=>invV28JobNet(jobNo,id).issued>0);
+        if(repeats.length&&!confirm('ตรวจสอบการเบิกซ้ำ: งาน '+jobNo+' เคยเบิกวัสดุ '+repeats.length+' รายการในตะกร้านี้แล้ว\nหากเป็นการเบิกเพิ่มเติมจริงให้กดตกลง มิฉะนั้นกดยกเลิกเพื่อคำนวณยอดคงค้างใหม่'))return;
+      }
       const prefix=type==='receive'?'IN':type==='return'?'RET':'ISS';const batchRef=doc(cloudCollection('inventoryMovements'));const batchNo=prefix+'-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+batchRef.id.slice(0,8).toUpperCase();
       const refs=entries.map(([id,qty],idx)=>({id,qty,itemRef:cloudPath('inventoryItems',id),moveRef:idx===0?batchRef:doc(cloudCollection('inventoryMovements'))}));
       invV3.busy=true;invV3Render();try{await runTransaction(db,async tx=>{const snaps=[];for(const r of refs)snaps.push(await tx.get(r.itemRef));for(let j=0;j<refs.length;j++){const r=refs[j],snap=snaps[j];if(!snap.exists())throw Error('วัสดุบางรายการถูกลบ');const item=snap.data(),old=Number(item.quantity),delta=type==='issue'?-r.qty:r.qty,next=Math.round((old+delta)*1000)/1000;if(!Number.isFinite(old)||old<0||next<0)throw Error('สต๊อกไม่พอ: '+item.name);const movement={itemId:r.id,itemName:item.name,unit:item.unit,type,quantity:r.qty,delta,previousQuantity:old,nextQuantity:next,jobNo,reference,note,documentNo:batchNo,batchId:batchRef.id,actorUid:userId,actorEmail:auth.currentUser?.email||'',actorName:auth.currentUser?.displayName||'',createdAt:new Date().toISOString()};tx.update(r.itemRef,{quantity:next,lastMovementId:r.moveRef.id});tx.set(r.moveRef,movement);}});document.getElementById('inv-v3-document').value=batchNo;invV3.cart={};invMsg('บันทึกสำเร็จ เลขที่รายการ '+batchNo);}
@@ -4637,6 +4641,22 @@
     Object.assign(window,{invV4Add,invV4Remove,invV4Qty,invV4Render,invV4Copy,invV4Reset});
     window.invPageChange=invPageChange;window.invArchiveVisibleMoves=invArchiveVisibleMoves;window.invEditItem=invEditItem;window.invSaveItemEdit=invSaveItemEdit;window.invCancelEdit=invCancelEdit;window.invDeleteItem=invDeleteItem;window.invArchiveItem=invArchiveItem;window.invArchiveMove=invArchiveMove;window.invDeleteRecipe=invDeleteRecipe;window.invV4PickDocument=invV4PickDocument;window.renderInventory=renderInventory;window.invQuickMove=invQuickMove;window.invRememberBrand=invRememberBrand;window.invToggleAdd=invToggleAdd;window.invMoveTypeChanged=invMoveTypeChanged;window.invAddItem=invAddItem;window.invSaveMovement=invSaveMovement;window.invSaveRecipe=invSaveRecipe;window.invUpdateRecipe=invUpdateRecipe;
 
+    // V28: Job-level net issue history (issues less returns), read-only.
+    function invV28JobNet(jobNo,itemId){
+      const job=String(jobNo||'').trim();
+      if(!job)return {issued:0,returned:0,net:0};
+      let issued=0,returned=0;
+      for(const m of invState.moves){
+        if(m.archived||String(m.jobNo||'').trim()!==job||m.itemId!==itemId)continue;
+        const n=Number(m.quantity||0);if(!Number.isFinite(n)||n<=0)continue;
+        if(m.type==='issue')issued+=n;
+        if(m.type==='return')returned+=n;
+      }
+      return {issued,returned,net:Math.max(0,Math.round((issued-returned)*1000)/1000)};
+    }
+    function invV28JobNumber(){
+      return String(document.getElementById('inv-v4-job')?.value||invV7Selected?.docNo||invV7Selected?.payload?.docNo||'').trim();
+    }
     // V27: Aggregate approved bill recipes and reconcile actual registered full bars.
     // Planning only: never writes inventory or changes saved recipes/documents.
     function invV27PlanBill(){
@@ -4684,17 +4704,24 @@
         }
         required.set(id,(required.get(id)||0)+bins.length);
       }
-      const rows=[...required].map(([id,qty])=>({item:invState.items.find(i=>i.id===id),qty}));
-      const shortages=rows.filter(z=>z.qty>Number(z.item?.quantity||0));
-      const lines=rows.map(({item,qty})=>`<div class="border-b py-2"><strong>${invSafe(item.name)}</strong><div class="text-xs text-slate-600">${invSafe(item.brand||'')} · ${invSafe(item.sku||'')} · ${invSafe(item.color||'')} · ${invSafe(item.lengthMm?invMoney(item.lengthMm/1000)+' ม.':'อุปกรณ์')}</div><div>ต้องใช้ <b>${invMoney(qty)}</b> ${invSafe(item.unit||'')} · มี <b>${invMoney(item.quantity)}</b> · <b class="${qty>Number(item.quantity)?'text-rose-700':'text-teal-700'}">${qty>Number(item.quantity)?'ขาด '+invMoney(qty-Number(item.quantity)):'เพียงพอ'}</b></div></div>`).join('');
-      host.innerHTML='<div class="rounded-xl border border-teal-200 bg-teal-50 p-3 space-y-2"><strong>V27 · สรุปวัสดุจากบิลและสต๊อกจริง (ยังไม่เบิก)</strong><p class="text-xs">รวม '+sales.length+' รายการสินค้า · '+rows.length+' รหัสวัสดุ · ขาด '+shortages.length+' รหัส · จัดตัดเบื้องต้นแบบ First Fit Decreasing แยกตามรหัสวัสดุ</p>'+lines+(glass.length?'<p class="text-amber-800">มีกระจก '+glass.length+' รายการตัด ต้องตรวจขนาด 2 มิติและแผ่นจริงแยกต่างหาก ไม่รวมในยอดเบิกนี้</p>':'')+(warnings.length?'<p role="alert" class="text-rose-800">'+warnings.map(invSafe).join(' / ')+'</p>':'')+'<p class="text-amber-800 text-xs">ยังไม่หักยอดจองงานอื่น เศษเส้น และแผนตัดต้องให้ช่างตรวจจริงก่อนอนุมัติเบิก</p><button type="button" id="inv-v27-transfer" class="rounded-lg bg-teal-700 text-white px-4 py-3 font-bold">นำยอดวัสดุที่ตรวจแล้วไปตารางตรวจสต๊อก</button></div>';
+      const jobNo=invV28JobNumber();
+      const rows=[...required].map(([id,total])=>{
+        const item=invState.items.find(i=>i.id===id),history=invV28JobNet(jobNo,id);
+        const remaining=Math.max(0,Math.round((total-history.net)*1000)/1000);
+        return {item,total,history,remaining};
+      });
+      const shortages=rows.filter(z=>z.remaining>Number(z.item?.quantity||0));
+      const lines=rows.map(({item,total,history,remaining})=>`<div class="border-b py-2"><strong>${invSafe(item.name)}</strong><div class="text-xs text-slate-600">${invSafe(item.brand||'')} · ${invSafe(item.sku||'')} · ${invSafe(item.color||'')} · ${invSafe(item.lengthMm?invMoney(item.lengthMm/1000)+' ม.':'อุปกรณ์')}</div><div>ต้องใช้ตามสูตร <b>${invMoney(total)}</b> ${invSafe(item.unit||'')} · เคยเบิก <b>${invMoney(history.issued)}</b> · คืน <b>${invMoney(history.returned)}</b> · เบิกสุทธิ <b>${invMoney(history.net)}</b></div><div>ยังต้องเบิก <b>${invMoney(remaining)}</b> · ในคลัง <b>${invMoney(item.quantity)}</b> · <b class="${remaining>Number(item.quantity)?'text-rose-700':'text-teal-700'}">${remaining>Number(item.quantity)?'ขาด '+invMoney(remaining-Number(item.quantity)):remaining===0?'ครบตามสูตรแล้ว':'เพียงพอ'}</b></div></div>`).join('');
+      host.innerHTML='<div class="rounded-xl border border-teal-200 bg-teal-50 p-3 space-y-2"><strong>V28 · สรุปยอดต้องใช้ / เบิกสะสม / คงเหลือที่ต้องเบิก (ยังไม่ตัดสต๊อก)</strong><p class="text-xs">งาน '+invSafe(jobNo)+' · '+sales.length+' รายการสินค้า · '+rows.length+' รหัสวัสดุ · ต้องซื้อเพิ่ม '+shortages.length+' รหัส</p>'+lines+(glass.length?'<p class="text-amber-800">กระจก '+glass.length+' รายการยังต้องตรวจขนาดแผ่นจริง ไม่รวมในยอดเบิกนี้</p>':'')+(warnings.length?'<p role="alert" class="text-rose-800">'+warnings.map(invSafe).join(' / ')+'</p>':'')+'<p class="text-amber-800 text-xs">ยอดเบิกสะสมคำนวณจากประวัติที่ไม่ถูกซ่อนของเลขงานเดียวกัน; หากเคยซ่อนประวัติ หรือเบิกเพื่อใช้งานคนละส่วนของบิล ให้ตรวจด้วยตนเอง · ยังไม่หักยอดจองงานอื่น และแผนตัดต้องตรวจจริง</p><button type="button" id="inv-v27-transfer" class="rounded-lg bg-teal-700 text-white px-4 py-3 font-bold">นำยอดที่ยังต้องเบิกไปตารางตรวจสต๊อก</button></div>';
       document.getElementById('inv-v27-transfer').onclick=()=>{
         if(warnings.length)return fail('มีชิ้นตัดยาวเกินเส้นสต๊อก ต้องแก้แผนตัดก่อนโอนรายการ');
-        if(glass.length&&!confirm('รายการกระจกยังไม่ได้คำนวณเป็นแผ่นจริง ต้องตรวจและเพิ่มแยกต่างหาก ยืนยันโอนเฉพาะอะลูมิเนียมและอุปกรณ์?'))return;
-        if(!confirm('นำจำนวนวัสดุจากผลคำนวณล่าสุดไปตรวจสต๊อก? ระบบจะไม่หักสต๊อกและไม่บันทึกการเบิก'))return;
-        invV4.lines={};for(const [id,qty] of required)invV4.lines[id]=Math.round(qty*1000)/1000;
+        if(glass.length&&!confirm('รายการกระจกยังไม่ได้คำนวณเป็นแผ่นจริง ยืนยันโอนเฉพาะอะลูมิเนียมและอุปกรณ์?'))return;
+        const pending=rows.filter(z=>z.remaining>0);
+        if(!pending.length)return alert('งานนี้เบิกวัสดุครบตามจำนวนในสูตรแล้ว ไม่มีรายการที่ต้องเบิกเพิ่ม');
+        if(!confirm('โอนเฉพาะยอดที่ยังต้องเบิก '+pending.length+' รายการของงาน '+jobNo+'?\nระบบยังไม่หักสต๊อกจนกว่าจะยืนยันในหน้าเบิก'))return;
+        invV4.lines={};for(const {item,remaining} of pending)invV4.lines[item.id]=remaining;
         invV4Render();document.getElementById('inv-v4-lines')?.scrollIntoView({behavior:'smooth',block:'center'});
-        invMsg('โอนยอดไปตารางตรวจสต๊อกแล้ว ตรวจแผนตัดและจำนวนอีกครั้งก่อนเตรียมเบิก');
+        invMsg('โอนยอดคงค้างของงาน '+jobNo+' แล้ว ตรวจรายการก่อนเบิก');
       };
     }
     window.invV27PlanBill=invV27PlanBill;
@@ -4710,6 +4737,8 @@
         if(!item||item.archived||!(qty>0)||!Number.isFinite(qty))return invMsg('มีรายการวัสดุที่ไม่ถูกต้อง กรุณาตรวจสอบ',true);
         if(Number(item.quantity)<qty)return invMsg('สต๊อกไม่พอ: '+item.name+' · ต้องใช้ '+invMoney(qty)+' แต่มี '+invMoney(item.quantity),true);
       }
+      const prior=rows.filter(({item})=>invV28JobNet(job,item.id).issued>0);
+      if(prior.length&&!confirm('งานนี้เคยมีประวัติเบิกวัสดุ '+prior.length+' รายการแล้ว\nหากใช้ผล V28 ที่หักยอดเบิกสะสม ระบบจะเตรียมเฉพาะยอดคงค้าง\nยืนยันว่าตรวจรายการและไม่ได้เตรียมเบิกซ้ำ?'))return;
       if(!confirm('เตรียมรายการเบิก '+rows.length+' รายการ สำหรับงาน '+job+'?\nยังไม่หักสต๊อกจนกว่าจะตรวจสอบและกดยืนยันเบิกในหน้าถัดไป'))return;
       invV3SetType('issue'); // clears old cart, avoiding accidental mixed-job issues
       for(const {item,qty} of rows)invV3.cart[item.id]=qty;
