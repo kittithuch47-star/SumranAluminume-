@@ -648,7 +648,7 @@
             <div id="auth-user-email" class="text-[9px] text-sky-200 truncate max-w-[180px]">-</div>
           </div>
           <span id="auth-user-role" class="text-[9px] px-1.5 py-0.5 rounded bg-white/10 border border-white/10 text-sky-100 whitespace-nowrap">-</span>
-          <button type="button" onclick="logoutGoogle()" class="text-[10px] px-2 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/10 font-semibold">ออกจากระบบ</button>
+          <button type="button" data-sumran-logout onclick="logoutGoogle()" class="text-[10px] px-2 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/10 font-semibold">ออกจากระบบ</button>
         </div>
         <button onclick="switchTab('home')" id="tab-btn-home" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-white/10 hover:bg-white/20 text-white"><i data-lucide="house" class="w-4 h-4"></i> หน้าหลัก</button>
         <button onclick="switchTab('editor')" id="tab-btn-editor" class="px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all bg-sky-500 text-white shadow">
@@ -741,6 +741,7 @@
 
     <!-- INVENTORY V1: independent of quotation, payments and historical data -->
     <section id="tab-inventory" class="hidden space-y-4 no-print">
+      <div id="inv-cloud-status" hidden role="status" aria-live="polite" class="rounded-xl border border-sky-200 bg-sky-50 text-sky-900 p-3 text-sm"></div>
       <div class="bg-gradient-to-r from-teal-800 to-slate-900 text-white rounded-2xl p-5">
         <h2 class="text-xl font-bold">คลังวัสดุและการผลิต</h2>
         <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรการผลิตมาตรฐาน</p>
@@ -2105,13 +2106,30 @@
       }
     }
 
+    let logoutInProgress=false;
     async function logoutGoogle() {
-      if(!auth) return;
+      if(logoutInProgress)return;
+      if(!auth){showToast('ระบบเข้าสู่ระบบยังไม่พร้อม กรุณาลองใหม่');return;}
+      logoutInProgress=true;
+      const buttons=document.querySelectorAll('[data-sumran-logout]');
+      buttons.forEach(b=>{b.disabled=true;b.textContent='กำลังออก...';});
       try {
-        clearTimeout(state.liveSyncTimer); unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
-        companyAccessReady=false; currentMember=null; currentRole=null; pendingLegacyData=null; invClearListeners(); clearCurrentCloudView();
-        await signOut(auth); userId=null; updateAuthUserUi(null); setAuthGate(true,'ออกจากระบบแล้ว กรุณาเข้าสู่ระบบด้วย Google'); showToast('ออกจากระบบแล้ว');
-      } catch(e){console.error('Logout error',e);showToast('ออกจากระบบไม่สำเร็จ');}
+        // Sign out FIRST. Never discard inventory listeners or cloud state on failure.
+        await signOut(auth);
+        clearTimeout(state.liveSyncTimer);
+        unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}});unsubscribeFns=[];
+        companyAccessReady=false;currentMember=null;currentRole=null;pendingLegacyData=null;
+        invClearListeners();clearCurrentCloudView();
+        userId=null;updateAuthUserUi(null);
+        setAuthGate(true,'ออกจากระบบแล้ว กรุณาเข้าสู่ระบบด้วย Google');
+        showToast('ออกจากระบบแล้ว');
+      }catch(e){
+        console.error('Logout error',e);
+        showToast('ออกจากระบบไม่สำเร็จ: '+String(e?.code||e?.message||'ไม่ทราบสาเหตุ'));
+      }finally{
+        logoutInProgress=false;
+        buttons.forEach(b=>{b.disabled=false;b.textContent='ออกจากระบบ';});
+      }
     }
 
     async function handleGoogleUserReady(user) {
@@ -2130,7 +2148,7 @@
         currentRole=currentMember.role; companyAccessReady=true; state.currentActor={uid:user.uid,email:user.email||'',displayName:user.displayName||''};
         if(currentRole === 'owner') await maybeMigrateLegacyDataForOwner();
         resetEditorForSession();
-        updateRoleUi(); setAuthGate(false); await attachCloudListenersForCurrentUser(); invSubscribe();
+        updateRoleUi(); setAuthGate(false); await attachCloudListenersForCurrentUser(); invSubscribe(); v19Subscribe(); v23Subscribe();
       } catch(e){console.error(e);setAuthGate(true,'ตรวจสอบสิทธิ์ร้านไม่สำเร็จ — ตรวจสอบ Firestore Rules');}
     }
 
@@ -4118,10 +4136,12 @@
     function invMmFromMeters(v){const n=Number(v);return Number.isFinite(n)?Math.round(n*1000):NaN;}
     function invMsg(message,error=false){const el=document.getElementById('inv-alert');el.textContent=message;el.classList.remove('hidden');el.classList.toggle('bg-red-50',error);el.classList.toggle('bg-amber-50',!error);}
     function invCanWrite(){if(!companyAccessReady||!userId){invMsg('กรุณาเข้าสู่ระบบบัญชีร้านก่อน',true);return false;}return true;}
-    function invClearListeners(){v19Subscribe();v23Subscribe();invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
+    function invClearListeners(){if(v19State.unsubscribe){try{v19State.unsubscribe();}catch(_){ }v19State.unsubscribe=null;}if(v23State.unsubscribe){try{v23State.unsubscribe();}catch(_){ }v23State.unsubscribe=null;}invState.unsubs.forEach(f=>{try{f();}catch(e){}});invState.unsubs=[];invState.items=[];invState.moves=[];invState.recipes=[];renderInventory();}
     function invSubscribe(){invClearListeners();if(!companyAccessReady)return;
+      const status=document.getElementById('inv-cloud-status');if(status){status.hidden=false;status.textContent='กำลังโหลดข้อมูลคลังจาก Firebase...';}
+      const pending=new Set(['items','moves','recipes']);
       for(const [name,key] of [['inventoryItems','items'],['inventoryMovements','moves'],['inventoryRecipes','recipes']]){
-        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();v20Refresh();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true));
+        const unsub=onSnapshot(cloudCollection(name),snap=>{invState[key]=snap.docs.map(d=>({id:d.id,...d.data()}));pending.delete(key);if(status){status.hidden=pending.size===0;if(pending.size)status.textContent='กำลังโหลดข้อมูลคลัง: '+[...pending].join(', ');}renderInventory();if(key==='recipes'){v12Refresh();v15RenderRecipes();v19RefreshOptions();v20Refresh();}if(key==='recipes'&&invV7Selected)invV7ShowDocument(invV7Selected);},e=>{if(status){status.hidden=false;status.textContent='โหลด '+name+' ไม่สำเร็จ ('+String(e.code||'error')+'): '+e.message+' — ตรวจสิทธิ์บัญชีและ Firestore Rules';status.className='rounded-xl border border-red-300 bg-red-50 text-red-800 p-3 text-sm';}invMsg('อ่านข้อมูลคลังไม่ได้: '+e.message,true);});
         invState.unsubs.push(unsub);
       }
     }
@@ -4658,6 +4678,7 @@
     const legacy=findDirect('inv-legacy-compat');if(legacy){legacy.hidden=true;legacy.style.display='none';}
     // Shared messages visible in stock section, not duplicated.
     move(findDirect('inv-alert'),'stock');
+    move(findDirect('inv-cloud-status'),'stock');
     // If a future version adds an unrecognized section, preserve it in the stock view.
     for(const el of children){if(!assigned.has(el) && el!==legacy && !el.classList.contains('bg-gradient-to-r')) move(el,'stock');}
     root.prepend(nav);
