@@ -1958,6 +1958,9 @@
         } else {
           await signInWithPopup(auth, provider);
         }
+        // Popup completed: release busy gate and explicitly load the signed-in account.
+        setAuthUiBusy(false);
+        if(auth.currentUser && !auth.currentUser.isAnonymous) await handleGoogleUserReady(auth.currentUser);
       } catch(e) {
         console.error('Google login failed:', e);
         if(standalone) {
@@ -1990,7 +1993,8 @@
     async function handleGoogleUserReady(user) {
       if(!user||user.isAnonymous){setAuthGate(true,'พบพื้นที่ข้อมูลเดิมของเบราว์เซอร์นี้แล้ว กรุณากดเข้าสู่ระบบด้วย Google');return;}
       userId=user.uid; localStorage.setItem(LOCAL_USER_KEY,userId); updateAuthUserUi(user);
-      if(authActionBusy) return;
+      // A successful Google sign-in must not be blocked by the login button's busy state.
+      setAuthUiBusy(false);
       try {
         currentMember=await loadMembershipForUser(user);
         if(!currentMember){
@@ -2019,7 +2023,7 @@
         await setPersistence(auth,browserLocalPersistence);
         // Resolve the redirect before creating an anonymous session. Otherwise the
         // temporary anonymous user can interfere with OAuth redirect completion.
-        try { await getRedirectResult(auth); }
+        try { await getRedirectResult(auth); setAuthUiBusy(false); }
         catch(e) { console.error('Google redirect result failed:', e); setAuthUiBusy(false); showAuthError(e); }
 
         if(!authInitialized){onAuthStateChanged(auth,user=>handleAuthStateChange(user));authInitialized=true;}
@@ -3888,3 +3892,4 @@
   </script>
 </body>
 </html>
+
