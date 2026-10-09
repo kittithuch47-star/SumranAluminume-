@@ -3815,7 +3815,7 @@
       document.getElementById('inv-add-toggle').disabled=!isOwner();
       document.getElementById('inv-cost').disabled=!isOwner();
       root.innerHTML=filtered.length?filtered.map(i=>`<div class="border rounded-xl p-3 flex flex-wrap gap-2 justify-between items-center"><div><strong>${invSafe(i.name)}</strong><div class="text-xs text-slate-500">${invSafe(i.brand)} · ${invSafe(i.sku)} · ${invSafe(i.color)}</div>${isOwner()?`<div class="text-xs text-slate-500">ต้นทุน/หน่วย ฿${invMoney(i.unitCost)}</div>`:''}</div><div class="text-right"><strong class="text-lg ${invNum(i.quantity)<=invNum(i.minStock)?'text-amber-700':'text-teal-700'}">${invMoney(i.quantity)} ${invSafe(i.unit)}</strong><div class="text-xs text-slate-500">ขั้นต่ำ ${invMoney(i.minStock)} ${invSafe(i.unit)}</div><div class="flex gap-1 justify-end mt-2"><button type="button" onclick="invQuickMove('${invSafe(i.id)}','receive')" class="bg-teal-50 text-teal-800 border rounded-lg px-2 py-1 text-xs">+ รับเข้า</button><button type="button" onclick="invQuickMove('${invSafe(i.id)}','issue')" class="bg-sky-50 text-sky-800 border rounded-lg px-2 py-1 text-xs">เบิก</button></div></div></div>`).join(''):'<p class="text-sm text-slate-500">ยังไม่มีรายการวัสดุ</p>';
-      const select=document.getElementById('inv-move-item'),prev=select.value;select.innerHTML=all.map(i=>`<option value="${invSafe(i.id)}">${invSafe(i.name)} (${invSafe(i.brand)}) — ${invMoney(i.quantity)} ${invSafe(i.unit)}</option>`).join('');if(all.some(i=>i.id===prev))select.value=prev;
+      // V3 uses the cart UI; the removed V2 inv-move-item select must not be accessed.
       invV3Render();
       const historyFilter=document.getElementById("inv-history-filter")?.value||"all";const moves=invState.moves.filter(m=>historyFilter==="all"||m.type===historyFilter).slice().sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||""))).slice(0,20);
       document.getElementById('inv-movements').innerHTML=moves.length?moves.map(m=>`<div class="border rounded-xl p-3"><strong>${m.type==='receive'?'รับเข้า':m.type==='return'?'คืน':'เบิก'} ${invMoney(m.quantity)} ${invSafe(m.unit)}</strong> — ${invSafe(m.itemName)}<div class="text-xs text-slate-500">งาน ${invSafe(m.jobNo||'-')} · ${invSafe(m.actorName||m.actorEmail)} · ${invSafe(m.createdAt||'')} · ${invSafe(m.reference||'')} ${invSafe(m.note||'')}</div></div>`).join(''):'<p class="text-slate-500">ยังไม่มีประวัติ</p>';
@@ -3892,4 +3892,3 @@
   </script>
 </body>
 </html>
-
