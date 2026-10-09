@@ -662,6 +662,54 @@
 @media(max-width:780px){#tab-inventory .v24-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}#tab-inventory .v24-tab{min-width:0;min-height:48px;font-size:11px;padding:8px 5px}#tab-inventory .v35-dashboard{grid-template-columns:1fr}#tab-inventory .v35-quick button{flex:1}#tab-inventory .v35-group>.v35-group-body{padding:10px}#tab-inventory .v24-nav{padding:12px;border-radius:16px}#tab-inventory .v35-hubactions button{flex:1 1 145px}}
 @media(max-width:420px){#tab-inventory .v24-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#tab-inventory .v35-quick{display:grid;grid-template-columns:1fr 1fr}#tab-inventory .v35-quick button{font-size:11px}}
 
+
+/* V36: one-primary-action guided inventory experience */
+#v32-guide{display:none!important}
+#v36-assistant{background:#fff;border:1px solid #cbd5e1;border-radius:24px;box-shadow:0 10px 30px #0f172a0b;padding:22px;scroll-margin-top:130px}
+.v36-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.v36-kicker{font-size:11px;font-weight:800;letter-spacing:.1em;color:#0f766e}.v36-title{font-size:clamp(19px,2.5vw,25px);font-weight:800;color:#12283c}.v36-sub{font-size:12px;color:#64748b;margin-top:5px}.v36-progress{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:19px 0}.v36-step{border:1px solid #e2e8f0;background:#f8fafc;border-radius:13px;padding:12px 7px;min-height:74px;text-align:center;font-size:11px;font-weight:700;color:#64748b}.v36-step span{display:block;font-size:19px;margin-bottom:3px}.v36-step[aria-current="step"]{background:#e0f2fe;border-color:#0284c7;color:#075985;box-shadow:inset 0 0 0 1px #0284c7}.v36-stage{border:1px solid #cbd5e1;background:linear-gradient(140deg,#f8fafc,#f0fdfa);border-radius:18px;padding:20px}.v36-stage h3{font-size:19px;font-weight:800;color:#0f172a}.v36-stage p{font-size:13px;color:#475569;margin:8px 0 14px;line-height:1.8}.v36-main{background:#0f766e;color:#fff;border:0;border-radius:13px;padding:14px 19px;font-weight:800;min-height:50px;width:100%;font-size:14px}.v36-back{background:white;border:1px solid #cbd5e1;border-radius:12px;padding:12px 17px;font-weight:700;color:#475569}.v36-actions{display:flex;gap:10px;flex-wrap:wrap}.v36-note{font-size:11px;color:#9a3412;margin-top:13px}.v36-compact{margin-top:12px;font-size:12px;color:#64748b}.v36-compact button{color:#0369a1;text-decoration:underline;font-weight:700}.v36-hidden-old{display:none!important}
+@media(max-width:640px){#v36-assistant{padding:14px;border-radius:18px}.v36-progress{gap:4px}.v36-step{font-size:9px;min-height:68px;padding:8px 3px}.v36-step span{font-size:17px}.v36-stage{padding:15px}.v36-actions{flex-direction:column}.v36-back{width:100%}}
+
+/* V37 visual redesign — keeps existing Firebase and business logic intact */
+#tab-inventory{--v37-ink:#17324a;--v37-teal:#0f766e;--v37-border:#dbe8ee;--v37-muted:#667d8e}
+#tab-inventory #v35-dashboard{display:none!important}
+#tab-inventory #v24-inventory-nav{position:relative;top:auto;box-shadow:none;border:1px solid var(--v37-border);background:white;border-radius:22px;padding:15px 18px}
+#tab-inventory .v24-tabs{gap:9px}
+#tab-inventory .v24-tab{border-radius:14px;background:#f5f9fb;border:1px solid #e3edf2;min-height:52px;color:#466073}
+#tab-inventory .v24-tab[aria-selected=true]{background:#e1f5f1;border-color:#86d4c7;color:#075e55;box-shadow:none}
+#tab-inventory>div.bg-gradient-to-r{display:none!important}
+#v36-assistant{border:1px solid #d7e7ed!important;border-radius:28px!important;background:#fff!important;box-shadow:0 16px 48px #164e6312!important;padding:0!important;overflow:hidden;scroll-margin-top:135px}
+.v37-hero{padding:27px 30px;background:linear-gradient(115deg,#083f58 0%,#0e6972 55%,#148477 100%);color:#fff;position:relative;overflow:hidden}
+.v37-hero:after{content:'';position:absolute;width:260px;height:260px;border:45px solid #ffffff0d;border-radius:50%;right:-70px;top:-130px;pointer-events:none}
+.v37-eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:#b7f7e9}
+.v37-hero h2{font-size:clamp(23px,3vw,30px);font-weight:850;line-height:1.3;margin:7px 0 6px}
+.v37-hero p{font-size:13px;color:#d6f2f1;line-height:1.65}
+.v37-hero-label{border:1px solid #ffffff45;background:#ffffff1c;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:800;white-space:nowrap}
+.v37-body{padding:24px 29px 27px}
+.v37-minihead{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:800;color:#33576b}
+.v37-minihead small{font-size:11px;font-weight:600;color:#8297a5}
+.v36-progress{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px!important;margin:14px 0 22px!important}
+.v36-step{position:relative;min-height:104px!important;border-radius:17px!important;padding:15px 5px!important;border:1px solid #e0eaf0!important;background:#f8fafc!important;font-size:12px!important;color:#5f7587!important;transition:background .15s,transform .15s}
+.v36-step:hover{transform:translateY(-2px);border-color:#8accc1!important}
+.v36-step span{font-size:24px!important;margin-bottom:7px!important}
+.v36-step[aria-current=step]{background:#e9f8f5!important;border:2px solid #16a394!important;color:#075d55!important;box-shadow:0 6px 20px #0f766e16!important}
+.v36-step[data-v37-done=true]{background:#f0fdfa!important;color:#0f766e!important}
+.v37-stage-wrap{display:grid;grid-template-columns:68px minmax(0,1fr);gap:17px;align-items:start}
+.v37-stage-icon{height:62px;width:62px;display:grid;place-items:center;background:#fff;border:1px solid #b9e5dd;border-radius:20px;font-size:30px;box-shadow:0 4px 13px #0f766e0b}
+.v36-stage{border:1px solid #cce8e2!important;background:linear-gradient(135deg,#f3fbf9,#f7fafc)!important;border-radius:22px!important;padding:24px!important}
+.v36-stage h3{font-size:20px!important;color:#163c4a!important}
+.v36-stage p{font-size:13px!important;color:#597284!important;line-height:1.85!important;margin:9px 0 18px!important}
+.v36-main{width:auto!important;min-width:230px;min-height:51px!important;border-radius:14px!important;background:linear-gradient(105deg,#0c766e,#0a9585)!important;box-shadow:0 6px 15px #0f766e24;font-size:14px!important;padding:13px 20px!important}
+.v36-main:hover{filter:brightness(1.06)}
+.v36-back{min-height:51px!important;border-radius:14px!important}
+.v36-note{border-top:1px solid #d8e9e6;padding-top:13px;color:#a16207!important;line-height:1.7!important}
+.v36-compact{padding:15px 29px 21px;border-top:1px solid #edf1f4;margin:0!important;color:#718798!important}
+.v36-compact button{text-decoration:none!important;padding:6px 9px;border-radius:9px;background:#f0f7f8;margin:3px;color:#0e6573!important}
+#tab-inventory .v35-group{border-radius:19px!important;border:1px solid #dce8ed!important;box-shadow:none!important;overflow:hidden}
+#tab-inventory .v35-group>summary{padding:19px 20px!important;font-weight:800;color:#224456;background:#fff;cursor:pointer}
+#tab-inventory .v35-group[open]>summary{background:#f1f8f8;color:#0b6967;border-bottom:1px solid #dce8ed}
+#tab-inventory .v24-panel>.bg-white,#tab-inventory .v24-panel>.rounded-2xl{border-radius:20px!important}
+@media(max-width:640px){.v37-hero{padding:22px 19px}.v37-hero-label{display:none}.v37-body{padding:16px}.v36-progress{gap:5px!important}.v36-step{min-height:77px!important;padding:10px 2px!important;font-size:9px!important;border-radius:11px!important}.v36-step span{font-size:20px!important;margin-bottom:4px!important}.v36-stage{padding:17px!important}.v37-stage-wrap{grid-template-columns:1fr;gap:8px}.v37-stage-icon{width:49px;height:49px;font-size:24px;border-radius:14px}.v36-main{width:100%!important;min-width:0}.v36-compact{padding:12px 16px}.v37-minihead small{display:none}}
+
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -790,6 +838,14 @@
         <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรการผลิตมาตรฐาน</p>
       </div>
 
+      <section id="v36-assistant" aria-label="ผู้ช่วยทำงานคลังทีละขั้นตอน">
+        <div class="v37-hero"><div class="v36-head"><div><div class="v37-eyebrow">SUMRAN ALUMINUM · WORKFLOW</div><h2>ผู้ช่วยจัดการงานผลิต</h2><p>ทำตามทีละขั้น ตั้งแต่เลือกงานจนถึงเบิกวัสดุ · ไม่ต้องจำว่าต้องกดปุ่มไหน</p></div><span class="v37-hero-label">✦ โหมดแนะนำทีละขั้น</span></div></div>
+        <div class="v37-body"><div class="v37-minihead"><span>เส้นทางการทำงาน</span><small>เลือกขั้นตอนเพื่อดูวิธีทำได้ทุกเมื่อ</small></div>
+          <div id="v36-progress" class="v36-progress" role="group" aria-label="ขั้นตอนทำงาน"></div>
+          <div class="v36-stage"><div class="v37-stage-wrap"><div id="v37-stage-icon" class="v37-stage-icon" aria-hidden="true">📄</div><div><div class="v37-minihead"><span id="v37-counter">ขั้นตอน 1 จาก 5</span></div><h3 id="v36-stage-title"></h3><p id="v36-stage-desc"></p><div class="v36-actions"><button id="v36-primary" type="button" class="v36-main"></button><button id="v36-back" type="button" class="v36-back">← ขั้นก่อนหน้า</button></div><div class="v36-note" id="v36-stage-note"></div></div></div></div>
+        </div>
+        <div class="v36-compact">เมนูอื่นที่ใช้บ่อย: <button type="button" onclick="v36GoSection('stock')">📦 สต๊อกวัสดุ</button> <button type="button" onclick="v36GoSection('recipes')">📐 สูตรผลิต</button> <button type="button" onclick="v36GoSection('history')">🕘 ประวัติ</button> <button type="button" onclick="v36GoSection('jobs')">📋 งานลูกค้า</button></div>
+      </section>
       <section id="v32-guide" class="rounded-2xl border-2 border-teal-300 bg-white p-4 space-y-4" aria-label="ขั้นตอนงานผลิต V32">
         <div class="flex justify-between items-center gap-2"><div><h2 class="text-xl font-bold text-teal-900">🧭 ศูนย์งานผลิต — เลือกขั้นตอนที่ต้องทำ</h2><p class="text-sm text-slate-600">เลือกงาน → ตรวจสูตรและสต๊อก → รอซื้อ/รับเข้า หรือเบิกผลิต</p></div><span class="rounded-xl bg-teal-100 text-teal-800 px-3 py-2 text-xs">V33 · นำทางงานผลิต</span></div>
         <div id="v32-current" role="status" class="bg-sky-50 border border-sky-200 p-3 rounded-xl text-sm">ขั้นที่ 1 · เลือกใบเสนอราคาของงานด้านล่าง</div>
@@ -5174,6 +5230,27 @@ function ready(){
  window.v31Render?.();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(ready,0));else setTimeout(ready,0);
+})();
+</script>
+
+<script>
+/* V36 navigation-only assistant: calls existing actions, never creates stock movements itself. */
+(function(){
+ const stages=[
+  {icon:'📄',short:'เลือกงาน',title:'ขั้น 1 · เลือกใบเสนอราคาของงาน',desc:'พิมพ์เลขใบเสนอราคาหรือชื่อลูกค้า แล้วเลือกผลลัพธ์จากรายการเอกสาร ระบบจะจำงานที่เลือกไว้ขณะใช้งานหน้านี้',button:'ไปเลือกใบเสนอราคา',section:'jobs',target:'inv-v4-doc-search',note:'ใบเสร็จของงานเดียวกันไม่ใช่เอกสารต้นทางสำหรับเบิกซ้ำ'},
+  {icon:'📐',short:'คำนวณ',title:'ขั้น 2 · เลือกสูตรและคำนวณวัสดุ',desc:'ตรวจสูตรที่อนุมัติสำหรับแต่ละรายการสินค้า จากนั้นกด “คำนวณรวมทั้งบิลและตรวจสต๊อก” ในแบบฟอร์มด้านล่าง',button:'ไปตรวจสูตรและคำนวณ',section:'jobs',target:'inv-v7-document-body',note:'ต้องเลือกงานและสูตรให้ครบก่อน ระบบไม่คำนวณหรือเบิกแทนโดยอัตโนมัติ'},
+  {icon:'🛒',short:'จัดซื้อ',title:'ขั้น 3 · ของขาด? ส่งเข้าศูนย์จัดซื้อ',desc:'หากวัสดุไม่พอ ให้กดบันทึกรายการวัสดุของบิลเข้าศูนย์จัดซื้อ แล้วเลือกวัสดุเพื่อยืนยันซื้อ หากของครบ สามารถข้ามไปตรวจความพร้อมได้',button:'ไปศูนย์จัดซื้อรวม',section:'jobs',target:'v31-hub',note:'ยืนยันซื้อไม่ได้หมายถึงรับสินค้าเข้าคลัง และอย่ากดรับรายการเดิมซ้ำ'},
+  {icon:'📦',short:'รับของ',title:'ขั้น 4 · รับสินค้าที่มาถึงจริง',desc:'จากศูนย์จัดซื้อกด “เตรียมรับเข้าคลัง” ตรวจจำนวนที่รับจริงในตะกร้า แล้วจึงยืนยันรับเข้า',button:'ไปหน้ารับสินค้า',section:'movement',target:'inv-v3-panel',note:'รุ่นนี้ยังไม่กระทบยอดรับเข้ากับทะเบียนจัดซื้ออัตโนมัติ ต้องตรวจยอดรับจริงก่อนทุกครั้ง'},
+  {icon:'✅',short:'เบิกผลิต',title:'ขั้น 5 · ตรวจความพร้อมและเบิกผลิต',desc:'กลับมาที่งานเดิม ตรวจยอดสต๊อกและประวัติการเบิกสุทธิอีกครั้ง เมื่อวัสดุครบจึงเตรียมเบิกผลิตผ่านปุ่มในระบบเดิม',button:'ไปตรวจความพร้อมของงาน',section:'jobs',target:'inv-v27-result',note:'ห้ามเบิกซ้ำจากใบเสร็จหรือจากงานที่เบิกครบแล้ว; การตรวจและยืนยันยังต้องทำในฟอร์มจริง'}
+ ];
+ let current=0;
+ function openSection(id){if(typeof window.v24InventoryOpen==='function')window.v24InventoryOpen(id,false);}
+ function reveal(id){const el=document.getElementById(id);if(!el)return false;for(let p=el;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;requestAnimationFrame(()=>{el.scrollIntoView({behavior:'smooth',block:'center'});if(id==='inv-v4-doc-search')el.focus({preventScroll:true});});return true;}
+ function render(){const s=stages[current];document.getElementById('v36-progress').innerHTML=stages.map((x,i)=>`<button type="button" class="v36-step" data-v36-step="${i}" ${i===current?'aria-current="step"':''}><span>${x.icon}</span>${x.short}</button>`).join('');document.getElementById('v37-counter').textContent='ขั้นตอน '+(current+1)+' จาก 5';document.getElementById('v37-stage-icon').textContent=s.icon;document.querySelectorAll('[data-v36-step]').forEach((b,i)=>b.dataset.v37Done=String(i<current));document.getElementById('v36-stage-title').textContent=s.title;document.getElementById('v36-stage-desc').textContent=s.desc;document.getElementById('v36-primary').textContent=s.button+' ↓';document.getElementById('v36-stage-note').textContent='ข้อควรระวัง: '+s.note;document.getElementById('v36-back').hidden=current===0;document.querySelectorAll('[data-v36-step]').forEach(b=>b.onclick=()=>{current=Number(b.dataset.v36Step);render();});}
+ window.v36GoSection=function(id){openSection(id);document.getElementById('v24-panel-'+id)?.scrollIntoView({behavior:'smooth',block:'start'});};
+ window.v36Next=function(n){current=Math.max(0,Math.min(4,n));render();document.getElementById('v36-assistant')?.scrollIntoView({behavior:'smooth',block:'start'});};
+ function setup(){if(!document.getElementById('v36-assistant'))return;document.getElementById('v36-primary').onclick=()=>{const s=stages[current];openSection(s.section);if(!reveal(s.target))alert('ไม่พบแบบฟอร์มของขั้นตอนนี้ กรุณาตรวจการโหลดหน้า');};document.getElementById('v36-back').onclick=()=>window.v36Next(current-1);render();}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
 </script>
 </body>
