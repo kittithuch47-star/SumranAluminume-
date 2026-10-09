@@ -593,6 +593,15 @@
   #tab-history.hc-mobile-detail-open .hc-mobile-back{display:flex;align-items:center;gap:9px;width:100%;padding:12px 14px;margin-bottom:12px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:13px;font-size:14px;font-weight:700;text-align:left}
   #tab-history.hc-mobile-detail-open .history-center{padding:12px}
 }
+  
+    /* V14: clean production recipe workspace; legacy remains opt-in. */
+    #inv-v12-panel {border-color:#cbd5e1!important;box-shadow:0 5px 20px #0f172a08;}
+    #inv-v12-panel > summary {font-size:1.15rem;letter-spacing:-.015em;list-style-position:inside;}
+    #inv-v12-panel > summary::marker {color:#0f766e;}
+    #v12-editor[open] {border-color:#99f6e4;background:#f8fafc;}
+    .v14-legacy {margin-top:12px;}
+    .v14-legacy:not([open]) > :not(summary) {display:none;}
+
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -716,7 +725,7 @@
     <!-- INVENTORY V1: independent of quotation, payments and historical data -->
     <section id="tab-inventory" class="hidden space-y-4 no-print">
       <div class="bg-gradient-to-r from-teal-800 to-slate-900 text-white rounded-2xl p-5">
-        <h2 class="text-xl font-bold">คลังวัสดุ Sumran Aluminum · V8 สูตรผลิต</h2>
+        <h2 class="text-xl font-bold">คลังวัสดุและการผลิต</h2>
         <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรฉบับร่าง (ไม่ตัดสต๊อกจากใบเสนอราคา)</p>
       </div>
       <div id="inv-alert" role="status" class="hidden rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900"></div>
@@ -760,7 +769,7 @@
           <label class="text-xs font-semibold">ค้นหาเอกสาร (พิมพ์แล้วคลิกผลลัพธ์)<input id="inv-v4-doc-search" oninput="invV4RefreshDocuments()" autocomplete="off" class="w-full border rounded-xl p-3 mt-1" placeholder="พิมพ์ QT, DO, เลขเอกสาร หรือชื่อลูกค้า"><div id="inv-v4-doc-results" class="mt-2 max-h-48 overflow-y-auto space-y-1"></div><select id="inv-v4-doc" onchange="invV4PickDocument(this.value)" class="hidden"><option value="">เลือกเอกสาร</option></select><div id="inv-v4-doc-selected" class="text-xs text-teal-800 mt-1"></div></label><label class="text-xs font-semibold">ค้นหาวัสดุจากทะเบียน<input id="inv-v4-find" class="w-full border rounded-xl p-3 mt-1" oninput="invV4Render()" placeholder="ไทยเม็ททอล / รหัสหน้าตัด / ชื่อวัสดุ"></label>
         </div>
         <div class="text-xs text-slate-500">พิมพ์ค้นหาวัสดุก่อน ระบบไม่แสดงทั้งคลังพร้อมกัน</div><div id="inv-v4-candidates" class="grid gap-2 max-h-52 overflow-y-auto"></div>
-        <div id="inv-v7-document-items" class="space-y-3 rounded-xl border border-teal-200 bg-teal-50 p-3"><strong class="text-teal-900">V7 · รายการสินค้าในเอกสารและสูตรผลิต</strong><p class="text-xs text-slate-600">เลือกเอกสารด้านบน แล้วจับคู่สูตรที่ช่างยืนยันสำหรับสินค้าแต่ละรายการ ระบบไม่เดาสูตร และไม่ตัดสต๊อกอัตโนมัติ</p><div id="inv-v7-document-body" class="text-sm text-slate-600">ยังไม่ได้เลือกเอกสาร</div></div><div id="inv-v4-lines" class="grid gap-2"></div>
+        <div id="inv-v7-document-items" class="space-y-3 rounded-xl border border-teal-200 bg-teal-50 p-3"><strong class="text-teal-900">รายการสินค้าในเอกสารและสูตรผลิต</strong><p class="text-xs text-slate-600">เลือกเอกสารด้านบน แล้วจับคู่สูตรที่ช่างยืนยันสำหรับสินค้าแต่ละรายการ ระบบไม่เดาสูตร และไม่ตัดสต๊อกอัตโนมัติ</p><div id="inv-v7-document-body" class="text-sm text-slate-600">ยังไม่ได้เลือกเอกสาร</div></div><div id="inv-v4-lines" class="grid gap-2"></div>
         <div id="inv-v4-totals" class="text-sm rounded-xl bg-sky-50 border border-sky-100 p-3"></div>
         <div class="flex flex-wrap gap-2"><button type="button" onclick="invV4Copy()" class="bg-sky-700 text-white rounded-xl px-4 py-3 text-sm font-bold">คัดลอกรายการที่ต้องซื้อ</button><button type="button" onclick="invV4Reset()" class="bg-slate-100 rounded-xl px-4 py-3 text-sm">ล้างรายการคำนวณ</button></div>
         <p class="text-xs text-amber-800">หมายเหตุ: เป็นรายการคำนวณชั่วคราว ยังไม่ใช่สูตรตัดที่อนุมัติ และไม่จอง/ตัดสต๊อก · จำนวนจากแค็ตตาล็อกและน้ำหนักกิโลกรัมในบิลซื้อไม่สามารถแทนจำนวนเส้นโดยอัตโนมัติได้</p>
@@ -787,32 +796,33 @@
         <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-bold">ประวัติการเคลื่อนไหวล่าสุด</h3><select id="inv-history-filter" onchange="renderInventory()" class="border rounded-lg p-2 text-xs"><option value="all">ทั้งหมด</option><option value="receive">รับเข้า</option><option value="issue">เบิกออก</option><option value="return">คืนวัสดุ</option></select></div><p class="text-xs text-slate-500">แสดง 8 รายการล่าสุด · เจ้าของร้านซ่อนรายการทดสอบได้โดยไม่เปลี่ยนยอดสต๊อก · การย้อนรายการจริงต้องปรับยอดแยกต่างหาก</p><div id="inv-movements" class="grid gap-2 text-sm"></div><div id="inv-history-owner-tools" class="hidden"><button type="button" onclick="invArchiveVisibleMoves()" class="border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs">ซ่อนประวัติ 8 รายการที่แสดง (เฉพาะเจ้าของ)</button></div>
       </div>
       <details class="bg-white rounded-2xl border-2 border-teal-300 p-4 space-y-3" id="inv-v12-panel" open>
-        <summary class="font-bold cursor-pointer text-teal-900">V13 · คลังสูตรผลิตทุกประเภท — เลือกงานจากสูตรแล้วคำนวณ</summary>
-        <p class="text-sm text-slate-600">ตั้งสูตรผลิตประตู หน้าต่าง กระจก หรืองานอื่นได้เองจากวัสดุในสต๊อก กำหนดจำนวนและค่าหักครั้งเดียว แล้วใช้กับงานใหม่ได้ · ไม่ใช่การเพิ่มสินค้าในใบเสนอราคา · ทดลองคำนวณไม่เบิกสต๊อก</p>
+        <summary class="font-bold cursor-pointer text-teal-900">สูตรการผลิตมาตรฐาน</summary>
+        <p class="text-sm text-slate-600">เลือกสูตรที่ร้านบันทึกไว้เพื่อคำนวณวัสดุจากขนาดงาน หรือเปิดจัดการสูตรเพื่อสร้างสูตรใหม่ · การทดลองคำนวณไม่ตัดสต๊อก</p>
         <div class="grid sm:grid-cols-4 gap-2">
-          <label class="text-xs">สูตรที่บันทึก<select id="v12-pick" class="w-full border rounded-lg p-2 mt-1" onchange="v12Choose()"><option value="">เลือกสูตร...</option></select></label>
+          <label class="text-xs">เลือกสูตรการผลิต<select id="v12-pick" class="w-full border rounded-lg p-2 mt-1" onchange="v12Choose()"><option value="">เลือกสูตร...</option></select></label>
           <label class="text-xs">กว้างงาน (มม.)<input id="v12-w" type="number" min="1" value="3000" class="w-full border rounded-lg p-2 mt-1"></label>
           <label class="text-xs">สูงงาน (มม.)<input id="v12-h" type="number" min="1" value="2400" class="w-full border rounded-lg p-2 mt-1"></label>
           <label class="text-xs">จำนวนบาน<input id="v12-panels" type="number" min="1" max="40" value="2" class="w-full border rounded-lg p-2 mt-1"></label>
         </div>
-        <div class="grid sm:grid-cols-3 gap-2">
+        <details class="v14-options border border-slate-200 rounded-xl p-3"><summary class="cursor-pointer text-xs font-semibold text-slate-600">ตั้งค่าการคำนวณเพิ่มเติม (กรณีงานพิเศษ)</summary><div class="grid sm:grid-cols-3 gap-2 mt-3">
           <label class="text-xs">จำนวนชุดงาน<input id="v12-sets" type="number" min="1" value="1" class="w-full border rounded-lg p-2 mt-1"></label>
           <label class="text-xs">ระยะรวมที่หักก่อนแบ่งความกว้างบาน (มม.)<input id="v12-split" type="number" value="0" class="w-full border rounded-lg p-2 mt-1"></label>
           <label class="text-xs">เผื่อรอยเลื่อยต่อชิ้น (มม.)<input id="v12-kerf" type="number" min="0" max="30" value="3" class="w-full border rounded-lg p-2 mt-1"></label>
-        </div>
+        </div></details>
         <p class="text-xs text-amber-800">ความกว้างบานเบื้องต้น = (กว้างงาน − ระยะรวมที่หัก) ÷ จำนวนบาน · ใช้เฉพาะแบบที่บานกว้างเท่ากัน และช่างต้องยืนยันระยะซ้อน/เสากลางก่อนผลิต</p>
-        <button type="button" onclick="v12Calculate()" class="w-full bg-teal-700 text-white font-bold rounded-xl p-3">คำนวณรายการตัด กระจก อุปกรณ์ และสต๊อก</button>
+        <button type="button" onclick="v12Calculate()" class="w-full bg-teal-700 text-white font-bold rounded-xl p-3">คำนวณวัสดุสำหรับการผลิต</button>
         <div id="v12-result" class="text-sm" aria-live="polite"></div>
-        <details class="border rounded-xl p-3 bg-slate-50" id="v12-editor"><summary class="cursor-pointer font-semibold">ตั้งสูตรมาตรฐาน (เจ้าของร้าน / ช่างผู้ชำนาญ)</summary>
+        <details class="border rounded-xl p-3 bg-slate-50" id="v12-editor"><summary class="cursor-pointer font-semibold">จัดการสูตรการผลิต · สร้าง / แก้ไข / คัดลอก</summary>
           <div class="grid sm:grid-cols-2 gap-2 mt-3"><label class="text-xs">ประเภทงาน<select id="v13-category" class="w-full border rounded-lg p-2 mt-1"><option value="door">ประตู</option><option value="window">หน้าต่าง</option><option value="glass">งานกระจก</option><option value="partition">ผนัง / ฉากกั้น</option><option value="other">งานอื่น ๆ</option></select></label><label class="text-xs">ชื่อสูตร<input id="v12-name" class="w-full border rounded-lg p-2 mt-1" placeholder="เช่น บานเลื่อนสลับ 2 บาน"></label><label class="text-xs">ยี่ห้อ / ระบบ<input id="v12-brand" class="w-full border rounded-lg p-2 mt-1" placeholder="เช่น ระบบรางแขวน รุ่น... "></label></div>
           <p class="text-xs mt-2 text-slate-600">เพิ่มวัสดุจากทะเบียน กำหนดฐานคำนวณ ค่าบวก/ลบ และจำนวนต่อชุดหรือต่อบาน · ถ้ากระจกใช้ฐาน กว้างบาน/สูงงาน ให้ใส่ค่าหักกระจกที่ช่างตรวจแล้ว</p>
           <div class="flex flex-wrap gap-2 mt-2"><button type="button" onclick="v12AddLine()" class="bg-sky-100 text-sky-900 rounded-lg px-3 py-2">+ เพิ่มวัสดุ / อุปกรณ์</button><button type="button" onclick="v12PresetRows()" class="border rounded-lg px-3 py-2">ใส่หัวข้อบานเลื่อน 2 บาน (ยังไม่กำหนดค่าหัก)</button></div>
           <div id="v12-lines" class="grid gap-2 mt-3"></div>
-          <div class="flex flex-wrap gap-2 mt-3"><button type="button" onclick="v12Save()" class="bg-teal-700 text-white rounded-lg px-4 py-2">บันทึกสูตรใน Firebase</button><button type="button" onclick="v12New()" class="border rounded-lg px-4 py-2">สร้างสูตรใหม่</button><button type="button" onclick="v13Clone()" class="border border-sky-500 text-sky-800 rounded-lg px-4 py-2">คัดลอกสูตรที่เลือก</button><button type="button" onclick="v12Approve()" class="border border-emerald-500 text-emerald-800 rounded-lg px-4 py-2">ยืนยันสูตรที่ตรวจแล้ว</button></div>
+          <div class="flex flex-wrap gap-2 mt-3"><button type="button" onclick="v12Save()" class="bg-teal-700 text-white rounded-lg px-4 py-2">บันทึกสูตรการผลิต</button><button type="button" onclick="v12New()" class="border rounded-lg px-4 py-2">สร้างสูตรใหม่</button><button type="button" onclick="v13Clone()" class="border border-sky-500 text-sky-800 rounded-lg px-4 py-2">คัดลอกสูตรที่เลือก</button><button type="button" onclick="v12Approve()" class="border border-emerald-500 text-emerald-800 rounded-lg px-4 py-2">อนุมัติสูตรการผลิต</button></div>
           <p class="text-xs text-amber-800 mt-2">การยืนยันสูตรเป็นหน้าที่เจ้าของร้าน ต้องตรวจรหัสวัสดุ ระยะตัด กระจก และอุปกรณ์กับช่างก่อนใช้สั่งซื้อจริง</p>
         </details>
         <div id="v12-msg" class="text-sm" aria-live="polite"></div>
       </details>
+      <details class="v14-legacy rounded-2xl border border-slate-200 bg-white p-4"><summary class="font-semibold cursor-pointer text-slate-600">เครื่องมือสูตรเดิมและผังบานขั้นสูง (สำหรับตรวจสอบงานเก่า)</summary><p class="text-xs text-slate-500 my-3">เก็บเครื่องมือเดิมไว้เพื่อรองรับสูตรและงานเก่า ไม่จำเป็นต้องเปิดสำหรับการใช้งานทั่วไป</p>
       <details class="bg-white rounded-2xl border p-4 space-y-3"><summary class="font-bold cursor-pointer">สร้างสูตรผลิตจากทะเบียนวัสดุ — กดเพื่อเปิด</summary>
         <p class="text-xs text-slate-500">เลือกวัสดุจากทะเบียนทีละรายการเป็นหลัก ระบุจำนวนและกฎตัดตามขนาดงาน ไม่ต้องเขียนอุปกรณ์ทั้งหมดในช่องคำอธิบาย</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -845,6 +855,7 @@
         </div>
         <button type="button" onclick="invV11Calculate()" class="w-full bg-sky-700 text-white rounded-xl p-3 font-bold">คำนวณรายการตัด กระจก และตรวจสต๊อก</button>
         <div id="inv-v10-result" role="status" aria-live="polite" class="text-sm"></div>
+      </details>
       </details>
     </section>
 
