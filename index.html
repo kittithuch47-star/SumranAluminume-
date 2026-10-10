@@ -911,16 +911,7 @@
         <h2 class="text-xl font-bold">คลังวัสดุและการผลิต</h2>
         <p class="text-xs text-teal-100 mt-1">รับเข้า · เบิกงาน · คืนของ · สูตรการผลิตมาตรฐาน</p>
       </div>
-
-      <section id="v36-assistant" aria-label="ผู้ช่วยทำงานคลังทีละขั้นตอน">
-        <div class="v37-hero"><div class="v36-head"><div><div class="v37-eyebrow">SUMRAN ALUMINUM · WORKFLOW</div><h2>ผู้ช่วยจัดการงานผลิต</h2><p>ทำตามทีละขั้น ตั้งแต่เลือกงานจนถึงเบิกวัสดุ · ไม่ต้องจำว่าต้องกดปุ่มไหน</p></div><span class="v37-hero-label">✦ โหมดแนะนำทีละขั้น</span></div></div>
-        <div class="v37-body"><div class="v37-minihead"><span>เส้นทางการทำงาน</span><small>เลือกขั้นตอนเพื่อดูวิธีทำได้ทุกเมื่อ</small></div>
-          <div id="v36-progress" class="v36-progress" role="group" aria-label="ขั้นตอนทำงาน"></div>
-          <div class="v36-stage"><div class="v37-stage-wrap"><div id="v37-stage-icon" class="v37-stage-icon" aria-hidden="true">📄</div><div><div class="v37-minihead"><span id="v37-counter">ขั้นตอน 1 จาก 5</span></div><h3 id="v36-stage-title"></h3><p id="v36-stage-desc"></p><div class="v36-actions"><button id="v36-primary" type="button" class="v36-main"></button><button id="v36-back" type="button" class="v36-back">← ขั้นก่อนหน้า</button></div><div class="v36-note" id="v36-stage-note"></div></div></div></div>
-        </div>
-        <div class="v36-compact">เมนูอื่นที่ใช้บ่อย: <button type="button" onclick="v36GoSection('stock')">📦 สต๊อกวัสดุ</button> <button type="button" onclick="v36GoSection('recipes')">📐 สูตรผลิต</button> <button type="button" onclick="v36GoSection('history')">🕘 ประวัติ</button> <button type="button" onclick="v36GoSection('jobs')">📋 งานลูกค้า</button></div>
-      </section>
-      <section id="v32-guide" class="rounded-2xl border-2 border-teal-300 bg-white p-4 space-y-4" aria-label="ขั้นตอนงานผลิต V32">
+<section id="v32-guide" class="rounded-2xl border-2 border-teal-300 bg-white p-4 space-y-4" aria-label="ขั้นตอนงานผลิต V32">
         <div class="flex justify-between items-center gap-2"><div><h2 class="text-xl font-bold text-teal-900">🧭 ศูนย์งานผลิต — เลือกขั้นตอนที่ต้องทำ</h2><p class="text-sm text-slate-600">เลือกงาน → ตรวจสูตรและสต๊อก → รอซื้อ/รับเข้า หรือเบิกผลิต</p></div><span class="rounded-xl bg-teal-100 text-teal-800 px-3 py-2 text-xs">V33 · นำทางงานผลิต</span></div>
         <div id="v32-current" role="status" class="bg-sky-50 border border-sky-200 p-3 rounded-xl text-sm">ขั้นที่ 1 · เลือกใบเสนอราคาของงานด้านล่าง</div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
@@ -5370,7 +5361,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 <style id="v42-clean-workflow">
-#v38-main #v36-assistant,#v38-main details[data-v40],#v38-main #inv-v4-planner{display:none!important}
+#v36-assistant,#v38-main details[data-v40],#v38-main #inv-v4-planner{display:none!important}
 #v41-wizard .v41-pane[hidden]{display:none!important}
 #v41-wizard #inv-v7-document-items{display:block!important;margin:14px 0}
 #v41-wizard #inv-v4-doc-results button{display:block;width:100%;text-align:left;margin:5px 0;border:1px solid #dce7ee;border-radius:10px;padding:11px;background:white}
@@ -5380,6 +5371,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #v41-wizard #inv-v7-document-body>div{margin:10px 0}
 #v41-wizard #inv-v4-candidates{margin-top:10px}
 @media(max-width:760px){#v41-wizard .v41-stock-row{flex-direction:column}}
+#v38-main #v36-assistant{display:none!important}
+#v41-wizard #v43-calc{display:block;margin:14px 0;width:100%}
+#v41-wizard #inv-v27-result{margin-top:16px}
+#v41-wizard #inv-v27-transfer{width:100%;margin-top:12px}
 </style>
 <script id="v41-script">
 /* V41 guided inventory: reuses original inputs and handlers. No stock mutations in this layer. */
@@ -5396,7 +5391,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let short=false;for(const r of rows){const available=Math.max(0,Number(r.item.quantity||0));const missing=Math.max(0,r.qty-available);if(missing>0.0001)short=true;const el=document.createElement('div');el.className='v41-stock-row';const a=document.createElement('div'),b=document.createElement('div');const title=document.createElement('strong');title.textContent=r.item.name||'วัสดุ';const detail=document.createElement('small');detail.textContent='ต้องใช้ '+r.qty+' '+(r.item.unit||'')+' · คลังมี '+available+' '+(r.item.unit||'');a.append(title,document.createElement('br'),detail);b.style.fontWeight='800';b.style.color=missing>0?'#c2410c':'#087e75';b.textContent=missing>0?'ขาด '+Number(missing.toFixed(3)):'เพียงพอ';el.append(a,b);host.appendChild(el);}no.textContent=short?'พบวัสดุขาด ต้องจัดซื้อและรับเข้าจริงก่อนเบิกผลิต':'วัสดุตามรายการตรวจนี้มีเพียงพอ แต่ต้องตรวจยอดจองงานอื่นและประวัติเบิกซ้ำก่อน';return !short;
  }
  function show(n){step=Math.max(0,Math.min(3,n));$('v41-track').innerHTML=names.map((name,i)=>'<div class="v41-pill '+(i===step?'active':i<step?'done':'')+'">'+name+'</div>').join('');for(let i=0;i<4;i++)$('v41-pane-'+i).hidden=i!==step;$('v41-title').textContent=labels[step];$('v41-hint').textContent=hints[step];$('v41-prev').hidden=step===0;$('v41-next').textContent=step===3?'เริ่มงานลูกค้าใหม่':'ถัดไป →';if(step===2||step===3){const enough=stockRender();if(step===3)$('v41-stock-note2').textContent=enough?'วัสดุตามรายการที่คำนวณมีเพียงพอ — ตรวจการเบิกซ้ำก่อนยืนยัน':'มีวัสดุขาด — ต้องบันทึกรอจัดซื้อและรับเข้าจริงก่อน';}info(step===0?'เลือกใบเสนอราคาจริงจากรายการค้นหา เพื่อป้องกันการเบิกซ้ำจากใบเสร็จ':'ตรวจสอบข้อมูลก่อนดำเนินการ');$('v41-wizard').scrollIntoView({behavior:'smooth',block:'start'});}
- function next(){if(step===0){if(!job()){info('กรุณาค้นหาและคลิกเลือกใบเสนอราคาจากรายการก่อน ไม่ใช่พิมพ์เลขงานเอง',true);return;}show(1);return;}if(step===1){if(!getRows().length){info('ยังไม่มีรายการวัสดุ กรุณาเลือกสูตรและกดคำนวณรวมทั้งบิลในขั้นนี้ก่อน',true);return;}show(2);return;}if(step===2){show(3);return;}if(!confirm('เริ่มเลือกงานลูกค้าใหม่? ระบบจะล้างเฉพาะรายการคำนวณในหน้าจอ ไม่ลบเอกสารหรือประวัติคลัง'))return;window.invV4Reset?.();$('inv-v4-doc-selected').textContent='';$('inv-v4-doc-search').value='';show(0);}
+ function next(){if(step===0){if(!job()){info('กรุณาค้นหาและคลิกเลือกใบเสนอราคาจากรายการก่อน ไม่ใช่พิมพ์เลขงานเอง',true);return;}show(1);return;}if(step===1){if(!getRows().length){info('ต้องกดคำนวณวัสดุรวมทั้งบิล แล้วกด “ยืนยันยอดและไปตรวจสต๊อก” ใต้ผลคำนวณก่อน',true);return;}show(2);return;}if(step===2){show(3);return;}if(!confirm('เริ่มเลือกงานลูกค้าใหม่? ระบบจะล้างเฉพาะรายการคำนวณในหน้าจอ ไม่ลบเอกสารหรือประวัติคลัง'))return;window.invV4Reset?.();$('inv-v4-doc-selected').textContent='';$('inv-v4-doc-search').value='';show(0);}
  function toBuy(){if(!job()||!getRows().length){info('ต้องเลือกบิลและคำนวณวัสดุก่อน',true);return;}if(stockRender()){info('รายการนี้ไม่พบวัสดุขาดตามสต๊อกปัจจุบัน ไม่ควรส่งซื้อซ้ำ',true);return;}if(typeof window.v31SaveDemand!=='function'){info('ยังไม่พร้อมบันทึกศูนย์จัดซื้อ กรุณาตรวจระบบ',true);return;}window.v31SaveDemand();info('ส่งคำสั่งบันทึกรอจัดซื้อแล้ว โปรดตรวจข้อความยืนยันจากระบบ ก่อนออกไปทำงานอื่น');}
  function toIssue(){if(!stockRender()){info('วัสดุยังไม่ครบ ห้ามเบิก ต้องส่งรอจัดซื้อก่อน',true);return;}if(!job()){info('กรุณาเลือกใบเสนอราคาก่อน',true);return;}if(typeof window.v30Prepare!=='function'){info('ไม่พบระบบตรวจความพร้อมและเตรียมเบิก',true);return;}window.v30Prepare();info('กำลังใช้ระบบเดิมตรวจความพร้อมและประวัติการเบิก หากผ่านจึงจะเตรียมตะกร้าเบิก กรุณาตรวจและยืนยันอีกครั้ง');}
  function init(){if(ready||!$('v38-main')||!$('v24-panel-jobs')||!$('inv-v4-planner'))return false;ready=true;const host=$('v24-panel-jobs');const wizard=document.createElement('section');wizard.id='v41-wizard';wizard.innerHTML='<div class="v41-hero"><small>SUMRAN ALUMINUM · PRODUCTION</small><h2>จัดการงานผลิตทีละขั้นตอน</h2><p>เลือกงานครั้งเดียว → ตรวจวัสดุ → จัดซื้อหรือเบิกผลิต</p></div><div id="v41-track" class="v41-track"></div><div class="v41-content"><h3 id="v41-title" class="v41-heading"></h3><p id="v41-hint" class="v41-hint"></p><div id="v41-pane-0" class="v41-pane"></div><div id="v41-pane-1" class="v41-pane" hidden></div><div id="v41-pane-2" class="v41-pane" hidden><div id="v41-stock-note" class="v41-status"></div><div id="v41-stock" class="v41-stock"></div><button type="button" class="v41-secondary" id="v41-refresh">↻ ตรวจสต๊อกอีกครั้ง</button></div><div id="v41-pane-3" class="v41-pane" hidden><div id="v41-stock-note2" class="v41-status">ตรวจสต๊อกก่อนดำเนินการ</div><div class="v41-actions"><button type="button" id="v41-buy" class="v41-next">🛒 บันทึกรอจัดซื้อ</button><button type="button" id="v41-issue" class="v41-secondary">📦 ตรวจและเตรียมเบิกผลิต</button></div><p class="v41-hint" style="margin-top:12px">การจัดซื้อและการเบิกจะใช้ระบบตรวจสอบเดิม ไม่ตัดสต๊อกอัตโนมัติ</p></div><div id="v41-message" class="v41-status" role="status"></div><div class="v41-actions"><button id="v41-prev" type="button" class="v41-secondary">← ย้อนกลับ</button><button id="v41-next" type="button" class="v41-next">ถัดไป →</button></div></div>';
@@ -5414,10 +5409,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  if(searchCandidates)$('v41-pane-1').appendChild(searchCandidates);
  if(lines)$('v41-pane-1').appendChild(lines);
  if(totals)$('v41-pane-1').appendChild(totals);
+ const result=$('inv-v27-result');if(result)$('v41-pane-1').appendChild(result);
+ const calcBtn=document.createElement('button');calcBtn.type='button';calcBtn.className='v41-next';calcBtn.id='v43-calc';calcBtn.textContent='คำนวณวัสดุรวมทั้งบิล';calcBtn.onclick=()=>{if(typeof window.invV27PlanBill!=='function'){info('ไม่พบฟังก์ชันคำนวณวัสดุ',true);return;}window.invV27PlanBill();const transfer=$('inv-v27-transfer');if(transfer){info('คำนวณแล้ว ตรวจยอดวัสดุด้านล่าง จากนั้นกด “ยืนยันยอดและไปตรวจสต๊อก”');transfer.textContent='ยืนยันยอดและไปตรวจสต๊อก →';}else{info('ยังคำนวณไม่สำเร็จ กรุณาตรวจสูตร ขนาด และรายการที่แจ้งเตือน',true);}};$('v41-pane-1').appendChild(calcBtn);
+ if(result)$('v41-pane-1').appendChild(result);
+ $('v41-pane-1').addEventListener('click',e=>{if(e.target?.id==='inv-v27-transfer'){setTimeout(()=>{if(getRows().length)show(2);else info('ยังไม่มียอดวัสดุที่โอนสำเร็จ กรุณาตรวจผลคำนวณ',true);},100);}});
  const calculateNote=document.createElement('div');calculateNote.className='v41-status';calculateNote.textContent='เลือกสูตรที่อนุมัติสำหรับสินค้าแต่ละรายการ แล้วกดคำนวณวัสดุ หากเป็นวัสดุแบบตัดเส้นต้องตรวจแผนตัดก่อนนับเป็นเส้นในสต๊อก';$('v41-pane-1').prepend(calculateNote);
  planner.hidden=true;
  // Remove old visual guides from the customer workflow, but do not delete underlying functions.
- const legacy=$('v36-assistant');if(legacy)legacy.hidden=true;
+ const legacy=$('v36-assistant');if(legacy)legacy.remove();
  for(const id of ['v19-change-orders','v20-planner']){const el=$(id);const details=el?.closest('details[data-v40]');if(details)details.hidden=true;}
  
  $('v41-next').onclick=next;$('v41-prev').onclick=()=>show(step-1);$('v41-refresh').onclick=()=>{stockRender();info('อัปเดตตัวเลขจากข้อมูลสต๊อกที่โหลดอยู่ในหน้านี้แล้ว')};$('v41-buy').onclick=toBuy;$('v41-issue').onclick=toIssue;show(0);return true;}
