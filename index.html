@@ -4479,27 +4479,41 @@
       const statusName={draft:'รอจัดเตรียม',ordered:'รอจัดซื้อ',issued:'เบิกวัสดุแล้ว',producing:'กำลังผลิต',completed:'ผลิตเสร็จ'};
       whOpen('📊 ภาพรวมงานทั้งร้าน',`<p class="wh-sub">สรุปจากแผนงานที่โหลดจาก Firebase ในขณะนี้</p><div class="wh-kpis" style="margin:12px 0">${Object.entries(counts).map(([s,n])=>`<div class="wh-kpi">${whEsc(statusName[s]||s)}<strong>${n}</strong>งาน</div>`).join('')}</div><div class="wh-stocklist">${plans.map(p=>`<div class="wh-stockitem"><div><b>${whEsc(p.docNo||'-')}</b><div class="wh-sub">${whEsc(statusName[p.status]||p.status||'-')} · ช่าง ${whEsc(p.productionWorker||'-')} · ${Array.isArray(p.productionSteps)?p.productionSteps.length:0}/${whProductionStages.length} ขั้นตอน</div></div><button class="wh-btn" onclick="whOpenJobDetails('${whEsc(p.docNo||'')}')">เปิดงาน</button></div>`).join('')||'<p class="wh-sub">ไม่พบแผนงาน</p>'}</div>`);
     }
-    // V11.16: customer handover/acceptance addendum to the existing delivery note.
+    // V11.17: distinct customer handover and quality acceptance documents to the existing delivery note.
     // Generates documents only; never modifies stock or delivery status.
     function whHandoverSheet(no,kind='handover'){
       const p=whPlans.find(x=>x.docNo===no);
       if(!p)throw Error('ไม่พบแผนงาน');
       if(p.status!=='completed')throw Error('งานยังผลิตไม่เสร็จ');
-      const d=p.delivery||{}, job=(Array.isArray(state.history)?state.history:[]).find(x=>x.docNo===no)||{};
+      const d=p.delivery||{};
+      // Match the actual sales document; never substitute internal stock movements for customer goods.
+      const history=Array.isArray(state.history)?state.history:[];
+      const linked=history.filter(x=>x.docNo===no||x.id===p.sourceDocId||x.docNo===p.sourceDocNo||x.jobId&&p.jobId&&x.jobId===p.jobId);
+      const job=linked.find(x=>whInvoiceItems(x).length)||linked[0]||history.find(x=>x.docNo===no)||{};
       const e=whEsc,fmt=v=>v?whDeliveryDate(v):'—';
       const isAcceptance=kind==='acceptance';
       const title=isAcceptance?'ใบตรวจรับงาน':'ใบส่งมอบงาน (แนบท้ายใบส่งของ)';
       const mode=d.mode==='pickup'?'ลูกค้ารับสินค้าที่ร้าน':'ติดตั้งหน้างานลูกค้า';
       const qc={passed:'ผ่านการตรวจรับ',failed:'ไม่ผ่าน / รอแก้ไข',pending:'ยังไม่ตรวจรับ'}[d.qc||'pending'];
       const recipient=d.recipient||'—';
-      const items=(p.lines||[]).map((l,i)=>{const mat=whItems.find(x=>x.id===l.itemId);return `<tr><td>${i+1}</td><td>${e(mat?.registerNo||mat?.sku||'—')}</td><td>${e(mat?whFullMaterialName(mat):l.name||'—')}</td><td style="text-align:right">${e(l.qty)}</td><td>${e(mat?.unit||l.unit||'')}</td></tr>`}).join('');
-      const body=`<div class="wh-handover"><div class="head"><h1>${e(title)}</h1><p>Sumran Aluminum · เลขที่งาน <b>${e(no)}</b></p><p>เอกสารประกอบใบส่งของเดิม ไม่ใช่ใบกำกับภาษีหรือใบเสร็จรับเงิน</p></div>
-      <div class="details"><div><b>ลูกค้า:</b> ${e(job.custName||job.customerName||p.customerName||p.customer||'—')}</div><div><b>รูปแบบ:</b> ${e(mode)}</div><div><b>ช่าง/ผู้ส่งมอบ:</b> ${e(d.team||p.productionWorker||'—')}</div><div><b>ผู้ตรวจรับ:</b> ${e(d.inspector||'—')}</div><div><b>วันนัดหมาย:</b> ${e(d.scheduledDate||'—')}</div><div><b>วันส่งมอบจริง:</b> ${e(fmt(d.deliveredAt))}</div><div><b>สถานที่:</b> ${e(d.location||'—')}</div><div><b>ผลตรวจคุณภาพ:</b> ${e(qc)}</div></div>
-      <h3>รายการวัสดุอ้างอิงตามแผนงาน</h3><table><thead><tr><th style="width:8%">ที่</th><th style="width:19%">รหัส</th><th>รายการ</th><th style="width:12%">จำนวน</th><th style="width:12%">หน่วย</th></tr></thead><tbody>${items||'<tr><td colspan="5">ไม่มีรายการวัสดุ</td></tr>'}</tbody></table>
-      <div class="notes"><b>หมายเหตุ / ผลตรวจรับ:</b> ${e(d.note||'—')}</div>
-      <div class="checks"><div>☐ ตรวจสอบสภาพและจำนวนรายการแล้ว</div><div>☐ ตรวจสอบการติดตั้ง/การทำงาน (ถ้ามี)</div><div>☐ รับมอบงานเรียบร้อย</div><div>☐ มีข้อแก้ไขตามหมายเหตุ</div></div>
-      <div class="sign"><div>ลงชื่อ ..............................................<br>(${e(d.team||p.productionWorker||'ผู้ส่งมอบ')})<br>ผู้ส่งมอบ / ช่างติดตั้ง<br>วันที่ ........../........../..........</div><div>ลงชื่อ ..............................................<br>(${e(recipient)})<br>ลูกค้า / ผู้รับมอบ<br>วันที่ ........../........../..........</div></div>
-      <div class="foot">พิมพ์เมื่อ ${e(new Date().toLocaleString('th-TH'))} · ใช้คู่กับใบส่งของเดิมสำหรับรายละเอียดสินค้าและราคา</div></div>`;
+      const salesItems=whInvoiceItems(job);
+      const goodsRows=salesItems.map((it,i)=>{
+        const name=String(it.name||it.description||it.productName||'ไม่ระบุชื่อสินค้า');
+        const size=Number(it.width)>0&&Number(it.height)>0?` · ${e(it.width)} × ${e(it.height)} ${e(it.sizeUnit||'ม.')}`:'';
+        const color=it.aluColor&&it.aluColor!=='-'?` · สี ${e(it.aluColor)}`:'';
+        return `<tr><td>${i+1}</td><td>${e(name)}${size}${color}</td><td style="text-align:right">${e(it.qty??1)}</td><td>${e(it.unit||'ชุด')}</td></tr>`;
+      }).join('');
+      const details=`<div class="details"><div><b>เลขที่งาน:</b> ${e(no)}</div><div><b>ลูกค้า:</b> ${e(job.customerName||job.payload?.customer?.name||p.customerName||p.customer||'—')}</div><div><b>รูปแบบส่งมอบ:</b> ${e(mode)}</div><div><b>ผู้ส่งมอบ / ช่าง:</b> ${e(d.team||p.productionWorker||'—')}</div><div><b>วันนัดหมาย:</b> ${e(d.scheduledDate||'—')}</div><div><b>วันส่งมอบจริง:</b> ${e(fmt(d.deliveredAt))}</div><div><b>สถานที่:</b> ${e(d.location||'—')}</div><div><b>ผู้รับงาน:</b> ${e(recipient)}</div></div>`;
+      const goods=`<h3>รายการสินค้าหรืองานที่ส่งมอบ (อ้างอิงจากบิลขาย)</h3><table><thead><tr><th style="width:8%">ที่</th><th>รายการสินค้า / รายละเอียดงาน</th><th style="width:13%">จำนวน</th><th style="width:13%">หน่วย</th></tr></thead><tbody>${goodsRows||'<tr><td colspan="4">ไม่พบรายการสินค้าในเอกสารขายที่เชื่อมกับงานนี้ กรุณาแนบใบส่งของเดิมเพื่อระบุรายการสินค้า ไม่ใช้รายการวัสดุเบิกคลังแทน</td></tr>'}</tbody></table>`;
+      const sign=(left,right)=>`<div class="sign"><div>ลงชื่อ ..............................................<br>(${e(left)})<br>ผู้ส่งมอบ / ผู้แทนร้าน<br>วันที่ ........../........../..........</div><div>ลงชื่อ ..............................................<br>(${e(right)})<br>ลูกค้า / ผู้รับมอบ<br>วันที่ ........../........../..........</div></div>`;
+      let section;
+      if(isAcceptance){
+        const checks=d.mode==='pickup'?[['สภาพสินค้าและความเรียบร้อย',''],['จำนวนและรุ่นตรงตามใบส่งของ',''],['กระจก / อุปกรณ์ไม่มีความเสียหาย',''],['แจ้งข้อสังเกตหรือข้อแก้ไขแก่ลูกค้า','']]:[['ขนาดและตำแหน่งติดตั้งถูกต้อง',''],['กรอบ / วงกบ / รอยต่อเรียบร้อย',''],['กระจกและซีลยางติดตั้งเรียบร้อย',''],['เปิด–ปิดและล็อกใช้งานได้',''],['อุปกรณ์ครบถ้วนและใช้งานได้',''],['เก็บงานและทำความสะอาดพื้นที่','']];
+        section=`<h3>แบบตรวจรับคุณภาพงาน</h3><p>ผลตรวจที่บันทึกไว้: <b>${e(qc)}</b> · ผู้ตรวจ: ${e(d.inspector||'—')}</p><table class="acceptance"><thead><tr><th style="width:8%">ที่</th><th>รายการตรวจสอบ</th><th style="width:25%">ผลตรวจ</th></tr></thead><tbody>${checks.map(([label],i)=>`<tr><td>${i+1}</td><td>${e(label)}</td><td>☐ ผ่าน &nbsp; ☐ ไม่ผ่าน</td></tr>`).join('')}</tbody></table><div class="notes"><b>หมายเหตุ / รายการที่ต้องแก้ไข:</b> ${e(d.note||'—')}</div><p>☐ ตรวจรับผ่าน &nbsp; ☐ ตรวจรับแบบมีเงื่อนไข &nbsp; ☐ ไม่ผ่าน / รอแก้ไข</p>${sign(d.inspector||d.team||p.productionWorker||'ผู้ตรวจ',recipient)}`;
+      }else{
+        section=`${goods}<div class="notes"><b>หมายเหตุการส่งมอบ:</b> ${e(d.note||'—')}</div><div class="checks"><div>☐ ตรวจสอบจำนวนและสภาพสินค้าแล้ว</div><div>☐ รับสินค้าหรือรับมอบงานติดตั้งเรียบร้อย</div><div>☐ มีรายการค้างส่งหรือข้อแก้ไขตามหมายเหตุ</div></div>${sign(d.team||p.productionWorker||'ผู้ส่งมอบ',recipient)}`;
+      }
+      const body=`<div class="wh-handover"><div class="head"><h1>${e(title)}</h1><p>Sumran Aluminum · เลขที่งาน <b>${e(no)}</b></p><p>เอกสารประกอบใบส่งของเดิม ไม่ใช่ใบกำกับภาษีหรือใบเสร็จรับเงิน</p></div>${details}${section}<div class="foot">พิมพ์เมื่อ ${e(new Date().toLocaleString('th-TH'))} · เอกสารนี้ไม่ใช่ใบเบิกวัสดุภายในร้าน</div></div>`;
       const styles=`@page{size:A4 portrait;margin:13mm}*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#182b40;font:11pt Sarabun,'Noto Sans Thai',Tahoma,sans-serif}.wh-handover{width:100%;margin:0}.head{border-bottom:2px solid #075985;padding-bottom:4mm;break-inside:avoid}.head h1{font-size:19pt;margin:0 0 2mm}.head p{margin:1mm 0;font-size:10pt}.details{display:grid;grid-template-columns:1fr 1fr;gap:2mm 5mm;margin:6mm 0;font-size:10pt}.details div{overflow-wrap:anywhere}.wh-handover h3{font-size:12pt;margin:5mm 0 2mm}.wh-handover table{width:100%;border-collapse:collapse;font-size:9.5pt;table-layout:fixed}.wh-handover thead{display:table-header-group}.wh-handover tr{break-inside:avoid}.wh-handover th,.wh-handover td{border:1px solid #94a3b8;padding:2mm;vertical-align:top;overflow-wrap:anywhere}.wh-handover th{background:#eaf2fa}.notes{margin:5mm 0;white-space:pre-wrap;overflow-wrap:anywhere}.checks{display:grid;grid-template-columns:1fr 1fr;gap:2mm;font-size:10pt;break-inside:avoid}.sign{display:flex;gap:10mm;justify-content:space-between;margin-top:14mm;break-inside:avoid}.sign div{width:48%;text-align:center;line-height:2}.foot{border-top:1px solid #cbd5e1;margin-top:8mm;padding-top:2mm;font-size:8pt;color:#475569}@media screen{body{padding:12px}.wh-handover{max-width:184mm;margin:auto}}`;
       return {title,body,styles,filename:String(no+'-'+kind).replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'};
     }
