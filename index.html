@@ -1844,6 +1844,7 @@
         persist();
       },e=>cloudError('Load history',e)));
 
+      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseColors'), snap=>{whSharedColors=snap.docs.map(d=>({id:d.id,...d.data()}));},e=>cloudError('Warehouse colors',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseMaterials'), snap=>{whItems=snap.docs.filter(d=>!d.id.startsWith('_counter_')).map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse materials',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseJobPlans'), snap=>{whPlans=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse plans',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseRecipes'), snap=>{whRecipes=snap.docs.map(d=>({id:d.id,...d.data()}));},e=>cloudError('Warehouse recipes',e)));
@@ -3785,6 +3786,11 @@
     function whOpen(title,html){document.getElementById('wh-modal-title').textContent=title;document.getElementById('wh-modal-content').innerHTML=html;document.getElementById('wh-modal').style.display='grid';document.querySelectorAll('#wh-modal select[data-selected]').forEach(el=>{if(el.dataset.selected)el.value=el.dataset.selected;});}
     function whClose(){document.getElementById('wh-modal').style.display='none';}
     let whBoxes=[];let whBoxAlerts=[];
+    let whSharedColors=[];
+    const whDefaultColors=['ขาวนม','อบขาว','ดำ','ชา'];
+    const whAllColors=()=>[...new Set([...whDefaultColors,...whSharedColors.map(x=>x.name).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'th'));
+    function whColorChoices(){return whAllColors().map(c=>`<label style="display:flex;align-items:center;gap:7px;padding:9px;border:1px solid #dbeafe;border-radius:10px"><input type="checkbox" name="selectedColors" value="${whEsc(c)}" style="width:18px;height:18px"> ${whEsc(c)}</label>`).join('');}
+    async function whAddSharedColor(){if(!whCanWrite())return;const name=prompt('ชื่อสีใหม่สำหรับใช้ร่วมกันทั้งร้าน เช่น เทาดำ');if(name===null)return;const color=name.trim();if(!color)return;if(whAllColors().some(x=>x.toLocaleLowerCase()===color.toLocaleLowerCase())){showToast('มีสีนี้ในชุดสีแล้ว');return;}try{await setDoc(cloudPath('warehouseColors',whId()),{name:color,createdBy:userId,createdAt:new Date().toISOString()});whSharedColors.push({name:color});whOpenMaterial();showToast('เพิ่มสีส่วนกลางแล้ว');}catch(err){cloudError('Add warehouse color',err);showToast(err.message||'เพิ่มสีไม่สำเร็จ');}}
     const whCategories=[['AL','อะลูมิเนียม'],['HW','อุปกรณ์'],['GL','กระจก'],['RB','ยางและซีล'],['OT','เบ็ดเตล็ด']];
     const whCategoryName=code=>whCategories.find(x=>x[0]===code)?.[1]||code;
     const whMaterialOptions=(chosen='')=>whItems.map(i=>`<option value="${whEsc(i.id)}" ${i.id===chosen?'selected':''}>${whEsc(i.registerNo||'')} · ${whEsc(i.name)} ${i.sku?'('+whEsc(i.sku)+')':''}</option>`).join('');
@@ -3796,7 +3802,7 @@
         <label>หมวดวัสดุ<select class="wh-input" name="category" ${i?'disabled':''}>${whCategories.map(([c,n])=>`<option value="${c}" ${c===(i?.category||'AL')?'selected':''}>${n} (${c})</option>`).join('')}</select></label>
         <label>รหัสสินค้าผู้ผลิต<input class="wh-input" name="sku" value="${whEsc(i?.sku||'')}" placeholder="เช่น 6T317"></label>
         <label>ระบบ/รุ่น<input class="wh-input" name="system" value="${whEsc(i?.system||'')}" placeholder="เช่น ยูโร 4 นิ้ว"></label>
-        <label>สี<input class="wh-input" name="color" value="${whEsc(i?.color||'')}" placeholder="เช่น ขาวนม"></label>
+        ${i?`<label>สี<input class="wh-input" name="color" value="${whEsc(i?.color||'')}" placeholder="เช่น ขาวนม"></label>`:`<div style="grid-column:1/-1;display:grid;gap:10px;border:1px solid #bfdbfe;border-radius:14px;padding:14px;background:#f8fbff"><b>🎨 เลือกหลายสีเพื่อสร้างทะเบียนพร้อมกัน</b><div class="wh-sub">สร้างวัสดุรุ่นเดียวกันได้หลายสีในครั้งเดียว แต่ละสีจะมีรหัสและยอดสต็อกแยกกัน</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=true)">เลือกทุกสี</button><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=false)">ล้างการเลือก</button><button type="button" class="wh-btn" onclick="whAddSharedColor()">＋ เพิ่มสีส่วนกลาง</button></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px">${whColorChoices()}</div><label>หรือพิมพ์สีเพิ่มเติม (คั่นด้วยจุลภาค)<input class="wh-input" name="extraColors" placeholder="เช่น เทา, น้ำตาล, แชมเปญ"></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="skipDuplicates" checked> ข้ามสีที่มีทะเบียนวัสดุรุ่นนี้อยู่แล้ว</label></div>`}
         <label>การจัดการวัสดุ<select class="wh-input" name="trackingMode" onchange="whToggleSharedMode(this)"><option value="job" ${i?.trackingMode!=='shared_box'?'selected':''}>คำนวณและเบิกตามงาน</option><option value="shared_box" ${i?.trackingMode==='shared_box'?'selected':''}>วัสดุสิ้นเปลือง เบิกเป็นกล่อง ใช้หลายงาน</option></select></label>
         <label>หน่วยสต็อก<input class="wh-input" name="unit" value="${whEsc(i?.unit||(i?.trackingMode==='shared_box'?'กล่อง':'เส้น'))}" required></label>
         <div class="wh-shared-hint wh-sub" style="grid-column:1/-1;${i?.trackingMode==='shared_box'?'':'display:none'}">วัสดุแบบใช้ร่วมกัน: รับเข้า/เบิกเป็นกล่อง ไม่หักสต็อกตามสูตรแต่ละงาน ช่างแจ้งเมื่อใช้หมด เจ้าของร้านจึงตัดสินใจซื้อ</div>
@@ -3812,21 +3818,34 @@
       const category=id?(whItems.find(x=>x.id===id)?.category||'OT'):String(f.get('category')||'OT');
       if(!name||!whCategories.some(x=>x[0]===category))return;
       const fields={name,category,sku:String(f.get('sku')||'').trim(),system:String(f.get('system')||'').trim(),color:String(f.get('color')||'').trim(),unit:String(f.get('unit')||'ชิ้น').trim(),minQty:whNum(f.get('minQty')),trackingMode:String(f.get('trackingMode')||'job'),updatedAt:new Date().toISOString(),updatedBy:userId};
+      let colors=[];
+      if(!id){
+        const raw=[...f.getAll('selectedColors'),...String(f.get('extraColors')||'').split(/[,，\n]+/)];
+        colors=[...new Map(raw.map(x=>String(x).trim()).filter(Boolean).map(x=>[x.toLocaleLowerCase(),x])).values()];
+        if(!colors.length){showToast('กรุณาเลือกอย่างน้อย 1 สี');return;}
+        if(colors.length>100){showToast('สร้างได้ครั้งละไม่เกิน 100 สี');return;}
+        const sameBase=x=>x.category===category&&String(x.name||'').trim().toLocaleLowerCase()===name.toLocaleLowerCase()&&String(x.system||'').trim().toLocaleLowerCase()===fields.system.toLocaleLowerCase()&&String(x.sku||'').trim().toLocaleLowerCase()===fields.sku.toLocaleLowerCase();
+        const existing=new Set(whItems.filter(sameBase).map(x=>String(x.color||'').trim().toLocaleLowerCase()));
+        const duplicates=colors.filter(x=>existing.has(x.toLocaleLowerCase()));
+        if(duplicates.length&&!f.has('skipDuplicates')){showToast('มีทะเบียนสีซ้ำแล้ว: '+duplicates.join(', '));return;}
+        colors=colors.filter(x=>!existing.has(x.toLocaleLowerCase()));
+        if(!colors.length){showToast('สีที่เลือกมีทะเบียนอยู่แล้วทั้งหมด');return;}
+      }
       whBusy=true;
       try{
         if(id){await updateDoc(cloudPath('warehouseMaterials',id),fields);}
         else{
-          const counterRef=cloudPath('warehouseMaterials','_counter_'+category),newId=whId();
+          const counterRef=cloudPath('warehouseMaterials','_counter_'+category),ids=colors.map(()=>whId());
           await runTransaction(db,async tx=>{
             const snap=await tx.get(counterRef);
             const existingMax=whItems.filter(x=>x.category===category).reduce((m,x)=>Math.max(m,Number(String(x.registerNo||'').match(new RegExp('^'+category+'-(\\d+)$'))?.[1]||0)),0);
-            const next=Math.max(whNum(snap.exists()?snap.data().nextNo:0),existingMax)+1;
-            tx.set(counterRef,{nextNo:next,isCounter:true,category});
-            tx.set(cloudPath('warehouseMaterials',newId),{...fields,registerNo:category+'-'+String(next).padStart(5,'0'),qty:0,createdAt:new Date().toISOString(),createdBy:userId});
+            const first=Math.max(whNum(snap.exists()?snap.data().nextNo:0),existingMax)+1;
+            tx.set(counterRef,{nextNo:first+colors.length-1,isCounter:true,category});
+            colors.forEach((color,k)=>tx.set(cloudPath('warehouseMaterials',ids[k]),{...fields,color,registerNo:category+'-'+String(first+k).padStart(5,'0'),qty:0,createdAt:new Date().toISOString(),createdBy:userId}));
           });
         }
-        whClose();showToast(id?'แก้ไขทะเบียนแล้ว':'เพิ่มวัสดุและออกรหัสอัตโนมัติแล้ว');
-      }catch(err){cloudError('Save material',err)}finally{whBusy=false;}
+        whClose();showToast(id?'แก้ไขทะเบียนแล้ว':'สร้างทะเบียนแยกตามสีสำเร็จ '+colors.length+' รายการ');
+      }catch(err){cloudError('Save material',err);showToast(err.message||'สร้างทะเบียนไม่สำเร็จ');}finally{whBusy=false;}
     }
     async function whDeleteMaterial(id){
       const i=whItems.find(x=>x.id===id);if(!i||!whCanWrite())return;
@@ -3887,7 +3906,7 @@
     async function whDeleteRecipe(id){const r=whRecipes.find(x=>x.id===id);if(!r||!whCanWrite())return;if(whPlans.some(p=>p.recipeId===id)){showToast('สูตรนี้มีงานอ้างอิงอยู่ ไม่สามารถลบได้');return;}if(!confirm('ลบสูตร '+r.name+'? ไม่กระทบเอกสารลูกค้า'))return;try{await deleteDoc(cloudPath('warehouseRecipes',id));whOpenRecipes();showToast('ลบสูตรแล้ว');}catch(err){cloudError('Delete recipe',err);}}
     window.whOpenRecipes=whOpenRecipes;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
     window.whToggleSharedMode=whToggleSharedMode;window.whOpenSharedBoxes=whOpenSharedBoxes;window.whOpenSharedIssue=whOpenSharedIssue;window.whSaveSharedIssue=whSaveSharedIssue;window.whReportSharedEmpty=whReportSharedEmpty;window.whAcknowledgeSharedAlert=whAcknowledgeSharedAlert;
-    window.whRender=whRender;window.whSelect=whSelect;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
+    window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
 
     window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
