@@ -724,7 +724,8 @@
 <section id="tab-warehouse" class="hidden no-print">
  <div id="wh-consumable-alert-banner" style="display:none;margin-bottom:12px;padding:13px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px"></div>
  <div class="wh-row" style="flex-wrap:wrap;margin-bottom:14px"><div><h2 style="font-size:27px;font-weight:800">📦 คลังสินค้าและงานผลิต</h2><p class="wh-sub">เลือกงาน → ตรวจวัสดุ → จัดซื้อ (ถ้าขาด) → เบิกของ → ยืนยันเริ่มผลิต</p></div><button class="wh-btn primary" onclick="whOpenMaterial()">＋ เพิ่มวัสดุในคลัง</button></div>
- <div class="wh-kpis"><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('all')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('all')" style="cursor:pointer">📦 วัสดุในทะเบียน<strong id="wh-kpi-items">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('low')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('low')" style="cursor:pointer">⚠️ วัสดุใกล้หมด<strong id="wh-kpi-low">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('out')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('out')" style="cursor:pointer">❌ วัสดุหมด<strong id="wh-kpi-out">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('ordered')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('ordered')" style="cursor:pointer">🛒 งานที่รอซื้อ<strong id="wh-kpi-pending">0</strong>งาน</div></div>
+ <div id="wh-load-diagnostic" role="status" style="display:none;padding:11px;margin:0 0 12px;border:1px solid #bfdbfe;border-radius:12px;font-size:12px"></div>
+  <div class="wh-kpis"><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('all')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('all')" style="cursor:pointer">📦 วัสดุในทะเบียน<strong id="wh-kpi-items">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('low')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('low')" style="cursor:pointer">⚠️ วัสดุใกล้หมด<strong id="wh-kpi-low">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('out')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('out')" style="cursor:pointer">❌ วัสดุหมด<strong id="wh-kpi-out">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('ordered')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('ordered')" style="cursor:pointer">🛒 งานที่รอซื้อ<strong id="wh-kpi-pending">0</strong>งาน</div></div>
  <div class="wh-steps"><span class="wh-step on"><b>1</b>เลือกงาน</span><span class="wh-step"><b>2</b>ตรวจวัสดุ</span><span class="wh-step"><b>3</b>จัดซื้อ</span><span class="wh-step"><b>4</b>เบิกจากคลัง</span><span class="wh-step"><b>5</b>เริ่มผลิต</span></div>
  <div class="wh-layout"><div class="wh-panel"><div class="wh-heading">เลือกงานที่ต้องการทำ</div><p class="wh-sub">รายการอ้างอิงเอกสารจริงในระบบ</p><input id="wh-job-search" class="wh-input" placeholder="ค้นหาเลขเอกสาร / ลูกค้า" oninput="whRender()" style="margin-top:12px"><div id="wh-jobs" style="margin-top:9px"></div></div>
  <div class="wh-panel"><div class="wh-row"><div><div class="wh-heading">วัสดุที่ต้องใช้ <span id="wh-selected-no" style="color:#0076ce"></span></div><p class="wh-sub" id="wh-customer">เลือกงานจากด้านซ้าย</p></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="wh-btn primary" onclick="whOpenRecipes()">🧮 สูตรงานผลิต</button><button class="wh-btn" onclick="whOpenComponents()">🧩 ส่วนประกอบ</button><button class="wh-btn" onclick="whOpenPlan()">✎ กำหนดวัสดุของงาน</button></div></div><div id="wh-auto-job-preview" style="margin-top:12px"></div><div id="wh-outsourced-work" style="margin-top:12px"></div><div style="overflow:auto;margin-top:13px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="wh-plan-rows"><tr><td colspan="4">กรุณาเลือกงาน</td></tr></tbody></table></div><p id="wh-job-dimensions" class="wh-sub" style="margin-top:10px"></p><div id="wh-alert" class="wh-notice" style="display:none"></div><div class="wh-row" style="margin-top:12px;flex-wrap:wrap"><button class="wh-btn" onclick="whShowStock()">📦 ดูสต็อกวัสดุ</button><button class="wh-btn" onclick="whShowHistory()">◷ ประวัติการเคลื่อนไหว</button><button class="wh-btn" onclick="whOpenSharedBoxes()">📦 วัสดุประจำช่าง / แจ้งหมด</button></div></div>
@@ -1846,6 +1847,7 @@
 
       unsubscribeFns.push(onSnapshot(cloudCollection('history'), snap=>{
         const incoming=[]; snap.forEach(d=>incoming.push(d.data()));
+        whLoadOk('history');
         state.history=incoming.sort((a,b)=>String(b.savedAt||b.id||'').localeCompare(String(a.savedAt||a.id||'')));
         if(!state.currentHistoryId && !state.docNo) generateAutoDocNo(state.docType);
         renderHistory();
@@ -1860,11 +1862,11 @@
           }
         }
         persist();
-      },e=>cloudError('Load history',e)));
+      },e=>whLoadFail('history',e)));
 
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseColors'), snap=>{whSharedColors=snap.docs.map(d=>({id:d.id,...d.data()}));},e=>cloudError('Warehouse colors',e)));
-      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseMaterials'), snap=>{whItems=snap.docs.filter(d=>!d.id.startsWith('_counter_')).map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse materials',e)));
-      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseSubcontracts'), snap=>{whSubcontracts=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Subcontracts',e)));
+      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseMaterials'), snap=>{whItems=snap.docs.filter(d=>!d.id.startsWith('_counter_')).map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseMaterials');whRender();},e=>whLoadFail('warehouseMaterials',e)));
+      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseSubcontracts'), snap=>{whSubcontracts=snap.docs.map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseSubcontracts');whRender();},e=>whLoadFail('warehouseSubcontracts',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseJobPlans'), snap=>{whPlans=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse plans',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseRecipes'), snap=>{whRecipes=snap.docs.map(d=>({id:d.id,...d.data()}));},e=>cloudError('Warehouse recipes',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseConsumableBoxes'), snap=>{whBoxes=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Consumable boxes',e)));
@@ -3771,6 +3773,10 @@
 
     // WAREHOUSE V1 — independent collections. No writes to quotations/receipts.
     let whItems=[],whPlans=[],whMoves=[],whRecipes=[],whSubcontracts=[],whSelected='',whBusy=false;
+    const whLoadState={history:'loading',warehouseMaterials:'loading',warehouseSubcontracts:'loading'};
+    function whLoadNote(){const names={history:'เอกสาร',warehouseMaterials:'ทะเบียนวัสดุ',warehouseSubcontracts:'ข้อมูลจ้างภายนอก'};const failed=Object.entries(whLoadState).filter(([k,v])=>v.startsWith('error:'));const loading=Object.entries(whLoadState).filter(([k,v])=>v==='loading');const el=document.getElementById('wh-load-diagnostic');if(!el)return;el.style.display=failed.length||loading.length?'block':'none';el.style.background=failed.length?'#fff1f2':'#eff6ff';el.style.borderColor=failed.length?'#fecdd3':'#bfdbfe';el.textContent=failed.length?'⚠ โหลดข้อมูลไม่ครบ: '+failed.map(([k,v])=>names[k]+' ('+v.slice(6)+')').join(', ')+' · ตรวจสอบ Firestore Rules และ Console':loading.length?'กำลังโหลดข้อมูล: '+loading.map(([k])=>names[k]).join(', '):'';}
+    function whLoadOk(k){whLoadState[k]='ok';whLoadNote();}
+    function whLoadFail(k,e){whLoadState[k]='error:'+(e?.code||e?.message||'unknown');whLoadNote();cloudError('Load '+k,e);}
     const whEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const whNum=x=>Math.max(0,Number(x)||0);
     const whId=()=>crypto.randomUUID?.()||('w'+Date.now()+Math.random().toString(36).slice(2));
@@ -3781,7 +3787,7 @@
     const whQtyText=n=>Number(Number(n).toFixed(3)).toLocaleString('th-TH',{maximumFractionDigits:3});
     // V11: read saved invoice item snapshots, never alter the document or stock automatically.
     const whNorm=x=>String(x||'').toLocaleLowerCase('th').replace(/[\s\-–—_.,()]+/g,'');
-    const whInvoiceItems=job=>Array.isArray(job?.payload?.items)?job.payload.items:[];
+    const whInvoiceItems=job=>{for(const candidate of [job?.payload?.items,job?.items,job?.data?.items,job?.document?.items])if(Array.isArray(candidate))return candidate;return [];};
     // V11.2: reusable component templates share the existing warehouseRecipes collection.
     // No new Firebase collection or Firestore rule is required.
     const whComponentKinds=['ช่องแสงบน','ช่องแสงข้าง','ช่องแสง','ลูกฟัก','มุ้งลวด','บานประตู','บานหน้าต่าง','อื่น ๆ'];
@@ -3968,9 +3974,9 @@
     async function whSaveWorkRouting(){if(!whCanWrite()||whBusy||!whSelected)return;const job=whDoc();if(!job)return;const rows=[...document.querySelectorAll('#wh-route-editor .wh-route-line')];const lines=[];for(const r of rows){const index=Number(r.dataset.index),mode=r.querySelector('.wh-route-mode').value,cost=Number(r.querySelector('.wh-route-cost').value),paid=Number(r.querySelector('.wh-route-paid').value);if(mode==='external'&&(!Number.isFinite(cost)||!Number.isFinite(paid)||cost<0||paid<0||paid>cost)){showToast('ค่าจ้างและยอดจ่ายต้องถูกต้อง และยอดจ่ายต้องไม่เกินค่าจ้าง');return;}lines.push({index,mode,contractor:mode==='external'?r.querySelector('.wh-route-contractor').value.trim():'',cost:mode==='external'?cost:0,paid:mode==='external'?paid:0,status:mode==='external'?r.querySelector('.wh-route-status').value:'',note:r.querySelector('.wh-route-note').value.trim()});}whBusy=true;try{await setDoc(cloudPath('warehouseSubcontracts',encodeURIComponent(whSelected)),{docNo:whSelected,lines,updatedAt:new Date().toISOString(),updatedBy:userId});whClose();whRender();showToast('บันทึกการแยกงานแล้ว · ไม่หักสต็อก');}catch(e){cloudError('Save work routing',e);showToast('บันทึกไม่สำเร็จ: '+(e.message||''));}finally{whBusy=false;}}
     function whRender(){
       if(!document.getElementById('wh-jobs'))return;
-      const jobs=[...new Map(state.history.filter(h=>h.docNo&&['quotation','invoice','receipt','delivery','cashbill'].includes(h.docType||h.type||'quotation')).map(h=>[h.docNo,h])).values()].sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
-      const q=(document.getElementById('wh-job-search')?.value||'').toLowerCase();
-      document.getElementById('wh-jobs').innerHTML=jobs.filter(h=>(String(h.docNo)+' '+String(h.custName||h.customerName||'')).toLowerCase().includes(q)).slice(0,80).map(h=>`<button class="wh-job ${whSelected===h.docNo?'selected':''}" onclick="whSelect('${whEsc(h.docNo).replace(/'/g,'&#39;')}')"><strong>${whEsc(h.docNo)}</strong><small>${whEsc(h.custName||h.customerName||h.customer?.name||'ไม่ระบุลูกค้า')}</small></button>`).join('')||'<p class="wh-sub">ไม่พบเอกสาร</p>';
+      const jobs=[...new Map(state.history.filter(h=>h.docNo).map(h=>[h.docNo,h])).values()].sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+      const q=(document.getElementById('wh-job-search')?.value||'').toLowerCase();whLoadNote();
+      document.getElementById('wh-jobs').innerHTML=jobs.filter(h=>(String(h.docNo)+' '+String(h.custName||h.customerName||'')).toLowerCase().includes(q)).map(h=>`<button class="wh-job ${whSelected===h.docNo?'selected':''}" onclick="whSelect('${whEsc(h.docNo).replace(/'/g,'&#39;')}')"><strong>${whEsc(h.docNo)}</strong><small>${whEsc(h.custName||h.customerName||h.customer?.name||'ไม่ระบุลูกค้า')}</small></button>`).join('')||'<p class="wh-sub">ไม่พบเอกสาร</p>';
       const boxBanner=document.getElementById('wh-consumable-alert-banner');
       if(boxBanner){const n=whBoxAlerts.filter(a=>a.status==='pending').length;boxBanner.style.display=n?'block':'none';boxBanner.innerHTML=n?`🔔 <b>ช่างแจ้งวัสดุสิ้นเปลืองหมด ${n} รายการ</b> <button class="wh-btn" onclick="whOpenSharedBoxes()" style="margin-left:8px">เปิดดูและรับทราบ</button>`:'';}
       document.getElementById('wh-kpi-items').textContent=whItems.length;
