@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sumran Aluminum V43 - ระบบเอกสารและคลังสินค้า</title>
+  <title>Sumran Aluminum V45 - Inventory Workspace</title>
   <meta name="theme-color" content="#075985">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -5512,5 +5512,100 @@ function boot(){if(init())return;if(++attempts<85)setTimeout(boot,200);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
+
+<style id="v45-new-inventory-design">
+/* V45: new operational workspace; scoped entirely to inventory */
+#tab-inventory #v38-sidebar,#tab-inventory #v38-topbar,#tab-inventory #v38-shortcuts,#tab-inventory #v44-intro{display:none!important}
+#tab-inventory #v38-shell{display:block!important;max-width:1500px;margin:auto}
+#tab-inventory #v38-main{width:100%}
+#v45-app{--ink:#172b40;--blue:#1559aa;--line:#e0e8f0;color:var(--ink);font-family:Prompt,Sarabun,sans-serif}
+#v45-app .v45-top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 2px 22px;border-bottom:1px solid var(--line);margin-bottom:20px}
+#v45-app .v45-top h2{font-size:clamp(22px,2.7vw,30px);font-weight:800;letter-spacing:-.04em}
+#v45-app .v45-top p{font-size:12px;color:#64748b;margin-top:4px}
+#v45-app .v45-status{display:inline-flex;align-items:center;gap:7px;color:#087f65;font-weight:700;font-size:12px;background:#e7f8f2;padding:9px 13px;border-radius:50px;white-space:nowrap}
+#v45-app .v45-layout{display:grid;grid-template-columns:215px minmax(0,1fr) 255px;gap:18px;align-items:start}
+#v45-app .v45-rail{background:#fff;border:1px solid var(--line);border-radius:15px;padding:11px;position:sticky;top:110px}
+#v45-app .v45-rail h3{font-size:11px;color:#8794a5;font-weight:700;padding:12px 10px;letter-spacing:.08em}
+#v45-app .v45-nav{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 11px;border:0;border-radius:10px;background:transparent;color:#3d5066;font-weight:700;font-size:13px;margin-bottom:3px}
+#v45-app .v45-nav svg{width:19px;height:19px;flex-shrink:0}
+#v45-app .v45-nav:hover{background:#f1f6fd}#v45-app .v45-nav[aria-current=page]{background:#e8f1fc;color:#145aa8}
+#v45-app .v45-content{min-width:0}
+#v45-app .v45-section-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 13px}
+#v45-app .v45-section-title h3{font-size:17px;font-weight:800}#v45-app .v45-section-title span{font-size:11px;color:#64748b}
+#v45-app .v45-right{position:sticky;top:110px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:19px}
+#v45-app .v45-right h3{font-weight:800;font-size:15px;margin-bottom:12px}
+#v45-app .v45-right p{font-size:12px;line-height:1.9;color:#64748b}
+#v45-app .v45-right .v45-link{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 0;border-bottom:1px solid #edf1f5;text-align:left;font-size:12px;font-weight:700;color:#215b96}
+#v45-app .v45-right .v45-link:last-child{border:0}
+#v45-app .v45-screen[hidden]{display:none!important}
+#v45-app #v41-wizard{border:0!important;border-radius:14px!important;box-shadow:none!important;margin:0!important}
+#v45-app #v41-track{background:#f7f9fc!important;border-bottom:1px solid #e5ebf3}
+#v45-app #v41-wizard .v41-hero{background:#fff!important}
+#v45-app #v41-wizard .v41-content{background:#fff!important}
+#v45-app .v45-primary{background:#165eae;color:white;font-weight:700;font-size:12px;border-radius:9px;padding:12px 16px}
+#v45-app .v45-info{background:#f1f6fd;border-left:3px solid #2d7bc9;padding:13px;font-size:12px;color:#39546e;line-height:1.7;margin-top:14px}
+#v45-app #v44-purchase{margin:0;border-radius:13px}
+#v45-app .v45-main-surface{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;min-width:0}
+#v45-app .v45-native{display:grid;gap:13px}
+#v45-app .v45-native>.v24-panel{display:grid!important}
+#v45-app .v45-native>.v24-panel[hidden]{display:none!important}
+#tab-inventory #v24-panel-jobs{display:none!important}
+#v45-app #v24-panel-jobs{display:block!important}
+#v45-app #v24-panel-jobs>.v24-panel-heading,#v45-app #v24-panel-jobs>.v24-panel-description{display:none!important}
+#v45-app #v44-help{display:none!important}
+#v45-app #v44-advanced{margin-top:15px}
+@media(max-width:1180px){#v45-app .v45-layout{grid-template-columns:175px minmax(0,1fr)}#v45-app .v45-right{grid-column:2;position:static}}
+@media(max-width:760px){#v45-app .v45-layout{display:block}#v45-app .v45-rail{position:static;display:flex;overflow-x:auto;gap:5px;padding:7px;margin-bottom:14px}#v45-app .v45-rail h3{display:none}#v45-app .v45-nav{min-width:max-content;margin:0;padding:11px;font-size:11px}#v45-app .v45-nav svg{width:16px;height:16px}#v45-app .v45-main-surface{padding:9px}#v45-app .v45-right{margin-top:14px}#v45-app .v45-top{padding:2px 0 14px}#v45-app .v45-status{font-size:10px;padding:7px}}
+@media print{#v45-app{display:none!important}}
+</style>
+<script id="v45-new-inventory-workspace">
+(function(){
+ const $=id=>document.getElementById(id);
+ let done=false,tries=0;
+ const views=[['jobs','clipboard-list','งานลูกค้า'],['stock','package','วัสดุคงเหลือ'],['movement','arrow-left-right','รับเข้า / เบิก / คืน'],['recipes','ruler','สูตรผลิต'],['history','history','ประวัติคลัง']];
+ function init(){
+  if(done||!$('v38-main')||!$('v41-wizard')||!$('v24-panel-jobs')||!$('v44-purchase'))return false;
+  done=true;
+  const root=document.createElement('div');root.id='v45-app';
+  root.innerHTML='<div class="v45-top"><div><h2>จัดการคลังสินค้า</h2><p>เลือกงาน ตรวจวัสดุ จัดซื้อ รับเข้า และเบิกใช้งานในที่เดียว</p></div><span class="v45-status">● เชื่อมต่อข้อมูลคลังเดิม</span></div><div class="v45-layout"><nav class="v45-rail" aria-label="เมนูคลังสินค้า"><h3>เมนูทำงาน</h3></nav><main class="v45-content"><div class="v45-section-title"><h3 id="v45-current-title">งานลูกค้า</h3><span>SUMRAN INVENTORY</span></div><div class="v45-main-surface"><div id="v45-jobs" class="v45-screen"></div><div id="v45-buy" class="v45-screen" hidden></div><div id="v45-native" class="v45-screen v45-native" hidden></div></div></main><aside class="v45-right"><h3>การทำงานที่เกี่ยวข้อง</h3><p>เลือกรายการงานและคำนวณวัสดุก่อนตรวจยอดคงเหลือ ระบบจะไม่เบิกของอัตโนมัติ</p><div id="v45-related"></div><div class="v45-info">ข้อมูลใบเสนอราคา ลูกค้า และการเงินยังใช้ฐานข้อมูลเดิม ไม่ถูกรีเซ็ต</div></aside></div>';
+  const main=$('v38-main');main.insertBefore(root,main.firstChild);
+  const rail=root.querySelector('.v45-rail'),related=$('v45-related');
+  const menu=[...views.slice(0,1),['buy','shopping-cart','ศูนย์จัดซื้อ'],...views.slice(1)];
+  for(const [id,icon,title] of menu){
+   const b=document.createElement('button');b.type='button';b.className='v45-nav';b.dataset.view=id;b.innerHTML='<i data-lucide="'+icon+'"></i><span>'+title+'</span>';b.addEventListener('click',()=>show(id));rail.appendChild(b);
+  }
+  const jobs=$('v24-panel-jobs'),wizard=$('v41-wizard'),purchase=$('v44-purchase');
+  $('v45-jobs').appendChild(wizard);
+  const helper=document.createElement('div');helper.className='v45-info';helper.textContent='เลือกใบเสนอราคา → เลือกสูตร → คำนวณ → ตรวจของขาด หากวัสดุไม่ครบให้บันทึกจัดซื้อก่อนเบิกผลิต';$('v45-jobs').appendChild(helper);
+  $('v45-buy').appendChild(purchase);purchase.open=true;
+  const adv=$('v44-advanced');if(adv)$('v45-buy').appendChild(adv);
+  for(const [id,title] of [['buy','เปิดศูนย์จัดซื้อ'],['stock','ตรวจยอดวัสดุ'],['movement','รับเข้า / เบิก / คืน']]){
+   const b=document.createElement('button');b.type='button';b.className='v45-link';b.textContent=title+' →';b.onclick=()=>show(id);related.appendChild(b);
+  }
+  function show(id){
+   const target=menu.find(x=>x[0]===id);if(!target)return;
+   $('v45-current-title').textContent=target[2];
+   for(const b of rail.querySelectorAll('button')){if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
+   $('v45-jobs').hidden=id!=='jobs';$('v45-buy').hidden=id!=='buy';$('v45-native').hidden=id==='jobs'||id==='buy';
+   if(id!=='jobs'&&id!=='buy'){
+    const native=$('v45-native');
+    const panel=$('v24-panel-'+id);
+    if(panel){native.replaceChildren(panel);panel.hidden=false;}
+    else{native.textContent='ยังไม่พบหน้ารายการนี้ในไฟล์ปัจจุบัน';}
+   }
+   root.scrollIntoView({block:'start',behavior:'smooth'});
+   if(window.lucide?.createIcons)window.lucide.createIcons();
+  }
+  window.v45Open=show;
+  const oldOpen=window.v35OpenPurchase;
+  window.v35OpenPurchase=function(){show('buy');if(purchase)purchase.open=true;};
+  show('jobs');
+  return true;
+ }
+ function boot(){if(init())return;if(++tries<90)setTimeout(boot,200)}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+
 </body>
 </html>
