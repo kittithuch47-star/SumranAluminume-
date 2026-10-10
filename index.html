@@ -3819,6 +3819,14 @@
     function whResolveRoleMaterial(l,it){
       const role=String(l.materialRole||'').trim();const category=l.materialCategory||whItems.find(i=>i.id===l.itemId)?.category||'OT';
       if(!role)return {error:'สูตรยังไม่ระบุหน้าที่วัสดุ'};
+      // V11.8.1: fixed consumables are linked by the actual registered material ID.
+      // A role label is descriptive, not a unique SKU (e.g. O2 vs 02).
+      // Keep dynamic colour/spec resolution for aluminum and glass.
+      if(!['AL','GL'].includes(category) && l.itemId){
+        const linked=whItems.find(i=>i.id===l.itemId);
+        if(linked && (linked.category||'OT')===category)return {item:linked};
+        if(linked)return {error:'วัสดุที่ผูกในสูตรเปลี่ยนหมวดเป็น '+whCategoryName(linked.category)+' กรุณาแก้สูตรให้ตรงทะเบียน'};
+      }
       const color=String(it.aluColor||'').trim(),system=whBillSystem(it),glass=whGlassSpec(whBillGlass(it));
       if(category==='AL'&&(!color||color==='-'))return {error:'บิลไม่ระบุสีอะลูมิเนียม'};
       if(category==='GL'&&(!glass.raw||glass.raw==='-'))return {error:'บิลไม่ระบุชนิดกระจก'};
@@ -3922,12 +3930,138 @@
       const lines=[...grouped].map(([itemId,qty])=>({itemId,qty}));
       return {matches,valid,blocked,lines};
     }
+    // V11.9: register missing glass directly from the selected invoice, without a separate register.
+    function whRegisterGlassFromBill(index){
+      const job=whDoc(),it=whInvoiceItems(job)[Number(index)];
+      if(!it){showToast('ไม่พบรายการในบิล');return;}
+      const raw=whBillGlass(it),spec=whGlassSpec(raw);
+      if(!raw){showToast('บิลไม่ระบุชนิดกระจก กรุณาตรวจข้อมูลบิลก่อน');return;}
+      if(!whCanWrite()){showToast('บัญชีนี้ไม่มีสิทธิ์เพิ่มทะเบียนวัสดุ');return;}
+      whOpenMaterial();
+      const f=document.querySelector('#wh-modal form')||document.querySelector('.wh-modal form')||document.querySelector('form[onsubmit="whSaveMaterial(event)"]');
+      if(!f){showToast('ไม่พบฟอร์มทะเบียนวัสดุ');return;}
+      f.elements.name.value='กระจก';
+      f.elements.category.value='GL';whCategoryColorDefault(f.elements.category);
+      const no=f.querySelector('[name=noColor]');if(no){no.checked=false;whToggleNoColor(no);}
+      f.querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=false);
+      if(f.elements.extraColors)f.elements.extraColors.value=raw;
+      if(f.elements.thicknessMm&&spec.thick!==null)f.elements.thicknessMm.value=spec.thick;
+      if(f.elements.unit)f.elements.unit.value='แผ่น';
+      const area=f.querySelector('.wh-glass-register');
+      if(area)area.insertAdjacentHTML('afterbegin',`<div style="color:#075985;font-weight:700">📄 จากบิล ${whEsc(job.docNo||'')} · ${whEsc(raw)}<div class="wh-sub">กรอกขนาดแผ่นที่ร้านจะซื้อจริงก่อนบันทึกทะเบียน · จำนวนเริ่มต้น 0 · จากนั้นสร้างใบจัดซื้อ/รับเข้าได้</div></div>`);
+    }
+    // V11.10: confirmed glass cutting plan uses registered GL sheet stock, never cut-piece quantities.
+    function whGlassNeeds(job){
+      const matches=whAutoDetect(job),needs=[];
+      for(const m of matches){
+        if(!m.recipe||!(m.w>0&&m.h>0&&m.sets>0))continue;
+        for(const l of m.recipe.lines||[]){
+          if((l.materialCategory||whItems.find(i=>i.id===l.itemId)?.category)!=='GL')continue;
+          const g=whGlassPieces(l,m.w,m.h,m.sets);
+          needs.push({index:m.index,spec:whBillGlass(m.it),recipeId:m.recipe.id||'',glass:g,role:l.materialRole||'กระจก'});
+        }
+      }
+      return needs;
+    }
+    function whGlassSignature(job){return JSON.stringify(whGlassNeeds(job).map(n=>[n.index,n.spec,n.recipeId,n.glass.count,n.glass.widthCm,n.glass.heightCm,n.glass.error||'']));}
+    function whGlassStockMatches(stock,spec){
+      if(stock.category!=='GL')return false;
+      const bill=whGlassSpec(spec),desc=whGlassSpec([stock.name,stock.color,stock.thicknessMm?' '+stock.thicknessMm+' มม.':''].join(' '));
+      const type=whNorm([stock.name,stock.color].join(' '));
+      const expected=whNorm(bill.kind);
+      if(!expected||!type.includes(expected))return false;
+      const thickness=Number(stock.thicknessMm||stock.thickness||desc.thick||0);
+      return bill.thick===null||(thickness>0&&Math.abs(thickness-bill.thick)<0.001);
+    }
+    // Simple guillotine grid estimate, 0.3 cm kerf by default, both orientations.
+    // This is a conservative sheet-count estimate, NOT an approved physical cutting layout.
+    function whGlassCapacity(stock,w,h,kerf){
+      const sw=Number(stock.sheetWidthCm),sh=Number(stock.sheetHeightCm);
+      if(!(sw>0&&sh>0&&w>0&&h>0&&kerf>=0))return 0;
+      const grid=(a,b)=>Math.floor((sw+kerf)/(a+kerf))*Math.floor((sh+kerf)/(b+kerf));
+      return Math.max(grid(w,h),grid(h,w));
+    }
+    function whOpenGlassCutPlan(){
+      const job=whDoc();if(!job){showToast('กรุณาเลือกบิลก่อน');return;}
+      const needs=whGlassNeeds(job);
+      if(!needs.length){showToast('ยังไม่มีสูตรกระจกที่จับคู่กับบิลนี้');return;}
+      const plan=whPlan();if(['issued','producing'].includes(plan?.status)){showToast('งานนี้เบิกวัสดุแล้ว ไม่สามารถเปลี่ยนแผนตัดย้อนหลัง');return;}
+      const saved=plan?.glassCutPlan;
+      const cards=needs.map((n,k)=>{
+        const g=n.glass;
+        const options=whItems.filter(i=>whGlassStockMatches(i,n.spec)&&Number(i.sheetWidthCm)>0&&Number(i.sheetHeightCm)>0);
+        const prev=saved?.entries?.find(x=>x.index===n.index&&x.spec===n.spec);
+        return `<div class="wh-glass-cut-entry" data-index="${n.index}" style="border:1px solid #bfdbfe;border-radius:12px;padding:12px;margin:12px 0;background:#f8fbff">
+          <b>${k+1}. ${whEsc(n.spec||'ไม่ระบุชนิดกระจก')}</b><div class="wh-sub">จากรายการบิลลำดับ ${n.index+1} · สูตรคำนวณทดลอง: ${g.error?whEsc(g.error):`${whQtyText(g.widthCm)} × ${whQtyText(g.heightCm)} ซม. · ${g.count} ชิ้น`}</div>
+          ${g.error?'<p style="color:#b91c1c">ต้องแก้สูตรกระจกก่อนยืนยัน</p>':''}
+          <div class="wh-form-grid" style="margin-top:9px">
+            <label>กว้างชิ้นตัดจริง (ซม.)<input class="wh-input wh-g-width" type="number" min="0.01" step="any" value="${whEsc(prev?.widthCm??(g.error?'':g.widthCm))}"></label>
+            <label>สูงชิ้นตัดจริง (ซม.)<input class="wh-input wh-g-height" type="number" min="0.01" step="any" value="${whEsc(prev?.heightCm??(g.error?'':g.heightCm))}"></label>
+            <label>จำนวนชิ้น<input class="wh-input wh-g-count" type="number" min="1" step="1" value="${whEsc(prev?.count??(g.error?'':g.count))}"></label>
+            <label>ระยะเผื่อแนวตัด (ซม.)<input class="wh-input wh-g-kerf" type="number" min="0" step="any" value="${whEsc(prev?.kerfCm??0.3)}"></label>
+            <label style="grid-column:1/-1">เลือกแผ่นกระจกในทะเบียน<select class="wh-input wh-g-stock" onchange="whGlassRecalculate()"><option value="">— เลือกแผ่นกระจกที่ตรงชนิดและความหนา —</option>${options.map(i=>`<option value="${whEsc(i.id)}" ${i.id===prev?.itemId?'selected':''}>${whEsc(i.registerNo||'')} · ${whEsc(i.name)} ${whEsc(i.color||'')} · ${whNum(i.sheetWidthCm)} × ${whNum(i.sheetHeightCm)} ซม. · คลัง ${whNum(i.qty)} แผ่น</option>`).join('')}</select></label>
+          </div><div class="wh-g-result wh-sub" style="margin-top:8px"></div>
+          ${!options.length?`<button class="wh-btn" style="margin-top:8px" onclick="whRegisterGlassFromBill(${n.index})">＋ เพิ่มกระจกจากบิลลงทะเบียน</button><p class="wh-sub">ต้องมีทะเบียนกระจกที่ระบุขนาดแผ่นก่อนจัดซื้อหรือเบิก</p>`:''}
+        </div>`;
+      }).join('');
+      whOpen('🪟 ตรวจและยืนยันแผนตัดกระจก',`<p class="wh-sub">บิล ${whEsc(job.docNo)} · ช่างต้องตรวจชนิด ความหนา ขนาดตัดจริง และแผ่นสต๊อก · การยืนยันยังไม่หักสต๊อก</p><div style="background:#fff7ed;padding:10px;border-radius:10px;color:#9a3412;margin-top:8px">⚠ สูตรระยะหักที่ใส่ทดลองยังไม่ใช่ขนาดตัดจริง ช่างต้องตรวจสอบก่อนยืนยัน · ระบบคำนวณจำนวนแผ่นด้วยการจัดวางแบบตารางเบื้องต้น ไม่ใช่ผังตัดที่รับรองแล้ว</div><div id="wh-glass-cut-list">${cards}</div><label style="display:flex;gap:8px;align-items:center;margin:12px 0"><input type="checkbox" id="wh-glass-verified"> ฉันตรวจสอบขนาดตัดและชนิดกระจกกับช่างแล้ว</label><button class="wh-btn primary" onclick="whSaveGlassCutPlan()">✓ ยืนยันแผนตัดและบันทึกแผนเบิก</button><p class="wh-sub" style="margin-top:8px">หากแผ่นสต๊อกไม่พอ ให้เปิด “ตรวจวัสดุและจัดซื้อ” แล้วรับของเข้าคลังก่อนกดเบิก · ไม่มีการสั่งซื้อหรือหักสต๊อกอัตโนมัติ</p>`);
+      document.querySelectorAll('#wh-glass-cut-list input').forEach(el=>el.addEventListener('input',whGlassRecalculate));
+      whGlassRecalculate();
+    }
+    function whGlassCutRows(){
+      return [...document.querySelectorAll('#wh-glass-cut-list .wh-glass-cut-entry')].map(row=>{
+        const index=Number(row.dataset.index),need=whGlassNeeds(whDoc()).find(x=>x.index===index);
+        const itemId=row.querySelector('.wh-g-stock').value,widthCm=Number(row.querySelector('.wh-g-width').value),heightCm=Number(row.querySelector('.wh-g-height').value),count=Number(row.querySelector('.wh-g-count').value),kerfCm=Number(row.querySelector('.wh-g-kerf').value);
+        const stock=whItems.find(i=>i.id===itemId);
+        const capacity=stock?whGlassCapacity(stock,widthCm,heightCm,kerfCm):0;
+        const sheets=capacity>0?Math.ceil(count/capacity):0;
+        return {index,spec:need?.spec||'',itemId,widthCm,heightCm,count,kerfCm,capacity,sheets,stock};
+      });
+    }
+    function whGlassRecalculate(){
+      for(const [k,r] of whGlassCutRows().entries()){
+        const out=document.querySelectorAll('#wh-glass-cut-list .wh-g-result')[k];if(!out)continue;
+        if(!r.stock){out.textContent='เลือกแผ่นสต๊อกที่ตรงสเป็กก่อน';continue;}
+        if(!(r.widthCm>0&&r.heightCm>0&&Number.isSafeInteger(r.count)&&r.count>0&&r.kerfCm>=0)){out.textContent='กรุณากรอกขนาดและจำนวนชิ้นให้ถูกต้อง';continue;}
+        out.textContent=r.capacity?`คำนวณเบื้องต้น: ตัดได้ไม่เกิน ${r.capacity} ชิ้น/แผ่น · ต้องใช้ ${r.sheets} แผ่น · ในคลัง ${whNum(r.stock.qty)} แผ่น${whNum(r.stock.qty)<r.sheets?' · ⚠ ขาด '+(r.sheets-whNum(r.stock.qty))+' แผ่น ต้องจัดซื้อ':''}`:'⚠ แผ่นนี้เล็กกว่าชิ้นตัด หรือวางไม่ลง กรุณาเลือกแผ่นอื่น';
+      }
+    }
+    async function whSaveGlassCutPlan(){
+      if(!whCanWrite()||whBusy||!whSelected)return;
+      if(!document.getElementById('wh-glass-verified')?.checked){showToast('กรุณาให้ช่างตรวจและติ๊กยืนยันขนาดก่อน');return;}
+      const job=whDoc(),needs=whGlassNeeds(job),entries=whGlassCutRows();
+      if(!needs.length||entries.length!==needs.length){showToast('รายการกระจกไม่ครบ');return;}
+      for(const r of entries){
+        if(!r.stock||!whGlassStockMatches(r.stock,r.spec)||!(r.widthCm>0&&r.heightCm>0)||!Number.isSafeInteger(r.count)||r.count<1||!(r.kerfCm>=0)||!r.capacity||!Number.isSafeInteger(r.sheets)||r.sheets<1){showToast('ตรวจชนิดกระจก ขนาดแผ่น และจำนวนชิ้นให้ครบก่อน');return;}
+      }
+      const byStock=new Map();for(const r of entries)byStock.set(r.itemId,(byStock.get(r.itemId)||0)+r.sheets);
+      const existing=whPlan();
+      // Only use non-glass automatic materials if every other recipe warning is resolved.
+      const auto=whAutoDetect(job);
+      const otherWarnings=auto.flatMap(m=>m.warnings.filter(w=>!w.startsWith('กระจก ')&&!/ยังไม่พบแผ่นสต๊อก/.test(w)));
+      const nonGlass=existing?(existing.lines||[]).filter(l=>whItems.find(i=>i.id===l.itemId)?.category!=='GL'):(otherWarnings.length?[]:auto.flatMap(m=>m.lines).filter(l=>whItems.find(i=>i.id===l.itemId)?.category!=='GL'));
+      if(!existing&&otherWarnings.length){showToast('มีสูตรวัสดุอื่นที่ยังตรวจไม่ผ่าน กรุณาแก้ให้ครบก่อนบันทึกแผน: '+otherWarnings[0]);return;}
+      const total=new Map();for(const l of nonGlass)total.set(l.itemId,(total.get(l.itemId)||0)+Number(l.qty));for(const [id,qty] of byStock)total.set(id,(total.get(id)||0)+qty);
+      const now=new Date().toISOString(),id=encodeURIComponent(whSelected),signature=whGlassSignature(job);
+      if(!confirm('บันทึกแผนตัดกระจกที่ช่างตรวจแล้วสำหรับ '+whSelected+'? ยังไม่หักสต๊อก และต้องกดเบิกอีกครั้ง'))return;
+      whBusy=true;
+      try{
+        await runTransaction(db,async tx=>{
+          const ref=cloudPath('warehouseJobPlans',id),snap=await tx.get(ref);
+          if(snap.exists()&&['issued','producing'].includes(snap.data().status))throw Error('งานนี้เบิกไปแล้ว');
+          if(snap.exists()&&existing&&JSON.stringify(snap.data().lines||[])!==JSON.stringify(existing.lines||[]))throw Error('แผนถูกแก้จากอุปกรณ์อื่น กรุณาเปิดใหม่');
+          const fields={docNo:whSelected,lines:[...total].map(([itemId,qty])=>({itemId,qty})),glassCutPlan:{signature,entries:entries.map(({stock,capacity,...r})=>r),confirmedAt:now,confirmedBy:userId},status:snap.exists()?snap.data().status||'planned':'planned',updatedAt:now,updatedBy:userId};
+          if(snap.exists())tx.update(ref,fields);else tx.set(ref,fields);
+        });
+        whClose();showToast('ยืนยันแผนตัดแล้ว · ตรวจสต๊อกก่อนกดเบิก');whRender();
+      }catch(err){cloudError('Save glass cutting plan',err);showToast(err.message||'บันทึกไม่สำเร็จ');}finally{whBusy=false;}
+    }
     function whAutoJobHtml(job,plan){
       if(!job)return '';
       const summary=whAutoSummary(job),items=whInvoiceItems(job);
       const detail=items.map((it,index)=>`<div style="padding:9px 0;border-bottom:1px solid #e2e8f0"><b>${index+1}. ${whEsc(it.name||'ไม่ระบุรายการ')}</b><div class="wh-sub">${whEsc(it.type==='alu'?'งานกระจก/อะลูมิเนียม':'งานทั่วไป')} · ${whEsc(it.aluColor&&it.aluColor!=='-'?'สี '+it.aluColor+' · ':'')}${Number(it.width)>0&&Number(it.height)>0?whQtyText(it.width*100)+' × '+whQtyText(it.height*100)+' ซม. · ':''}${whQtyText(it.qty||0)} ${whEsc(it.unit||'ชุด')}${whBillSystem(it)?' · ชุด '+whEsc(whBillSystem(it)):''}${whBillGlass(it)?' · กระจก '+whEsc(whBillGlass(it)):''}</div></div>`).join('');
-      const checks=summary.matches.map(m=>`<div style="padding:8px 0;border-bottom:1px solid #e2e8f0"><b>${whEsc(m.name)}</b> ${m.warnings.length?'<span style="color:#b91c1c;font-weight:700">⚠ ต้องตรวจสอบ</span>':'<span style="color:#15803d;font-weight:700">✓ จับคู่สูตรแล้ว</span>'}<div class="wh-sub">${m.recipe?'สูตร: '+whEsc(m.recipe.name)+' · ':''}${whQtyText(m.w)} × ${whQtyText(m.h)} ซม. · ${whQtyText(m.sets)} ชุด</div>${m.warnings.length?`<div style="color:#b91c1c;font-size:12px">${m.warnings.map(whEsc).join(' · ')}</div>`:''}</div>`).join('');
-      return `<div style="border:1px solid #bfdbfe;border-radius:13px;padding:12px;background:#f8fbff"><b>📄 รายละเอียดจากบิล ${whEsc(job.docNo)}</b><div class="wh-sub">${whEsc(job.customerName||job.custName||'')} · ${whEsc(job.project||'')} · ${items.length} รายการ</div><details style="margin:9px 0"><summary style="cursor:pointer;color:#075985;font-weight:700">ดูรายการสินค้าและขนาดทั้งหมดในบิล</summary>${detail||'<p class="wh-sub">ไม่พบรายการสินค้าในข้อมูลบิล</p>'}</details>${summary.matches.length?`<b>🧮 ตรวจจับสูตรผลิตอัตโนมัติ</b>${checks}`:'<p class="wh-sub" style="margin-top:8px">ไม่พบรายการงานกระจก/อะลูมิเนียมที่มีข้อมูลสำหรับจับคู่สูตร · งานประเภทอื่นใช้ปุ่มกำหนดวัสดุของงานได้</p>'}${summary.blocked.length?`<div class="wh-notice">⚠ มี ${summary.blocked.length} รายการที่ต้องตรวจสอบก่อนสร้างแผนวัสดุ ไม่เลือกสูตรแทนช่างโดยการเดา</div>`:''}${summary.valid.length&&!plan?`<p class="wh-sub" style="margin-top:10px">ตารางด้านล่างเป็นการคำนวณอัตโนมัติจากบิล ยังไม่บันทึกแผนหรือเบิกสต็อก</p><button class="wh-btn primary" style="margin-top:8px" ${summary.blocked.length?'disabled title="ตรวจสอบรายการที่จับคู่ไม่ได้ก่อน"':''} onclick="whSaveAutoJobPlan()">✓ ยืนยันแผนวัสดุจากบิลนี้</button>`:''}${plan?'<p class="wh-sub" style="margin-top:8px">มีแผนวัสดุที่บันทึกไว้แล้ว ระบบแสดงแผนเดิมเพื่อป้องกันการเปลี่ยนยอดเบิกโดยไม่ตั้งใจ</p>':''}</div>`;
+      const checks=summary.matches.map(m=>`<div style="padding:8px 0;border-bottom:1px solid #e2e8f0"><b>${whEsc(m.name)}</b> ${m.warnings.length?'<span style="color:#b91c1c;font-weight:700">⚠ ต้องตรวจสอบ</span>':'<span style="color:#15803d;font-weight:700">✓ จับคู่สูตรแล้ว</span>'}<div class="wh-sub">${m.recipe?'สูตร: '+whEsc(m.recipe.name)+' · ':''}${whQtyText(m.w)} × ${whQtyText(m.h)} ซม. · ${whQtyText(m.sets)} ชุด</div>${m.warnings.length?`<div style="color:#b91c1c;font-size:12px">${m.warnings.map(whEsc).join(' · ')}</div>`:''}${whBillGlass(m.it)&&m.warnings.some(x=>/ไม่พบในทะเบียน|ยังไม่พบแผ่นสต๊อก|ไม่พบวัสดุ/.test(x))?`<button class="wh-btn primary" style="margin-top:8px" onclick="whRegisterGlassFromBill(${m.index})">＋ เพิ่มกระจก ${whEsc(whBillGlass(m.it))} จากบิลลงทะเบียน</button><div class="wh-sub">สร้างทะเบียนก่อน (ยอด 0) → จัดซื้อ → รับเข้าคลัง → ตรวจแผนตัดกับช่างก่อนเบิก</div>`:''}</div>`).join('');
+      return `<div style="border:1px solid #bfdbfe;border-radius:13px;padding:12px;background:#f8fbff"><b>📄 รายละเอียดจากบิล ${whEsc(job.docNo)}</b><div class="wh-sub">${whEsc(job.customerName||job.custName||'')} · ${whEsc(job.project||'')} · ${items.length} รายการ</div><details style="margin:9px 0"><summary style="cursor:pointer;color:#075985;font-weight:700">ดูรายการสินค้าและขนาดทั้งหมดในบิล</summary>${detail||'<p class="wh-sub">ไม่พบรายการสินค้าในข้อมูลบิล</p>'}</details>${whGlassNeeds(job).length?`<button class="wh-btn primary" style="margin:10px 0" onclick="whOpenGlassCutPlan()">🪟 ตรวจและยืนยันแผนตัดกระจก ${plan?.glassCutPlan?.signature===whGlassSignature(job)?'✓ ยืนยันแล้ว':'(รอยืนยัน)'}</button>`:''}${summary.matches.length?`<b>🧮 ตรวจจับสูตรผลิตอัตโนมัติ</b>${checks}`:'<p class="wh-sub" style="margin-top:8px">ไม่พบรายการงานกระจก/อะลูมิเนียมที่มีข้อมูลสำหรับจับคู่สูตร · งานประเภทอื่นใช้ปุ่มกำหนดวัสดุของงานได้</p>'}${summary.blocked.length?`<div class="wh-notice">⚠ มี ${summary.blocked.length} รายการที่ต้องตรวจสอบก่อนสร้างแผนวัสดุ ไม่เลือกสูตรแทนช่างโดยการเดา</div>`:''}${summary.valid.length&&!plan?`<p class="wh-sub" style="margin-top:10px">ตารางด้านล่างเป็นการคำนวณอัตโนมัติจากบิล ยังไม่บันทึกแผนหรือเบิกสต็อก</p><button class="wh-btn primary" style="margin-top:8px" ${summary.blocked.length?'disabled title="ตรวจสอบรายการที่จับคู่ไม่ได้ก่อน"':''} onclick="whSaveAutoJobPlan()">✓ ยืนยันแผนวัสดุจากบิลนี้</button>`:''}${plan?'<p class="wh-sub" style="margin-top:8px">มีแผนวัสดุที่บันทึกไว้แล้ว ระบบแสดงแผนเดิมเพื่อป้องกันการเปลี่ยนยอดเบิกโดยไม่ตั้งใจ</p>':''}</div>`;
     }
     async function whSaveAutoJobPlan(){
       if(!whSelected||!whCanWrite())return;
@@ -4055,7 +4189,7 @@
       document.getElementById('wh-summary').textContent=total?`จาก ${total} รายการ`:whSelected?'งานนี้ยังไม่มีแผนวัสดุ':'ภาพรวมคลังสินค้า · เลือกงานเพื่อดูความพร้อมผลิต';
       document.getElementById('wh-status').textContent=total?`พอใช้ ${good} รายการ · ขาด ${bad} รายการ${plan?.status?' · '+({ordered:'สั่งซื้อแล้ว',issued:'เบิกแล้ว',producing:'กำลังผลิต'}[plan.status]||''):''}`:`คลังมี ${whItems.length} ทะเบียน · ใกล้หมด ${whItems.filter(i=>whNum(i.qty)>0&&whNum(i.qty)<=whNum(i.minQty)).length} · หมด ${whItems.filter(i=>whNum(i.qty)===0).length} (กดกล่องด้านบนเพื่อดูรายชื่อ)`;
       const alert=document.getElementById('wh-alert');alert.style.display=bad?'block':'none';alert.textContent=bad?`⚠️ วัสดุไม่เพียงพอ ${bad} รายการ · ดูตัวเลขสีแดงและจำนวนที่ขาดในตาราง · ต้องรับของเข้าคลังให้ครบก่อนเบิก`:'';
-      const buttons=document.querySelectorAll('#tab-warehouse .wh-actions button');buttons[0].disabled=!plan||!bad||['issued','producing'].includes(plan.status);buttons[1].disabled=!whItems.length;buttons[2].disabled=!total||!!bad||['issued','producing'].includes(plan?.status);buttons[3].disabled=plan?.status!=='issued';
+      const buttons=document.querySelectorAll('#tab-warehouse .wh-actions button');buttons[0].disabled=!plan||!bad||['issued','producing'].includes(plan.status);buttons[1].disabled=!whItems.length;buttons[2].disabled=!total||!!bad||['issued','producing'].includes(plan?.status)||(job&&whGlassNeeds(job).length>0&&plan?.glassCutPlan?.signature!==whGlassSignature(job));buttons[3].disabled=plan?.status!=='issued';
       document.querySelectorAll('#tab-warehouse .wh-step').forEach((el,i)=>el.classList.toggle('on',i===(plan?.status==='producing'?4:plan?.status==='issued'?4:bad&&plan?.status==='ordered'?2:bad?1:total?3:0)));
     }
     // V11.6: read-only procurement workbench. Only saved, unissued plans are counted.
@@ -4242,11 +4376,11 @@
     function whSearchPlanMaterial(input){const row=input.closest('.wh-plan-line'),target=row?.querySelector('.wh-plan-results');if(!target)return;const q=input.value.trim().toLocaleLowerCase();const matches=whItems.filter(i=>!whIsShared(i)&&whSearchText(i).includes(q)).slice(0,40);target.style.display='block';target.innerHTML=matches.map(i=>`<button type="button" class="wh-btn" style="display:block;width:100%;text-align:left;white-space:normal;margin:3px 0" onclick="whPickPlanMaterial(this,'${whEsc(i.id)}')">${whEsc(i.registerNo||'')} · ${whEsc(i.name)} · ${whEsc(i.color||'')} · ${whEsc(i.unit||'')}</button>`).join('')||'<p class="wh-sub">ไม่พบวัสดุ</p>';}
     function whPickPlanMaterial(btn,id){const row=btn.closest('.wh-plan-line'),item=whItems.find(i=>i.id===id);if(!row||!item)return;row.querySelector('.wh-line-item').value=id;row.querySelector('.wh-plan-search').value=[item.registerNo,item.name,item.color||'',item.unit].filter(Boolean).join(' · ');row.querySelector('.wh-plan-results').style.display='none';}
     function whAddLine(){document.getElementById('wh-edit-lines').insertAdjacentHTML('beforeend',whLineHtml('',{}));}
-    async function whSavePlan(){if(!whCanWrite())return;const rows=[...document.querySelectorAll('#wh-edit-lines .wh-plan-line')];const lines=rows.map(r=>({itemId:r.querySelector('.wh-line-item').value,qty:Number(r.querySelector('.wh-line-qty').value)}));if(lines.some(l=>!l.itemId||!Number.isFinite(l.qty)||l.qty<=0)){showToast('กรุณากรอกจำนวนให้ถูกต้อง');return;}const combined=new Map();for(const l of lines)combined.set(l.itemId,(combined.get(l.itemId)||0)+l.qty);const existing=whPlan();if(['issued','producing'].includes(existing?.status)){showToast('งานนี้เบิกแล้ว ไม่สามารถแก้แผนย้อนหลัง');return;}try{await setDoc(cloudPath('warehouseJobPlans',encodeURIComponent(whSelected)),{docNo:whSelected,lines:[...combined].map(([itemId,qty])=>({itemId,qty})),status:'planned',...(existing?.widthCm?{widthCm:existing.widthCm,heightCm:existing.heightCm,sets:existing.sets,recipeId:existing.recipeId||'',recipeName:existing.recipeName||''}:{}),updatedAt:new Date().toISOString(),updatedBy:userId});whClose();showToast('บันทึกแผนวัสดุแล้ว');}catch(err){cloudError('Save plan',err)}}
+    async function whSavePlan(){if(!whCanWrite())return;const rows=[...document.querySelectorAll('#wh-edit-lines .wh-plan-line')];const lines=rows.map(r=>({itemId:r.querySelector('.wh-line-item').value,qty:Number(r.querySelector('.wh-line-qty').value)}));if(lines.some(l=>!l.itemId||!Number.isFinite(l.qty)||l.qty<=0)){showToast('กรุณากรอกจำนวนให้ถูกต้อง');return;}const combined=new Map();for(const l of lines)combined.set(l.itemId,(combined.get(l.itemId)||0)+l.qty);const existing=whPlan();if(['issued','producing'].includes(existing?.status)){showToast('งานนี้เบิกแล้ว ไม่สามารถแก้แผนย้อนหลัง');return;}try{await setDoc(cloudPath('warehouseJobPlans',encodeURIComponent(whSelected)),{docNo:whSelected,lines:[...combined].map(([itemId,qty])=>({itemId,qty})),status:'planned',glassCutPlan:null,...(existing?.widthCm?{widthCm:existing.widthCm,heightCm:existing.heightCm,sets:existing.sets,recipeId:existing.recipeId||'',recipeName:existing.recipeName||''}:{}),updatedAt:new Date().toISOString(),updatedBy:userId});whClose();showToast('บันทึกแผนวัสดุแล้ว');}catch(err){cloudError('Save plan',err)}}
     async function whOrder(){const p=whPlan();if(!p||!whCanWrite())return;try{await updateDoc(cloudPath('warehouseJobPlans',p.id),{status:'ordered',orderedAt:new Date().toISOString(),updatedBy:userId});showToast('บันทึกสถานะรอจัดซื้อแล้ว — ยังไม่เพิ่มสต็อก');}catch(e){cloudError('Order materials',e)}}
     function whReceive(){if(!whCanWrite())return;const opts=whItems.map(i=>`<option value="${whEsc(i.id)}">${whEsc(i.name)} (${whEsc(i.unit)}) — คงเหลือ ${whNum(i.qty)}</option>`).join('');whOpen('รับวัสดุเข้าคลัง',`<form onsubmit="whSaveReceive(event)" class="wh-form-grid"><label>วัสดุ<select class="wh-input" name="itemId" required>${opts}</select></label><label>จำนวนรับจริง<input class="wh-input" name="qty" type="number" min="0.001" step="any" required></label><label style="grid-column:1/-1">หมายเหตุ / เลขใบซื้อ<input class="wh-input" name="note" placeholder="เช่น รับจากร้านค้า"></label><button class="wh-btn primary">ยืนยันรับเข้าและเพิ่มสต็อก</button></form>`);}
     async function whSaveReceive(e){e.preventDefault();if(!whCanWrite()||whBusy)return;const f=new FormData(e.target),id=String(f.get('itemId')),qty=Number(f.get('qty'));if(!(qty>0&&Number.isFinite(qty)))return;whBusy=true;try{const moveId=whId();await runTransaction(db,async tx=>{const ref=cloudPath('warehouseMaterials',id),snap=await tx.get(ref);if(!snap.exists())throw Error('ไม่พบวัสดุ');tx.update(ref,{qty:whNum(snap.data().qty)+qty});tx.set(cloudPath('warehouseMovements',moveId),{type:'receive',itemId:id,qty,docNo:whSelected||'',note:String(f.get('note')||''),createdAt:new Date().toISOString(),createdBy:userId});});whClose();showToast('รับเข้าและอัปเดตสต็อกแล้ว');}catch(err){cloudError('Receive material',err)}finally{whBusy=false;}}
-    async function whIssue(){const p=whPlan();if(!p||!whCanWrite()||whBusy)return;if(!confirm('ยืนยันเบิกวัสดุสำหรับงาน '+whSelected+'? ระบบจะหักสต็อกจริง'))return;whBusy=true;try{const movementId=whId();await runTransaction(db,async tx=>{const planRef=cloudPath('warehouseJobPlans',p.id),planSnap=await tx.get(planRef);if(!planSnap.exists()||['issued','producing'].includes(planSnap.data().status))throw Error('งานนี้ถูกเบิกไปแล้ว');const lines=planSnap.data().lines||[],reads=[];for(const l of lines){const ref=cloudPath('warehouseMaterials',l.itemId);reads.push({l,ref,snap:await tx.get(ref)});}for(const r of reads){if(!r.snap.exists()||whNum(r.snap.data().qty)<whNum(r.l.qty))throw Error('วัสดุไม่ครบ กรุณาตรวจสต็อกใหม่');}for(const r of reads)tx.update(r.ref,{qty:whNum(r.snap.data().qty)-whNum(r.l.qty)});tx.update(planRef,{status:'issued',issuedAt:new Date().toISOString(),issuedBy:userId});tx.set(cloudPath('warehouseMovements',movementId),{type:'issue',docNo:whSelected,lines,createdAt:new Date().toISOString(),createdBy:userId});});showToast('เบิกวัสดุครบงานแล้ว');}catch(err){cloudError('Issue materials',err);showToast(err.message)}finally{whBusy=false;}}
+    async function whIssue(){const p=whPlan();if(!p||!whCanWrite()||whBusy)return;const job=whDoc();if(job&&whGlassNeeds(job).length&&p.glassCutPlan?.signature!==whGlassSignature(job)){showToast('ต้องให้ช่างยืนยันแผนตัดกระจกก่อนเบิก');return;}if(!confirm('ยืนยันเบิกวัสดุสำหรับงาน '+whSelected+'? ระบบจะหักสต็อกจริง'))return;whBusy=true;try{const movementId=whId();await runTransaction(db,async tx=>{const planRef=cloudPath('warehouseJobPlans',p.id),planSnap=await tx.get(planRef);if(!planSnap.exists()||['issued','producing'].includes(planSnap.data().status))throw Error('งานนี้ถูกเบิกไปแล้ว');if(job&&whGlassNeeds(job).length&&planSnap.data().glassCutPlan?.signature!==whGlassSignature(job))throw Error('แผนตัดกระจกยังไม่ได้รับการยืนยันหรือบิลเปลี่ยน');const lines=planSnap.data().lines||[],reads=[];for(const l of lines){const ref=cloudPath('warehouseMaterials',l.itemId);reads.push({l,ref,snap:await tx.get(ref)});}for(const r of reads){if(!r.snap.exists()||whNum(r.snap.data().qty)<whNum(r.l.qty))throw Error('วัสดุไม่ครบ กรุณาตรวจสต็อกใหม่');}for(const r of reads)tx.update(r.ref,{qty:whNum(r.snap.data().qty)-whNum(r.l.qty)});tx.update(planRef,{status:'issued',issuedAt:new Date().toISOString(),issuedBy:userId});tx.set(cloudPath('warehouseMovements',movementId),{type:'issue',docNo:whSelected,lines,createdAt:new Date().toISOString(),createdBy:userId});});showToast('เบิกวัสดุครบงานแล้ว');}catch(err){cloudError('Issue materials',err);showToast(err.message)}finally{whBusy=false;}}
     async function whStartProduction(){const p=whPlan();if(!p||p.status!=='issued'||!whCanWrite())return;try{await updateDoc(cloudPath('warehouseJobPlans',p.id),{status:'producing',productionAt:new Date().toISOString(),productionBy:userId});showToast('อัปเดตสถานะงานเป็นกำลังผลิตแล้ว');}catch(e){cloudError('Start production',e)}}
     function whShowInventoryCategory(kind='all'){
       if(kind==='ordered'){
@@ -4423,7 +4557,7 @@
     window.whOpenComponents=whOpenComponents;window.whEditComponent=whEditComponent;window.whSaveComponent=whSaveComponent;
     window.whOpenRecipes=whOpenRecipes;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whRecipeUpdateLine=whRecipeUpdateLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
     window.whSharedIssueUnit=whSharedIssueUnit;window.whToggleSharedMode=whToggleSharedMode;window.whOpenSharedBoxes=whOpenSharedBoxes;window.whOpenSharedIssue=whOpenSharedIssue;window.whSaveSharedIssue=whSaveSharedIssue;window.whReportSharedEmpty=whReportSharedEmpty;window.whAcknowledgeSharedAlert=whAcknowledgeSharedAlert;
-    window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
+    window.whOpenGlassCutPlan=whOpenGlassCutPlan;window.whGlassRecalculate=whGlassRecalculate;window.whSaveGlassCutPlan=whSaveGlassCutPlan;window.whRegisterGlassFromBill=whRegisterGlassFromBill;window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
 
     window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
