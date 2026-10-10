@@ -3973,11 +3973,18 @@
       for(const l of r.lines||[]){
         const item=whItems.find(i=>i.id===l.itemId);
         if(whIsShared(item))continue;
+        // Legacy width/height modes produce metres, not physical stock bars.
+        // Never silently treat 1.2 metres as 1.2 bars. Require explicit cut rules.
+        if(['width','height','perimeter'].includes(l.mode) && /เส้น|แท่ง|ท่อน/.test(String(item?.unit||''))){
+          warnings.push((item?.name||'วัสดุ')+' : สูตรเดิมคิดเป็นเมตร ไม่ใช่จำนวนเส้น กรุณาแก้สูตรเป็น ตัดตามความกว้าง/สูง และระบุจำนวนท่อน');
+          continue;
+        }
         if(l.mode.startsWith('cut_')){
           const len=({cut_width:w,cut_height:h,cut_half_width:w/2,cut_custom:w*whNum(l.a??1)+h*whNum(l.b??0)})[l.mode]+whNum(l.offsetCm);
           const stock=whNum(l.stockLengthCm||item?.stockLengthCm||640),kerf=whNum(l.kerfCm);
           const pieces=Math.round(l.factor)*sets;
           if(!(len>0&&stock>0)||len+kerf>stock){warnings.push((item?.name||'วัสดุ')+' : ขนาดตัดไม่ถูกต้องหรือยาวเกินเส้น');continue;}
+          if(l.waste>0)warnings.push((item?.name||'วัสดุ')+' : วัสดุตัดเป็นท่อนมีค่าเผื่อสูญเสีย กรุณาตรวจสอบและเพิ่มท่อนสำรองเอง');
           if(!cuts.has(l.itemId))cuts.set(l.itemId,{itemId:l.itemId,stockLengthCm:stock,pieces:[],kerfCm:kerf});
           const c=cuts.get(l.itemId);
           if(c.stockLengthCm!==stock||c.kerfCm!==kerf){warnings.push((item?.name||'วัสดุ')+' : ความยาวเส้นหรือใบเลื่อยในสูตรไม่ตรงกัน');continue;}
@@ -4012,8 +4019,8 @@
       if(!r||!(w>0&&h>0&&Number.isInteger(sets)&&sets>0)){showToast('กรอกขนาดและจำนวนชุดให้ถูกต้อง');return;}
       const result=whRecipeDetailed(r,w,h,sets);
       const table=result.lines.map(l=>{const i=whItems.find(x=>x.id===l.itemId);return `<tr><td>${whEsc(i?.name||'วัสดุที่ถูกลบ')}</td><td>${l.qty} ${whEsc(i?.unit||'')}</td><td>${whNum(i?.qty)}</td></tr>`}).join('');
-      const detail=result.cutDetails.map(c=>{const i=whItems.find(x=>x.id===c.itemId);return `<div style="padding:9px;border-bottom:1px solid #e2e8f0"><b>${whEsc(i?.name||'วัสดุ')}</b> · ${c.bars.length} เส้น × ${c.stockLengthCm} ซม. <div class="wh-sub">${c.bars.map((bar,n)=>`เส้น ${n+1}: ตัด ${bar.pieces.map(x=>Number(x.toFixed(2))+' ซม.').join(' + ')} · เศษ ${Number((c.stockLengthCm-bar.used).toFixed(2))} ซม.`).join('<br>')}</div></div>`}).join('');
-      document.getElementById('wh-r-preview').innerHTML=`${result.warnings.length?`<div class="wh-notice">${result.warnings.map(whEsc).join('<br>')}</div>`:''}<table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th></tr></thead><tbody>${table}</tbody></table>${detail?`<h4 style="font-weight:700;margin-top:14px">แผนตัดอะลูมิเนียมแยกตามวัสดุ</h4>${detail}`:''}<p class="wh-sub" style="margin:10px 0">จัดตัดแบบประมาณการ First Fit Decreasing · ไม่รวมเศษเก่าจากคลัง · ตรวจหน้างานก่อนเบิกจริง</p><button class="wh-btn primary" ${!whSelected||result.warnings.length?'disabled':''} onclick="whApplyRecipe('${whEsc(id)}')">นำสูตรไปกำหนดวัสดุให้งาน ${whEsc(whSelected||'(เลือกงานก่อน)')}</button>`;
+      const detail=result.cutDetails.map(c=>{const i=whItems.find(x=>x.id===c.itemId);return `<div style="padding:9px;border-bottom:1px solid #e2e8f0"><b>${whEsc(i?.name||'วัสดุ')}</b> · ตัด ${c.pieces.length} ท่อน · เบิก ${c.bars.length} เส้น × ${c.stockLengthCm} ซม. <div class="wh-sub">${c.bars.map((bar,n)=>`เส้น ${n+1}: ตัด ${bar.pieces.map(x=>Number(x.toFixed(2))+' ซม.').join(' + ')} · เศษ ${Number((c.stockLengthCm-bar.used).toFixed(2))} ซม.`).join('<br>')}</div></div>`}).join('');
+      document.getElementById('wh-r-preview').innerHTML=`${result.warnings.length?`<div class="wh-notice">${result.warnings.map(whEsc).join('<br>')}</div>`:''}<table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th></tr></thead><tbody>${table}</tbody></table>${detail?`<h4 style="font-weight:700;margin-top:14px">รายการตัด (ท่อน) และจำนวนเส้นที่เบิกจริง</h4>${detail}`:''}<p class="wh-sub" style="margin:10px 0">จัดตัดแบบประมาณการ First Fit Decreasing · ไม่รวมเศษเก่าจากคลัง · ตรวจหน้างานก่อนเบิกจริง</p><button class="wh-btn primary" ${!whSelected||result.warnings.length?'disabled':''} onclick="whApplyRecipe('${whEsc(id)}')">นำสูตรไปกำหนดวัสดุให้งาน ${whEsc(whSelected||'(เลือกงานก่อน)')}</button>`;
     }
     async function whApplyRecipe(id){
       const r=whRecipes.find(x=>x.id===id),w=Number(document.getElementById('wh-r-width')?.value),h=Number(document.getElementById('wh-r-height')?.value),sets=Number(document.getElementById('wh-r-sets')?.value);
