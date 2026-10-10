@@ -4485,7 +4485,7 @@
       const p=whPlans.find(x=>x.docNo===no);
       if(!p)throw Error('ไม่พบแผนงาน');
       if(p.status!=='completed')throw Error('งานยังผลิตไม่เสร็จ');
-      const d=p.delivery||{}, job=whDocs.find(x=>x.docNo===no)||{};
+      const d=p.delivery||{}, job=(Array.isArray(state.history)?state.history:[]).find(x=>x.docNo===no)||{};
       const e=whEsc,fmt=v=>v?whDeliveryDate(v):'—';
       const isAcceptance=kind==='acceptance';
       const title=isAcceptance?'ใบตรวจรับงาน':'ใบส่งมอบงาน (แนบท้ายใบส่งของ)';
@@ -4559,8 +4559,30 @@
        ${state==='delivered'?'<p class="wh-enough-summary">✓ ส่งมอบสำเร็จแล้ว ข้อมูลการส่งมอบถูกเก็บในแผนงาน</p>':''}`}
        </div>
        <div style="border-top:1px solid #dbeafe;padding-top:12px"><b>📄 เอกสารตรวจรับและส่งมอบ (ใช้คู่กับใบส่งของเดิม)</b><p class="wh-sub">พิมพ์เอกสารให้ลูกค้าลงชื่อได้ โดยไม่เปลี่ยนสถานะงานและไม่หักสต็อก</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px"><button class="wh-btn primary" onclick="whDownloadHandoverPdf('${esc(p.docNo)}','handover')">⬇️ PDF ใบส่งมอบ</button><button class="wh-btn" onclick="whDownloadHandoverPdf('${esc(p.docNo)}','acceptance')">⬇️ PDF ใบตรวจรับ</button><button class="wh-btn" onclick="whPrintHandover('${esc(p.docNo)}','handover')">🖨️ พิมพ์ใบส่งมอบ</button><button class="wh-btn" onclick="whPrintHandover('${esc(p.docNo)}','acceptance')">🖨️ พิมพ์ใบตรวจรับ</button></div></div>
-       <button class="wh-btn" onclick="whClose();whSelect('${esc(p.docNo)}')">📦 ดูรายการวัสดุในคลัง</button>
+       <button class="wh-btn" onclick="whOpenJobMaterials('${esc(p.docNo)}')">📋 ดูวัสดุที่ใช้ในงานนี้</button>
       </div>`);
+    }
+    // V11.16.2: show the selected job's saved material plan, not the whole inventory.
+    // Read-only: never issue, deduct, or modify stock here.
+    function whOpenJobMaterials(no){
+      const p=whPlans.find(x=>x.docNo===no);
+      if(!p){showToast('ไม่พบแผนวัสดุของงานนี้');return;}
+      const lines=Array.isArray(p.lines)?p.lines:[];
+      const issued=['issued','producing','completed'].includes(p.status);
+      const rows=lines.map((l,i)=>{
+        const item=whItems.find(x=>x.id===l.itemId);
+        const name=item?whFullMaterialName(item):(l.name||'วัสดุที่ไม่พบในทะเบียน');
+        const code=item?.registerNo||item?.code||l.code||'—';
+        const unit=item?.unit||l.unit||'ชิ้น';
+        const qty=whNum(l.qty);
+        const remain=item?whQtyText(whNum(item.qty))+' '+whEsc(unit):'ไม่พบทะเบียน';
+        const status=issued?'✓ เบิกแล้ว':item&&whNum(item.qty)>=qty?'✓ เพียงพอ':'⚠ ตรวจสต็อก';
+        return `<tr><td>${i+1}</td><td><b>${whEsc(name)}</b><div class="wh-sub">${whEsc(code)}</div></td><td>${whQtyText(qty)} ${whEsc(unit)}</td><td>${remain}</td><td>${status}</td></tr>`;
+      }).join('');
+      whOpen('📋 วัสดุที่ใช้ในงาน · '+whEsc(no),`
+        <p class="wh-sub" style="margin-bottom:10px">แสดงเฉพาะวัสดุจากแผนของงานนี้ ${lines.length} รายการ · ${issued?'เบิกวัสดุแล้ว':'ยังไม่เบิกครบ'} · เป็นการดูข้อมูลเท่านั้น ไม่ตัดสต็อกซ้ำ</p>
+        <div style="overflow-x:auto"><table class="wh-table" style="min-width:560px"><thead><tr><th>ลำดับ</th><th>รหัส / ชื่อวัสดุ</th><th>ใช้ในงาน</th><th>คงเหลือในคลัง</th><th>สถานะ</th></tr></thead><tbody>${rows||'<tr><td colspan="5">งานนี้ยังไม่มีแผนวัสดุที่บันทึกไว้</td></tr>'}</tbody></table></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px"><button class="wh-btn" onclick="whOpenJobDetails('${whEsc(no)}')">← กลับรายละเอียดงาน</button><button class="wh-btn primary" onclick="whPrintSheet('materials')">🖨️ พิมพ์ใบรายการวัสดุ</button></div>`);
     }
     async function whSaveDelivery(no,markDelivered){
       const p=whPlans.find(x=>x.docNo===no);if(!p||p.status!=='completed'||!whCanWrite()){showToast('ไม่มีสิทธิ์หรือยังผลิตไม่เสร็จ');return;}
@@ -4763,7 +4785,7 @@
     window.whOpenComponents=whOpenComponents;window.whEditComponent=whEditComponent;window.whSaveComponent=whSaveComponent;
     window.whOpenRecipes=whOpenRecipes;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whRecipeUpdateLine=whRecipeUpdateLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
     window.whSharedIssueUnit=whSharedIssueUnit;window.whToggleSharedMode=whToggleSharedMode;window.whOpenSharedBoxes=whOpenSharedBoxes;window.whOpenSharedIssue=whOpenSharedIssue;window.whSaveSharedIssue=whSaveSharedIssue;window.whReportSharedEmpty=whReportSharedEmpty;window.whAcknowledgeSharedAlert=whAcknowledgeSharedAlert;
-    window.whPrintSheet=whPrintSheet;window.whDownloadSheetPdf=whDownloadSheetPdf;window.whOpenProductionDashboard=whOpenProductionDashboard;window.whOpenJobDetails=whOpenJobDetails;window.whSaveDelivery=whSaveDelivery;window.whDownloadHandoverPdf=whDownloadHandoverPdf;window.whPrintHandover=whPrintHandover;window.whOpenProductionProgress=whOpenProductionProgress;window.whSaveProductionProgress=whSaveProductionProgress;
+    window.whPrintSheet=whPrintSheet;window.whDownloadSheetPdf=whDownloadSheetPdf;window.whOpenProductionDashboard=whOpenProductionDashboard;window.whOpenJobDetails=whOpenJobDetails;window.whOpenJobMaterials=whOpenJobMaterials;window.whSaveDelivery=whSaveDelivery;window.whDownloadHandoverPdf=whDownloadHandoverPdf;window.whPrintHandover=whPrintHandover;window.whOpenProductionProgress=whOpenProductionProgress;window.whSaveProductionProgress=whSaveProductionProgress;
     window.whOpenGlassCutPlan=whOpenGlassCutPlan;window.whGlassRecalculate=whGlassRecalculate;window.whSaveGlassCutPlan=whSaveGlassCutPlan;window.whRegisterGlassFromBill=whRegisterGlassFromBill;window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceiveSearch=whReceiveSearch;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
 
     window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
