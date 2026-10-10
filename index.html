@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sumran Aluminum V45 - Inventory Workspace</title>
+  <title>Sumran Aluminum V46 - Reference Inventory Dashboard</title>
   <meta name="theme-color" content="#075985">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -5513,97 +5513,42 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
-<style id="v45-new-inventory-design">
-/* V45: new operational workspace; scoped entirely to inventory */
-#tab-inventory #v38-sidebar,#tab-inventory #v38-topbar,#tab-inventory #v38-shortcuts,#tab-inventory #v44-intro{display:none!important}
-#tab-inventory #v38-shell{display:block!important;max-width:1500px;margin:auto}
-#tab-inventory #v38-main{width:100%}
-#v45-app{--ink:#172b40;--blue:#1559aa;--line:#e0e8f0;color:var(--ink);font-family:Prompt,Sarabun,sans-serif}
-#v45-app .v45-top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 2px 22px;border-bottom:1px solid var(--line);margin-bottom:20px}
-#v45-app .v45-top h2{font-size:clamp(22px,2.7vw,30px);font-weight:800;letter-spacing:-.04em}
-#v45-app .v45-top p{font-size:12px;color:#64748b;margin-top:4px}
-#v45-app .v45-status{display:inline-flex;align-items:center;gap:7px;color:#087f65;font-weight:700;font-size:12px;background:#e7f8f2;padding:9px 13px;border-radius:50px;white-space:nowrap}
-#v45-app .v45-layout{display:grid;grid-template-columns:215px minmax(0,1fr) 255px;gap:18px;align-items:start}
-#v45-app .v45-rail{background:#fff;border:1px solid var(--line);border-radius:15px;padding:11px;position:sticky;top:110px}
-#v45-app .v45-rail h3{font-size:11px;color:#8794a5;font-weight:700;padding:12px 10px;letter-spacing:.08em}
-#v45-app .v45-nav{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 11px;border:0;border-radius:10px;background:transparent;color:#3d5066;font-weight:700;font-size:13px;margin-bottom:3px}
-#v45-app .v45-nav svg{width:19px;height:19px;flex-shrink:0}
-#v45-app .v45-nav:hover{background:#f1f6fd}#v45-app .v45-nav[aria-current=page]{background:#e8f1fc;color:#145aa8}
-#v45-app .v45-content{min-width:0}
-#v45-app .v45-section-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 13px}
-#v45-app .v45-section-title h3{font-size:17px;font-weight:800}#v45-app .v45-section-title span{font-size:11px;color:#64748b}
-#v45-app .v45-right{position:sticky;top:110px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:19px}
-#v45-app .v45-right h3{font-weight:800;font-size:15px;margin-bottom:12px}
-#v45-app .v45-right p{font-size:12px;line-height:1.9;color:#64748b}
-#v45-app .v45-right .v45-link{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 0;border-bottom:1px solid #edf1f5;text-align:left;font-size:12px;font-weight:700;color:#215b96}
-#v45-app .v45-right .v45-link:last-child{border:0}
-#v45-app .v45-screen[hidden]{display:none!important}
-#v45-app #v41-wizard{border:0!important;border-radius:14px!important;box-shadow:none!important;margin:0!important}
-#v45-app #v41-track{background:#f7f9fc!important;border-bottom:1px solid #e5ebf3}
-#v45-app #v41-wizard .v41-hero{background:#fff!important}
-#v45-app #v41-wizard .v41-content{background:#fff!important}
-#v45-app .v45-primary{background:#165eae;color:white;font-weight:700;font-size:12px;border-radius:9px;padding:12px 16px}
-#v45-app .v45-info{background:#f1f6fd;border-left:3px solid #2d7bc9;padding:13px;font-size:12px;color:#39546e;line-height:1.7;margin-top:14px}
-#v45-app #v44-purchase{margin:0;border-radius:13px}
-#v45-app .v45-main-surface{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;min-width:0}
-#v45-app .v45-native{display:grid;gap:13px}
-#v45-app .v45-native>.v24-panel{display:grid!important}
-#v45-app .v45-native>.v24-panel[hidden]{display:none!important}
-#tab-inventory #v24-panel-jobs{display:none!important}
-#v45-app #v24-panel-jobs{display:block!important}
-#v45-app #v24-panel-jobs>.v24-panel-heading,#v45-app #v24-panel-jobs>.v24-panel-description{display:none!important}
-#v45-app #v44-help{display:none!important}
-#v45-app #v44-advanced{margin-top:15px}
-@media(max-width:1180px){#v45-app .v45-layout{grid-template-columns:175px minmax(0,1fr)}#v45-app .v45-right{grid-column:2;position:static}}
-@media(max-width:760px){#v45-app .v45-layout{display:block}#v45-app .v45-rail{position:static;display:flex;overflow-x:auto;gap:5px;padding:7px;margin-bottom:14px}#v45-app .v45-rail h3{display:none}#v45-app .v45-nav{min-width:max-content;margin:0;padding:11px;font-size:11px}#v45-app .v45-nav svg{width:16px;height:16px}#v45-app .v45-main-surface{padding:9px}#v45-app .v45-right{margin-top:14px}#v45-app .v45-top{padding:2px 0 14px}#v45-app .v45-status{font-size:10px;padding:7px}}
-@media print{#v45-app{display:none!important}}
+<style id="v46-reference-inventory">
+/* V46: reference-inspired operational layout; original Firebase logic stays intact */
+#tab-inventory{background:#f1f7fc!important;color:#153252!important}#tab-inventory #v38-sidebar,#tab-inventory #v38-topbar,#tab-inventory #v38-shortcuts,#tab-inventory #v44-intro{display:none!important}
+#tab-inventory #v38-shell{display:block!important;max-width:none!important}#tab-inventory #v38-main{width:100%!important}#tab-inventory #v24-panel-jobs{display:none!important}
+#v46-app{font-family:Prompt,Sarabun,sans-serif;color:#112c4b;max-width:1680px;margin:auto}#v46-app button{cursor:pointer;transition:filter .15s,background .15s}#v46-app button:hover{filter:brightness(.96)}
+.v46-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:16px}.v46-title{display:flex;gap:15px;align-items:center}.v46-bigicon{font-size:38px}.v46-title h2{font-size:clamp(23px,2.4vw,31px);font-weight:850;letter-spacing:-.04em}.v46-title p{font-size:12px;color:#637c97}.v46-metrics{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:9px}.v46-metric{border:1px solid #cde6f8;background:#fff;border-radius:13px;padding:12px 15px;min-width:130px}.v46-metric small{display:block;font-size:11px;color:#637c97}.v46-metric strong{display:block;font-size:22px;line-height:1.5}.v46-metric.green{background:#f0fdf9;border-color:#9de8d4}.v46-metric.amber{background:#fffaf0;border-color:#fbe4ad}.v46-metric.red{background:#fff3f4;border-color:#fbcbd0}.v46-metric.blue{background:#f0faff;border-color:#b7e5fb}
+.v46-track{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:13px;background:#f5faff;border:1px solid #d8e7f6;border-radius:15px;margin-bottom:16px}.v46-step{display:flex;align-items:center;justify-content:center;gap:8px;color:#36516d;font-size:12px;font-weight:750;border-radius:11px;padding:9px 5px}.v46-step b{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;background:#d7e3f0;color:#36516d}.v46-step.active{background:#e0f2fe;color:#0757aa}.v46-step.active b{background:linear-gradient(130deg,#12a9ef,#076acb);color:#fff}
+.v46-grid{display:grid;grid-template-columns:minmax(240px,1fr) minmax(430px,2fr) minmax(240px,.95fr);gap:13px;align-items:start}.v46-panel{background:#fff;border:1px solid #dce9f6;border-radius:17px;box-shadow:0 4px 17px #123d6410;padding:16px;min-width:0}.v46-panel h3{font-size:17px;font-weight:850;margin-bottom:10px}.v46-caption{font-size:11px;color:#66809b;margin-bottom:12px}.v46-joblist{display:grid;gap:8px;max-height:580px;overflow:auto}.v46-job{width:100%;text-align:left;background:#fff;border:1px solid #e0e9f4;border-radius:12px;padding:13px}.v46-job.selected{border:2px solid #2493ee;background:#f0f9ff;padding:12px}.v46-job strong{font-size:13px}.v46-job small{display:block;color:#71859c;font-size:11px;margin-top:4px}.v46-job .v46-pill{display:inline-block;margin-top:8px;background:#fff1d4;color:#ae6a00;padding:4px 9px;border-radius:30px;font-size:10px;font-weight:800}.v46-jobsearch{width:100%;border:1px solid #d6e4f1;border-radius:11px;padding:12px;font-size:13px;margin-bottom:10px;background:#f9fcff}
+.v46-centerhead{display:flex;justify-content:space-between;gap:8px;align-items:start}.v46-centerhead strong{color:#0972d2}.v46-miniactions{display:flex;gap:6px}.v46-outline{border:1px solid #d1e2f1;border-radius:9px;padding:9px 11px;color:#135991;font-size:11px;font-weight:750;background:#f9fcff}.v46-table{width:100%;border-collapse:collapse;margin-top:13px;font-size:12px}.v46-table th{background:#f0f5fa;text-align:left;padding:11px 9px;color:#3b506a;font-size:11px}.v46-table td{border-bottom:1px solid #e8eef6;padding:12px 9px;vertical-align:middle}.v46-table td:nth-child(n+2){white-space:nowrap}.v46-ok{color:#00976d;font-weight:800}.v46-no{color:#e43b4a;font-weight:800}.v46-tag{display:inline-block;padding:5px 8px;border-radius:40px;font-weight:800;font-size:10px;background:#defbe6;color:#008542}.v46-tag.short{background:#ffe6e8;color:#d93446}.v46-alert{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff0f1;border-radius:12px;padding:13px;margin-top:14px;color:#c92f43;font-size:12px;font-weight:750}.v46-action{background:linear-gradient(120deg,#10a8f5,#0665bb);border-radius:10px;color:white;padding:12px 15px;font-weight:800;font-size:12px}.v46-action:disabled{opacity:.4;cursor:not-allowed}.v46-side-step{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid #e9eef5;font-size:12px;color:#47627e}.v46-side-step b{display:grid;place-items:center;flex:0 0 27px;height:27px;border-radius:50%;background:#e4edf6}.v46-side-step.active{color:#096ebd;font-weight:800}.v46-side-step.active b{background:#1589e0;color:white}.v46-donut{width:130px;height:130px;border-radius:50%;background:conic-gradient(#05a677 var(--pct),#f04756 0);display:grid;place-items:center;margin:15px auto}.v46-donut>div{background:#fff;border-radius:50%;width:92px;height:92px;display:grid;place-items:center;text-align:center;font-size:23px;font-weight:850}.v46-donut small{display:block;font-size:10px;color:#71859c}.v46-summaryline{display:flex;justify-content:space-between;font-size:12px;margin:7px 0}.v46-summaryline strong{font-weight:800}.v46-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:13px;background:#fff;border:1px solid #dce9f6;border-radius:14px}.v46-footer button{border:1px solid #d6e3f2;padding:10px 15px;border-radius:10px;color:#155d9b;font-size:12px;font-weight:800}.v46-native{margin-top:14px}.v46-native[hidden],.v46-workflow[hidden],.v46-workflow .v41-pane[hidden]{display:none!important}.v46-workflow #v41-wizard{margin:0!important;box-shadow:none!important;border:1px solid #dce9f6!important}.v46-workflow #v41-wizard .v41-hero{display:none!important}.v46-workflow #v41-track{display:none!important}.v46-workflow #v41-wizard .v41-content{padding:14px!important}.v46-workflow #v41-wizard .v41-heading{font-size:15px!important}.v46-workflow #v41-wizard .v41-hint{font-size:11px!important}.v46-native>.v24-panel{display:grid!important}.v46-native>.v24-panel[hidden]{display:none!important}.v46-muted{color:#7890a8;font-size:11px}.v46-loading{padding:18px;color:#71859c;font-size:12px}
+@media(max-width:1200px){.v46-heading{display:block}.v46-metrics{margin-top:13px}.v46-grid{grid-template-columns:minmax(210px,1fr) minmax(360px,2fr)}.v46-right{grid-column:1/-1}.v46-side-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}}
+@media(max-width:780px){.v46-grid{display:block}.v46-panel{margin-bottom:11px}.v46-track{display:flex;overflow-x:auto}.v46-step{min-width:155px}.v46-metrics{grid-template-columns:repeat(2,1fr)}.v46-metric{min-width:0}.v46-table-wrap{overflow-x:auto}.v46-table{min-width:530px}.v46-side-steps{display:block}.v46-centerhead{flex-wrap:wrap}.v46-footer{flex-wrap:wrap}.v46-title h2{font-size:22px}}
+@media print{#v46-app{display:none!important}}
 </style>
-<script id="v45-new-inventory-workspace">
+<script id="v46-reference-workspace">
 (function(){
- const $=id=>document.getElementById(id);
- let done=false,tries=0;
- const views=[['jobs','clipboard-list','งานลูกค้า'],['stock','package','วัสดุคงเหลือ'],['movement','arrow-left-right','รับเข้า / เบิก / คืน'],['recipes','ruler','สูตรผลิต'],['history','history','ประวัติคลัง']];
- function init(){
-  if(done||!$('v38-main')||!$('v41-wizard')||!$('v24-panel-jobs')||!$('v44-purchase'))return false;
-  done=true;
-  const root=document.createElement('div');root.id='v45-app';
-  root.innerHTML='<div class="v45-top"><div><h2>จัดการคลังสินค้า</h2><p>เลือกงาน ตรวจวัสดุ จัดซื้อ รับเข้า และเบิกใช้งานในที่เดียว</p></div><span class="v45-status">● เชื่อมต่อข้อมูลคลังเดิม</span></div><div class="v45-layout"><nav class="v45-rail" aria-label="เมนูคลังสินค้า"><h3>เมนูทำงาน</h3></nav><main class="v45-content"><div class="v45-section-title"><h3 id="v45-current-title">งานลูกค้า</h3><span>SUMRAN INVENTORY</span></div><div class="v45-main-surface"><div id="v45-jobs" class="v45-screen"></div><div id="v45-buy" class="v45-screen" hidden></div><div id="v45-native" class="v45-screen v45-native" hidden></div></div></main><aside class="v45-right"><h3>การทำงานที่เกี่ยวข้อง</h3><p>เลือกรายการงานและคำนวณวัสดุก่อนตรวจยอดคงเหลือ ระบบจะไม่เบิกของอัตโนมัติ</p><div id="v45-related"></div><div class="v45-info">ข้อมูลใบเสนอราคา ลูกค้า และการเงินยังใช้ฐานข้อมูลเดิม ไม่ถูกรีเซ็ต</div></aside></div>';
-  const main=$('v38-main');main.insertBefore(root,main.firstChild);
-  const rail=root.querySelector('.v45-rail'),related=$('v45-related');
-  const menu=[...views.slice(0,1),['buy','shopping-cart','ศูนย์จัดซื้อ'],...views.slice(1)];
-  for(const [id,icon,title] of menu){
-   const b=document.createElement('button');b.type='button';b.className='v45-nav';b.dataset.view=id;b.innerHTML='<i data-lucide="'+icon+'"></i><span>'+title+'</span>';b.addEventListener('click',()=>show(id));rail.appendChild(b);
-  }
-  const jobs=$('v24-panel-jobs'),wizard=$('v41-wizard'),purchase=$('v44-purchase');
-  $('v45-jobs').appendChild(wizard);
-  const helper=document.createElement('div');helper.className='v45-info';helper.textContent='เลือกใบเสนอราคา → เลือกสูตร → คำนวณ → ตรวจของขาด หากวัสดุไม่ครบให้บันทึกจัดซื้อก่อนเบิกผลิต';$('v45-jobs').appendChild(helper);
-  $('v45-buy').appendChild(purchase);purchase.open=true;
-  const adv=$('v44-advanced');if(adv)$('v45-buy').appendChild(adv);
-  for(const [id,title] of [['buy','เปิดศูนย์จัดซื้อ'],['stock','ตรวจยอดวัสดุ'],['movement','รับเข้า / เบิก / คืน']]){
-   const b=document.createElement('button');b.type='button';b.className='v45-link';b.textContent=title+' →';b.onclick=()=>show(id);related.appendChild(b);
-  }
-  function show(id){
-   const target=menu.find(x=>x[0]===id);if(!target)return;
-   $('v45-current-title').textContent=target[2];
-   for(const b of rail.querySelectorAll('button')){if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
-   $('v45-jobs').hidden=id!=='jobs';$('v45-buy').hidden=id!=='buy';$('v45-native').hidden=id==='jobs'||id==='buy';
-   if(id!=='jobs'&&id!=='buy'){
-    const native=$('v45-native');
-    const panel=$('v24-panel-'+id);
-    if(panel){native.replaceChildren(panel);panel.hidden=false;}
-    else{native.textContent='ยังไม่พบหน้ารายการนี้ในไฟล์ปัจจุบัน';}
-   }
-   root.scrollIntoView({block:'start',behavior:'smooth'});
-   if(window.lucide?.createIcons)window.lucide.createIcons();
-  }
-  window.v45Open=show;
-  const oldOpen=window.v35OpenPurchase;
-  window.v35OpenPurchase=function(){show('buy');if(purchase)purchase.open=true;};
-  show('jobs');
-  return true;
- }
- function boot(){if(init())return;if(++tries<90)setTimeout(boot,200)}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+ const $=id=>document.getElementById(id);let ready=false,tries=0,active='jobs';
+ const tabs=[['jobs','📋','งานลูกค้า'],['stock','📦','สต๊อกวัสดุ'],['movement','🔄','รับ–เบิก–คืน'],['recipes','📐','สูตรผลิต'],['history','🕘','ประวัติ']];
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function init(){if(ready||!$('v38-main')||!$('v41-wizard')||!$('v24-panel-jobs'))return false;ready=true;
+ const root=document.createElement('div');root.id='v46-app';root.innerHTML=`<div class="v46-heading"><div class="v46-title"><span class="v46-bigicon">📦</span><div><h2>คลังสินค้าและงานผลิต</h2><p>เลือกงาน → ตรวจวัสดุ → จัดซื้อ (ถ้าขาด) → เบิกของ → ยืนยันและอัปเดตสถานะ</p></div></div><div class="v46-metrics"><div class="v46-metric green"><small>วัสดุในทะเบียน</small><strong id="v46-count">—</strong><small>รายการ</small></div><div class="v46-metric amber"><small>ใกล้หมด</small><strong id="v46-low">—</strong><small>รายการ</small></div><div class="v46-metric red"><small>หมดสต๊อก</small><strong id="v46-out">—</strong><small>รายการ</small></div><div class="v46-metric blue"><small>รอจัดซื้อ</small><strong id="v46-buycount">—</strong><small>รายการที่บันทึก</small></div></div></div><div class="v46-track" id="v46-track"></div><div class="v46-grid"><section class="v46-panel"><h3>เลือกงานที่ต้องการทำ</h3><input class="v46-jobsearch" id="v46-filter" placeholder="🔎 ค้นหาเลขเอกสาร / ชื่อลูกค้า"><p class="v46-caption">เลือกใบเสนอราคาจากผลค้นหา เพื่อใช้ข้อมูลจริง</p><div id="v46-joblist" class="v46-joblist"><p class="v46-loading">กำลังเตรียมรายการงาน…</p></div></section><section class="v46-panel"><div class="v46-centerhead"><div><h3>รายการวัสดุที่ต้องใช้ <strong id="v46-doc">—</strong></h3><p id="v46-customer" class="v46-caption">เลือกงานเพื่อเริ่มคำนวณวัสดุ</p></div><div class="v46-miniactions"><button type="button" class="v46-outline" id="v46-open-calc">📋 คำนวณ/ตรวจวัสดุ</button><button type="button" class="v46-outline" id="v46-print">🖨️ พิมพ์รายการ</button></div></div><div class="v46-table-wrap"><table class="v46-table"><thead><tr><th>วัสดุ / รายการ</th><th>จำนวนที่ใช้</th><th>คงเหลือในคลัง</th><th>สถานะ</th></tr></thead><tbody id="v46-materials"><tr><td colspan="4" class="v46-loading">เลือกงานและคำนวณวัสดุเพื่อแสดงรายการจริง</td></tr></tbody></table></div><div id="v46-alert" class="v46-alert" hidden></div><div class="v46-workflow" id="v46-workflow" hidden></div><div class="v46-native" id="v46-native" hidden></div></section><aside class="v46-panel v46-right"><h3>สรุปสถานะวัสดุ</h3><p class="v46-caption" id="v46-total-label">จากรายการที่คำนวณแล้ว</p><div id="v46-donut" class="v46-donut" style="--pct:0%"><div><span id="v46-total">0<small>รายการ</small></span></div></div><div class="v46-summaryline"><span>🟢 พอใช้</span><strong id="v46-good">0</strong></div><div class="v46-summaryline"><span>🔴 ขาด</span><strong id="v46-short">0</strong></div><div class="v46-summaryline"><span>🟡 ใกล้หมด</span><strong id="v46-near">0</strong></div><div style="border-top:1px solid #e5edf5;margin:14px 0"></div><h3 style="color:#0878ce">การดำเนินการต่อไป</h3><div class="v46-side-steps" id="v46-nextsteps"></div><button class="v46-action" style="width:100%;margin-top:15px" id="v46-primary">เริ่มตรวจวัสดุ →</button><p class="v46-muted" style="margin-top:10px">ระบบไม่ตัดสต๊อกอัตโนมัติ การเบิกและรับเข้าต้องยืนยันในขั้นตอนจริง</p></aside></div><div class="v46-footer"><div><button type="button" id="v46-home">← กลับหน้าหลัก</button> <button type="button" id="v46-history">◷ ประวัติคลัง</button></div><span class="v46-muted">ใช้ข้อมูล Firebase เดิม · ไม่ลบเอกสารและการเงิน</span></div>`;
+ $('v38-main').prepend(root);
+ const wizard=$('v41-wizard');$('v46-workflow').append(wizard);
+ const purchase=$('v44-purchase');const advanced=$('v44-advanced');if(purchase){purchase.open=true;}
+ function getItems(){try{return Array.isArray(window.invState?.items)?window.invState.items:[]}catch{return []}}
+ function getRows(){try{const state=window.invState;const rows=Array.isArray(window.invV4State?.lines)?window.invV4State.lines:[];return rows}catch{return []}}
+ function update(){const items=getItems();$('v46-count').textContent=items.length||'0';$('v46-out').textContent=items.filter(x=>Number(x.quantity||0)<=0).length;$('v46-low').textContent=items.filter(x=>Number(x.quantity||0)>0&&Number(x.quantity||0)<=Number(x.minStock||x.minQty||0)).length;const job=$('inv-v4-doc-selected')?.textContent?.trim()||$('inv-v4-job')?.value?.trim()||'';$('v46-doc').textContent=job||'—';const original=$('v41-stock');const entries=original?.querySelectorAll('.v41-stock-row')||[];let good=0,short=0;const body=$('v46-materials');if(entries.length){body.innerHTML='';entries.forEach(e=>{const label=e.querySelector('strong')?.textContent||'วัสดุ';const detail=e.querySelector('small')?.textContent||'';const status=e.lastElementChild?.textContent||'';const isShort=status.includes('ขาด');if(isShort)short++;else good++;const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${esc(label)}</strong><div class="v46-muted">${esc(detail)}</div></td><td>ดูรายละเอียด</td><td>ตรวจจากสต๊อก</td><td><span class="v46-tag ${isShort?'short':''}">${esc(status)}</span></td>`;body.append(tr)});}else{body.innerHTML='<tr><td colspan="4" class="v46-loading">เลือกงาน → เลือกสูตร → คำนวณวัสดุ → ยืนยันยอด เพื่อตรวจสต๊อกจริง</td></tr>';}const total=good+short;$('v46-total').innerHTML=total+'<small>รายการ</small>';$('v46-good').textContent=good;$('v46-short').textContent=short;$('v46-near').textContent=0;$('v46-donut').style.setProperty('--pct',total?Math.round(good/total*100)+'%':'0%');$('v46-alert').hidden=!short;if(short)$('v46-alert').innerHTML=`<span>⚠️ พบวัสดุขาด ${short} รายการ ต้องจัดซื้อและรับเข้าก่อนเบิก</span><button class="v46-action" id="v46-buy-now">ไปศูนย์จัดซื้อ →</button>`;if(short)$('v46-buy-now').onclick=()=>show('buy');$('v46-primary').textContent=short?'🛒 จัดซื้อของที่ขาด →':total?'📦 ตรวจและเตรียมเบิกผลิต →':'เริ่มตรวจวัสดุ →';}
+ function syncSteps(){const wizardStep=[...$('v41-track')?.children||[]].findIndex(x=>x.classList.contains('active'));const step=wizardStep<0?0:wizardStep;const names=['เลือกงาน','ตรวจวัสดุและคำนวณ','จัดซื้อ (ถ้าขาด)','เบิกของจากคลัง','ยืนยันและอัปเดตสถานะ'];$('v46-track').innerHTML=names.map((n,i)=>`<div class="v46-step ${i===Math.min(step,4)?'active':''}"><b>${i+1}</b><span>${n}</span></div>`).join('');$('v46-nextsteps').innerHTML=['จัดซื้อของที่ขาด','เบิกของจากคลัง','ยืนยันเริ่มผลิต','ผลิตเสร็จ'].map((n,i)=>`<div class="v46-side-step ${i===(step>1?0:-1)?'active':''}"><b>${i+1}</b><span>${n}</span></div>`).join('');}
+ function show(id){active=id;const isJobs=id==='jobs';$('v46-workflow').hidden=!isJobs;$('v46-native').hidden=isJobs;const native=$('v46-native');if(!isJobs){if(id==='buy'){native.replaceChildren(...[purchase,advanced].filter(Boolean));}else{const panel=$('v24-panel-'+id);if(panel){native.replaceChildren(panel);panel.hidden=false;}else native.textContent='ยังไม่พบหน้าที่เลือกในไฟล์นี้';}}else{$('v46-workflow').hidden=false;}root.querySelector('.v46-grid>section:first-child').style.display=isJobs?'':'none';root.querySelector('.v46-grid').style.gridTemplateColumns=isJobs?'':'minmax(0,2fr) minmax(240px,.9fr)';$('v46-open-calc').textContent=isJobs?'📋 คำนวณ/ตรวจวัสดุ':'📋 กลับไปงานลูกค้า';$('v46-native').scrollIntoView({behavior:'smooth',block:'nearest'});update();}
+ function showWizard(){show('jobs');$('v46-workflow').hidden=false;wizard.scrollIntoView({behavior:'smooth',block:'center'});}
+ $('v46-open-calc').onclick=()=>active==='jobs'?showWizard():show('jobs');$('v46-primary').onclick=()=>{const short=Number($('v46-short').textContent)||0;const total=Number($('v46-good').textContent)+short;if(short){show('buy');return;}if(total&&$('v41-issue')){$('v41-issue').click();showWizard();return;}showWizard();};$('v46-home').onclick=()=>{if(typeof window.switchTab==='function')window.switchTab('home');else $('tab-btn-home')?.click();};$('v46-history').onclick=()=>show('history');$('v46-print').onclick=()=>{const rows=$('v46-materials')?.innerText||'';if(!rows||rows.includes('เลือกงาน')){alert('กรุณาคำนวณวัสดุก่อนพิมพ์');return;}const w=window.open('','_blank');if(!w){alert('กรุณาอนุญาตให้เปิดหน้าต่างสำหรับพิมพ์');return;}w.document.write('<!doctype html><html lang="th"><meta charset="utf-8"><title>รายการวัสดุ</title><style>body{font-family:Arial,sans-serif;padding:24px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:9px;text-align:left}</style><h2>รายการวัสดุ '+esc($('v46-doc').textContent)+'</h2>'+root.querySelector('.v46-table-wrap').innerHTML+'</html>');w.document.close();w.focus();w.print();};
+ $('v46-filter').oninput=()=>{const q=$('v46-filter').value;const search=$('inv-v4-doc-search');if(search){search.value=q;search.dispatchEvent(new Event('input',{bubbles:true}));}renderJobs();};
+ function renderJobs(){const candidates=$('inv-v4-candidates')||$('inv-v4-doc-results');const host=$('v46-joblist');const buttons=[...(candidates?.querySelectorAll('button')||[])].filter(b=>b.offsetParent!==null||b.textContent.trim());const q=$('v46-filter').value.toLowerCase();host.replaceChildren();if(!buttons.length){host.innerHTML='<p class="v46-loading">ค้นหาเลขใบเสนอราคาด้านบนเพื่อแสดงงานจริงจาก Firebase</p>';return;}let n=0;for(const b of buttons){const label=b.innerText||b.textContent||'';if(q&&!label.toLowerCase().includes(q))continue;const item=document.createElement('button');item.type='button';item.className='v46-job';item.innerHTML='<strong>📄 '+esc(label.trim().slice(0,100))+'</strong><small>คลิกเพื่อเลือกใบเสนอราคานี้</small>';item.onclick=()=>{b.click();host.querySelectorAll('.v46-job').forEach(x=>x.classList.remove('selected'));item.classList.add('selected');setTimeout(update,150);};host.append(item);if(++n>=30)break;}if(!n)host.innerHTML='<p class="v46-loading">ไม่พบเอกสารที่ตรงกับคำค้นหา</p>';}
+ const oldOpen=window.v35OpenPurchase;window.v35OpenPurchase=function(){show('buy');if(purchase)purchase.open=true;};window.v46Open=show;
+ const observer=new MutationObserver(()=>{syncSteps();update();renderJobs()});const track=$('v41-track');if(track)observer.observe(track,{childList:true,subtree:true});const stock=$('v41-stock');if(stock)observer.observe(stock,{childList:true,subtree:true});const candidates=$('inv-v4-candidates');if(candidates)observer.observe(candidates,{childList:true,subtree:true});
+ syncSteps();update();renderJobs();show('jobs');return true;}
+ function boot(){if(init())return;if(++tries<90)setTimeout(boot,200)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
 
