@@ -3800,6 +3800,45 @@
       const name=String(f.get('name')||'').trim();if(!name)return;
       try{await setDoc(cloudPath('warehouseRecipes',id),{...(old||{}),name,description:String(f.get('description')||''),componentKind:String(f.get('kind')||'อื่น ๆ'),templateType:'component',lines:old?.lines||[],updatedAt:new Date().toISOString(),updatedBy:userId});whOpenComponents();showToast('บันทึกรูปแบบส่วนประกอบแล้ว');}catch(err){cloudError('Save component',err);showToast('บันทึกส่วนประกอบไม่สำเร็จ');}
     }
+    // V11.3: recipe stores a functional material role, not a fixed colour/SKU.
+    function whRoleKey(s){return whNorm(String(s||'').replace(/ขาวนม|อบขาว|สีดำ|สีชา|สีขาว|ดำ|ชา|เขียวตัดแสง|กระจกใส|กระจกฝ้า/g,''));}
+    function whGlassSpec(s){
+      const raw=String(s||'').trim();const m=raw.match(/(\d+(?:\.\d+)?)\s*(มม\.|มม|mm|ซม\.|นิ้ว)/i);
+      const thick=m?Number(m[1]):null;
+      const kind=whNorm(raw.replace(/\d+(?:\.\d+)?\s*(มม\.|มม|mm|ซม\.|นิ้ว)/gi,'').trim());
+      return {raw,kind,thick};
+    }
+    function whResolveRoleMaterial(l,it){
+      const role=String(l.materialRole||'').trim();const category=l.materialCategory||whItems.find(i=>i.id===l.itemId)?.category||'OT';
+      if(!role)return {error:'สูตรยังไม่ระบุหน้าที่วัสดุ'};
+      const color=String(it.aluColor||'').trim(),system=whBillSystem(it),glass=whGlassSpec(whBillGlass(it));
+      if(category==='AL'&&(!color||color==='-'))return {error:'บิลไม่ระบุสีอะลูมิเนียม'};
+      if(category==='GL'&&(!glass.raw||glass.raw==='-'))return {error:'บิลไม่ระบุชนิดกระจก'};
+      const candidates=whItems.filter(i=>{
+        if((i.category||'OT')!==category)return false;
+        if(category==='AL'){
+          if(whRoleKey(i.name)!==whRoleKey(role))return false;
+          if(whNorm(i.color)!==whNorm(color))return false;
+          if(system&&whNorm(i.system||'')!==whNorm(system))return false;
+        }else if(category==='GL'){
+          const desc=whGlassSpec([i.name,i.color].filter(Boolean).join(' '));
+          const matchKind=glass.kind&&([i.name,i.color].some(x=>whNorm(x).includes(glass.kind))||glass.kind.includes(whNorm(i.color||'__')));
+          if(!matchKind)return false;
+          if(glass.thick!==null && !([i.name,i.color,i.thickness,i.thicknessMm].some(x=>String(x||'').includes(String(glass.thick)))))return false;
+        }else if(whRoleKey(i.name)!==whRoleKey(role))return false;
+        return true;
+      });
+      if(candidates.length===1)return {item:candidates[0]};
+      if(candidates.length>1)return {error:'พบ '+candidates.length+' รายการตรงสเป็ก กรุณาเลือกยี่ห้อ/รุ่นในทะเบียนก่อนยืนยัน'};
+      return {error:'ไม่พบในทะเบียน: '+role+(category==='AL'?' · '+system+' · '+color:category==='GL'?' · '+glass.raw:'')};
+    }
+    function whGlassPieces(l,w,h,sets){
+      const count=Number(l.glassPanes||0),dw=l.glassDeductWidthCm==null?NaN:Number(l.glassDeductWidthCm),dh=l.glassDeductHeightCm==null?NaN:Number(l.glassDeductHeightCm),overlap=Number(l.glassOverlapCm||0);
+      if(!Number.isInteger(count)||count<1||!Number.isFinite(dw)||!Number.isFinite(dh))return {error:'ยังไม่ได้กำหนดจำนวนช่องหรือระยะหักกระจก'};
+      const pieceW=(w-dw+overlap)/count,pieceH=h-dh;
+      if(!(pieceW>0&&pieceH>0))return {error:'ขนาดกระจกหลังหักระยะไม่ถูกต้อง'};
+      return {count:count*sets,widthCm:pieceW,heightCm:pieceH,areaSqm:pieceW*pieceH/10000*count*sets};
+    }
     function whResolveBillMaterial(material,color,system){
       if(!material)return {error:'ไม่พบวัสดุต้นแบบในทะเบียน'};
       if(!['AL','GL'].includes(material.category))return {item:material};
@@ -3844,14 +3883,21 @@
             const glass=whBillGlass(it);
             const mapped=new Map();
             for(const line of calc.lines){
+              const recipeLine=matched.lines.find(l=>l.itemId===line.itemId||(line.itemId==='GLASS_ROLE'&&l.materialCategory==='GL'));
               const source=whItems.find(i=>i.id===line.itemId);
               const selectedColor=source?.category==='GL'?glass:source?.category==='AL'?color:'';
-              const resolved=whResolveBillMaterial(source,selectedColor,declaredSystem);
+              const resolved=recipeLine?.materialRole?whResolveRoleMaterial(recipeLine,it):whResolveBillMaterial(source,selectedColor,declaredSystem);
               if(resolved.error){entry.warnings.push((source?.name||'วัสดุ')+': '+resolved.error);continue;}
+              if(recipeLine?.materialCategory==='GL'){
+                const g=whGlassPieces(recipeLine,w,h,sets);
+                entry.warnings.push('กระจก '+(g.error||g.count+' ชิ้น '+whQtyText(g.widthCm)+' × '+whQtyText(g.heightCm)+' ซม.')+' — ต้องตรวจขนาดแผ่นสต็อกและยืนยันจำนวนแผ่นก่อนเบิก');
+                continue;
+              }
               mapped.set(resolved.item.id,(mapped.get(resolved.item.id)||0)+line.qty);
             }
             entry.lines=[...mapped].map(([itemId,qty])=>({itemId,qty}));
-            if(details.some(i=>i.category==='GL')&&!glass)entry.warnings.push('บิลไม่ระบุชนิด/สีกระจก ต้องตรวจสอบก่อนยืนยัน');
+            if((details.some(i=>i.category==='GL')||matched.lines.some(l=>l.materialCategory==='GL'))&&!glass)entry.warnings.push('บิลไม่ระบุชนิด/สีกระจก ต้องตรวจสอบก่อนยืนยัน');
+            if(glass&&!matched.lines.some(l=>l.materialCategory==='GL'&&l.glassPanes>0))entry.warnings.push('บิลมีกระจก แต่สูตรยังไม่มีการคำนวณชิ้นกระจก กรุณาแก้สูตร');
             if(details.some(i=>i.category==='AL')&&!color)entry.warnings.push('บิลไม่ระบุสีอะลูมิเนียม ต้องตรวจสอบก่อนยืนยัน');
           }
         }
@@ -4051,6 +4097,8 @@
     function whPickRecipeMaterial(btn,id){
       const row=btn.closest('.wh-recipe-line'),i=whItems.find(x=>x.id===id);if(!row||!i)return;
       row.querySelector('.wh-r-item').value=id;
+      row.querySelector('.wh-r-role').value=i.name;
+      row.querySelector('.wh-r-category').value=i.category||'OT';whRecipeUpdateLine(row.querySelector('.wh-r-category'));
       row.querySelector('.wh-r-search').value=[i.registerNo,i.name,i.color||'ไม่ระบุสี'].join(' · ');
       row.querySelector('.wh-r-results').style.display='none';
     }
@@ -4066,6 +4114,9 @@
       const modes=[['set','จำนวนต่อชุด (ชิ้น/ตัว)'],['cut_width','ตัดตามความกว้าง (ซม.)'],['cut_height','ตัดตามความสูง (ซม.)'],['cut_half_width','ตัดตามครึ่งความกว้าง (ซม.)'],['cut_custom','ตัดตามสูตร กว้าง×A + สูง×B + C'],['width','⚠️ สูตรเก่า: ความกว้างเป็นเมตร (ไม่ใช่เส้น)'],['height','⚠️ สูตรเก่า: ความสูงเป็นเมตร (ไม่ใช่เส้น)'],['perimeter','⚠️ สูตรเก่า: รอบวงเป็นเมตร (ไม่ใช่เส้น)'],['area','ใช้ตามพื้นที่ (ตร.ม.) — สูตรเดิม'],['fixed','จำนวนครั้งเดียวทั้งงาน']];
       return `<div class="wh-recipe-line" style="padding:13px;margin:10px 0;border:1px solid #dbeafe;border-radius:13px;background:#f8fbff">
       <div class="wh-form-grid"><label>🔎 ค้นหาวัสดุ<input class="wh-input wh-r-search" type="search" autocomplete="off" value="${whEsc(display)}" onfocus="whSearchRecipeMaterial(this)" oninput="this.closest('.wh-recipe-line').querySelector('.wh-r-item').value='';whSearchRecipeMaterial(this)" placeholder="ชื่อ / รหัส / สี / รุ่น"><input type="hidden" class="wh-r-item" value="${whEsc(l.itemId||'')}"><div class="wh-r-results" style="display:none;max-height:240px;overflow:auto;border:1px solid #dbeafe;padding:7px;border-radius:12px;background:white"></div></label>
+      <label>ประเภทวัสดุในสูตร<select class="wh-input wh-r-category" onchange="whRecipeUpdateLine(this)">${[['AL','อะลูมิเนียม'],['GL','กระจก'],['HW','อุปกรณ์'],['OT','อื่น ๆ']].map(([v,t])=>`<option value="${v}" ${(l.materialCategory||item?.category||'OT')===v?'selected':''}>${t}</option>`).join('')}</select></label>
+      <label>หน้าที่วัสดุ (ไม่ระบุสี/ยี่ห้อ)<input class="wh-input wh-r-role" value="${whEsc(l.materialRole||item?.name||'')}" placeholder="เช่น เฟรมข้าง / กระจก / ล้อบานเลื่อน"></label>
+      <div class="wh-r-glass" style="grid-column:1/-1;border:1px solid #bfdbfe;border-radius:12px;padding:12px;background:#eff6ff"><b>ตั้งค่าสูตรตัดกระจก — ช่างกรอกระยะหักจริง</b><div class="wh-form-grid" style="margin-top:8px"><label>จำนวนช่อง/แผ่นต่อชุด<input class="wh-input wh-r-panes" type="number" min="1" step="1" value="${whEsc(l.glassPanes??'')}"></label><label>ระยะหักความกว้างรวม (ซม.)<input class="wh-input wh-r-gdw" type="number" step="any" value="${whEsc(l.glassDeductWidthCm??'')}"></label><label>ระยะหักความสูง (ซม.)<input class="wh-input wh-r-gdh" type="number" step="any" value="${whEsc(l.glassDeductHeightCm??'')}"></label><label>ระยะซ้อนบานรวม (ซม.)<input class="wh-input wh-r-goverlap" type="number" step="any" value="${whEsc(l.glassOverlapCm??0)}"></label></div><small>ไม่ล็อกชนิด/สีกระจก ช่างต้องยืนยันระยะหักก่อนนำไปตัดจริง</small></div>
       <label>วิธีคำนวณ<select class="wh-input wh-r-mode" onchange="whRecipeUpdateLine(this)">${modes.map(([v,t])=>`<option value="${v}" ${mode===v?'selected':''}>${t}</option>`).join('')}</select><small class="wh-r-help" style="display:block;color:#0f5482;margin-top:6px;font-weight:500;line-height:1.5"></small></label>
       <label>จำนวนชิ้นต่อชุด / ตัวคูณ<input class="wh-input wh-r-factor" type="number" min="0.000001" step="any" value="${whNum(l.factor??1)}" required></label>
       <label>เผื่อสูญเสีย (%)<input class="wh-input wh-r-waste" type="number" min="0" max="1000" step="any" value="${whNum(l.waste||0)}"></label>
@@ -4080,6 +4131,7 @@
     function whRecipeUpdateLine(el){
       const row=el.closest('.wh-recipe-line'),mode=row.querySelector('.wh-r-mode').value,cut=mode.startsWith('cut_');
       row.querySelectorAll('.wh-r-cut').forEach(x=>x.style.display=cut?'':'none');
+      const glass=row.querySelector('.wh-r-category')?.value==='GL';row.querySelectorAll('.wh-r-glass').forEach(x=>x.style.display=glass?'':'none');
       row.querySelectorAll('.wh-r-custom').forEach(x=>x.style.display=mode==='cut_custom'?'':'none');
       const help={set:'อุปกรณ์นับเป็นตัว เช่น ลูกล้อ 4 ตัวต่อชุด',cut_width:'อะลูมิเนียม: ตัดตามความกว้างหน้างาน ระบุจำนวนท่อน เช่น เฟรมบน 1 ท่อน',cut_height:'อะลูมิเนียม: ตัดตามความสูงหน้างาน เช่น เฟรมข้าง 2 ท่อน',cut_half_width:'อะลูมิเนียม: ตัดตามครึ่งความกว้าง เช่น ขวางบาน (ปรับระยะหักตามจริง)',cut_custom:'อะลูมิเนียม: กว้าง × A + สูง × B + ระยะบวก/หัก (ซม.)',width:'สูตรเก่า: คิดความยาวเป็นเมตร ไม่ใช่จำนวนเส้น ห้ามใช้กับอะลูมิเนียมที่เบิกเป็นเส้น',height:'สูตรเก่า: คิดความสูงเป็นเมตร ไม่ใช่จำนวนเส้น ห้ามใช้กับอะลูมิเนียมที่เบิกเป็นเส้น',perimeter:'สูตรเก่า: คิดรอบวงเป็นเมตร ไม่ใช่จำนวนเส้น',area:'คิดพื้นที่เป็นตารางเมตร เหมาะกับวัสดุที่ใช้เป็นพื้นที่',fixed:'จำนวนคงที่ทั้งงาน ไม่คูณจำนวนชุด'};
       const hint=row.querySelector('.wh-r-help');if(hint)hint.textContent=help[mode]||'';
@@ -4090,7 +4142,7 @@
     function whEditRecipe(id=''){
       if(!whItems.length){showToast('กรุณาเพิ่มวัสดุในทะเบียนก่อน');return;}
       const r=whRecipes.find(x=>x.id===id);
-      whOpen(r?'แก้ไขสูตรวัสดุ':'สร้างสูตรวัสดุใหม่',`<form onsubmit="whSaveRecipe(event)"><input type="hidden" name="recipeId" value="${whEsc(id)}"><div class="wh-form-grid"><label>ชื่อประเภทงาน / ชื่อสูตร<input class="wh-input" name="name" required value="${whEsc(r?.name||'')}" placeholder="เช่น บานเลื่อนสลับ 2 บาน"></label><label>รายละเอียด<input class="wh-input" name="description" value="${whEsc(r?.description||'')}" placeholder="รายละเอียดสูตร"></label></div><p class="wh-sub" style="margin:12px 0">V10.2 · สูตรแม่แบบไม่ผูกกับขนาดลูกค้า ช่างกำหนดวัสดุ จำนวนชิ้น และวิธีตัดตามกว้าง/สูง พร้อมระยะหักจริง · ทดลองด้วยขนาด 120 × 120 ซม. ได้ภายหลัง · อะลูมิเนียมแต่ละรหัสแยกคำนวณเส้น</p><div id="wh-recipe-lines">${(r?.lines||[]).map(whRecipeLineHtml).join('')}</div><button type="button" class="wh-btn" onclick="whRecipeAddLine()">＋ เพิ่มวัสดุในสูตร</button><button class="wh-btn primary" style="margin-left:8px" type="submit">บันทึกสูตร</button></form>`);
+      whOpen(r?'แก้ไขสูตรวัสดุ':'สร้างสูตรวัสดุใหม่',`<form onsubmit="whSaveRecipe(event)"><input type="hidden" name="recipeId" value="${whEsc(id)}"><div class="wh-form-grid"><label>ชื่อประเภทงาน / ชื่อสูตร<input class="wh-input" name="name" required value="${whEsc(r?.name||'')}" placeholder="เช่น บานเลื่อนสลับ 2 บาน"></label><label>รายละเอียด<input class="wh-input" name="description" value="${whEsc(r?.description||'')}" placeholder="รายละเอียดสูตร"></label></div><p class="wh-sub" style="margin:12px 0">V11.3 · สูตรตามหน้าที่วัสดุ ไม่ล็อกสี/ยี่ห้อ · เพิ่มกระจกและระยะหักในสูตรเดียวกัน · สูตรแม่แบบไม่ผูกกับขนาดลูกค้า ช่างกำหนดวัสดุ จำนวนชิ้น และวิธีตัดตามกว้าง/สูง พร้อมระยะหักจริง · ทดลองด้วยขนาด 120 × 120 ซม. ได้ภายหลัง · อะลูมิเนียมแต่ละรหัสแยกคำนวณเส้น</p><div id="wh-recipe-lines">${(r?.lines||[]).map(whRecipeLineHtml).join('')}</div><button type="button" class="wh-btn" onclick="whRecipeAddLine()">＋ เพิ่มวัสดุในสูตร</button><button class="wh-btn primary" style="margin-left:8px" type="submit">บันทึกสูตร</button></form>`);
       document.querySelectorAll('#wh-recipe-lines .wh-r-mode').forEach(whRecipeUpdateLine);
     }
     async function whSaveRecipe(e){
@@ -4098,17 +4150,30 @@
       const f=new FormData(e.target),id=String(f.get('recipeId')||''),name=String(f.get('name')||'').trim();
       const lines=[...document.querySelectorAll('.wh-recipe-line')].map(row=>({
         itemId:row.querySelector('.wh-r-item').value,mode:row.querySelector('.wh-r-mode').value,
+        materialRole:row.querySelector('.wh-r-role').value.trim(),materialCategory:row.querySelector('.wh-r-category').value,
+        glassPanes:row.querySelector('.wh-r-panes').value===''?null:Number(row.querySelector('.wh-r-panes').value),
+        glassDeductWidthCm:row.querySelector('.wh-r-gdw').value===''?null:Number(row.querySelector('.wh-r-gdw').value),
+        glassDeductHeightCm:row.querySelector('.wh-r-gdh').value===''?null:Number(row.querySelector('.wh-r-gdh').value),
+        glassOverlapCm:Number(row.querySelector('.wh-r-goverlap').value||0),
         factor:Number(row.querySelector('.wh-r-factor').value),waste:Number(row.querySelector('.wh-r-waste').value),
         offsetCm:Number(row.querySelector('.wh-r-offset').value),stockLengthCm:Number(row.querySelector('.wh-r-stock').value),
         kerfCm:Number(row.querySelector('.wh-r-kerf').value),a:Number(row.querySelector('.wh-r-a').value),b:Number(row.querySelector('.wh-r-b').value)
       }));
-      if(!name||!lines.length||lines.some(l=>!l.itemId||!Number.isFinite(l.factor)||l.factor<=0||!Number.isFinite(l.waste)||l.waste<0||!Number.isFinite(l.offsetCm)||!Number.isFinite(l.kerfCm)||l.kerfCm<0||(l.mode.startsWith('cut_')&&(!Number.isInteger(l.factor)||!(l.stockLengthCm>0))))){showToast('ตรวจชื่อสูตร วัสดุ จำนวนชิ้น และความยาวต่อเส้น');return;}
+      if(!name||!lines.length||lines.some(l=>!l.materialRole||(!l.itemId&&l.materialCategory!=='GL')||(l.materialCategory==='GL'&&(!(l.glassPanes>0)||l.glassDeductWidthCm===null||l.glassDeductHeightCm===null))||!Number.isFinite(l.factor)||l.factor<=0||!Number.isFinite(l.waste)||l.waste<0||!Number.isFinite(l.offsetCm)||!Number.isFinite(l.kerfCm)||l.kerfCm<0||(l.mode.startsWith('cut_')&&(!Number.isInteger(l.factor)||!(l.stockLengthCm>0))))){showToast('ตรวจชื่อสูตร วัสดุ จำนวนชิ้น และความยาวต่อเส้น');return;}
       try{await setDoc(cloudPath('warehouseRecipes',id||whId()),{name,description:String(f.get('description')||''),lines,...(whRecipes.find(x=>x.id===id)?.templateType==='component'?{templateType:'component',componentKind:whRecipes.find(x=>x.id===id).componentKind}:{}),updatedAt:new Date().toISOString(),updatedBy:userId});(whRecipes.find(x=>x.id===id)?.templateType==='component'?whOpenComponents():whOpenRecipes());showToast('บันทึกสูตรแล้ว');}catch(err){cloudError('Save recipe',err);}
     }
     function whRecipeDetailed(r,w,h,sets){
       const totals=new Map(),cuts=new Map(),warnings=[];
       for(const l of r.lines||[]){
         const item=whItems.find(i=>i.id===l.itemId);
+        if(l.materialCategory==='GL'){
+          const g=whGlassPieces(l,w,h,sets);
+          if(g.error){warnings.push('กระจก: '+g.error);continue;}
+          const key=l.itemId||'GLASS_ROLE';
+          totals.set(key,(totals.get(key)||0)+g.areaSqm);
+          warnings.push('กระจก: '+g.count+' ชิ้น ขนาด '+whQtyText(g.widthCm)+' × '+whQtyText(g.heightCm)+' ซม. — ต้องยืนยันแผนตัดแผ่นจริง');
+          continue;
+        }
         if(whIsShared(item))continue;
         // Legacy width/height modes produce metres, not physical stock bars.
         // Never silently treat 1.2 metres as 1.2 bars. Require explicit cut rules.
