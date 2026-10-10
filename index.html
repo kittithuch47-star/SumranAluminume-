@@ -4430,20 +4430,47 @@
       const page=`<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${whEsc(sheet.title)}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"><style>${sheet.styles}</style></head><body><div class="wh-print-toolbar" style="position:sticky;top:0;background:#eaf5ff;padding:12px;text-align:center"><button onclick="window.print()" style="padding:12px 18px;border-radius:9px;border:0;background:#075985;color:white;font-weight:bold">🖨️ พิมพ์ / บันทึกเป็น PDF</button></div>${sheet.body}<style>@media print{.wh-print-toolbar{display:none!important}}</style></body></html>`;
       const w=window.open('','_blank');if(!w){showToast('เบราว์เซอร์บล็อกหน้าพิมพ์ กรุณาอนุญาต Pop-up หรือกดดาวน์โหลด PDF');return;}w.document.open();w.document.write(page);w.document.close();w.focus();
     }
+    // V11.13: clear PDF errors, reliable desktop download, and manual print fallback.
     async function whDownloadSheetPdf(kind='materials'){
       let sheet;try{sheet=whSheetDocument(kind)}catch(err){showToast(err.message);return;}
+      const button=typeof event!=='undefined'?event?.currentTarget:null;
+      if(button){button.disabled=true;button.dataset.originalText=button.textContent;button.textContent='⏳ กำลังสร้าง PDF...';}
       try{
-        showToast('กำลังสร้าง PDF...');
         const res=await fetch('/api/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:sheet.title,html:sheet.body,styles:sheet.styles,links:'<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">'})});
-        if(!res.ok){let message='สร้าง PDF ไม่สำเร็จ (HTTP '+res.status+')';try{const data=await res.json();if(data?.error)message=data.error}catch(_){}throw Error(message)}
-        const blob=await res.blob();if(!blob.size)throw Error('ไฟล์ PDF ว่างเปล่า');
-        const file=new File([blob],sheet.filename,{type:'application/pdf'});
-        if(navigator.canShare&&navigator.share&&navigator.canShare({files:[file]})){
-          try{await navigator.share({files:[file],title:sheet.title});return}catch(err){if(err.name==='AbortError')return;}
+        if(!res.ok){
+          const contentType=res.headers.get('content-type')||'';
+          let detail='';
+          try{if(contentType.includes('json')){const data=await res.json();detail=String(data.error||data.message||'');}else{detail=(await res.text()).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,160);}}catch(_){}
+          throw Error('API /api/pdf ตอบ HTTP '+res.status+(detail?' — '+detail:''));
         }
-        const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=sheet.filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-        showToast('สร้าง PDF สำเร็จ หากมือถือไม่บันทึกอัตโนมัติให้เลือกบันทึกในไฟล์');
-      }catch(err){console.error('Warehouse PDF:',err);showToast('ดาวน์โหลด PDF ไม่สำเร็จ: '+err.message+' · ตรวจสอบ /api/pdf บน Vercel');}
+        const blob=await res.blob();
+        if(!blob.size)throw Error('เซิร์ฟเวอร์ส่งไฟล์ว่าง');
+        const mime=(res.headers.get('content-type')||blob.type||'').toLowerCase();
+        if(!mime.includes('pdf'))throw Error('API ไม่ได้ส่ง PDF กลับมา (Content-Type: '+(mime||'ไม่ระบุ')+')');
+        const url=URL.createObjectURL(blob);
+        // On desktop, use download directly. Mobile browsers may prefer their native share sheet.
+        const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if(mobile&&typeof File!=='undefined'&&navigator.share&&navigator.canShare){
+          const file=new File([blob],sheet.filename,{type:'application/pdf'});
+          if(navigator.canShare({files:[file]})){
+            try{await navigator.share({files:[file],title:sheet.title});return;}
+            catch(err){if(err.name==='AbortError')return;}
+          }
+        }
+        const a=document.createElement('a');a.href=url;a.download=sheet.filename;a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),120000);
+        showToast('ส่งไฟล์ PDF ให้เบราว์เซอร์แล้ว');
+      }catch(err){
+        console.error('Warehouse PDF download:',err);
+        const message='ดาวน์โหลด PDF ไม่สำเร็จ: '+err.message;
+        const box=document.createElement('div');box.id='wh-pdf-error';
+        box.style.cssText='position:fixed;z-index:99999;left:12px;right:12px;top:12px;max-width:580px;margin:auto;padding:18px;background:#fff;border:2px solid #ef4444;border-radius:15px;box-shadow:0 12px 35px #0004;color:#7f1d1d;font:14px/1.6 Sarabun,sans-serif';
+        box.innerHTML='<strong>ไม่สามารถดาวน์โหลด PDF ได้</strong><p style="margin:8px 0;overflow-wrap:anywhere"></p><p style="margin:8px 0;color:#475569">ถ้าขึ้น HTTP 404 หรือ 405 ต้องตรวจสอบไฟล์ API ใน Vercel; ถ้าขึ้น 500 ให้ตรวจสอบ Function Logs</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="wh-pdf-print-fallback" style="padding:9px;background:#075985;color:white;border:0;border-radius:8px">เปิดหน้าพิมพ์ / บันทึก PDF</button><button type="button" id="wh-pdf-close-error" style="padding:9px;background:#e2e8f0;border:0;border-radius:8px">ปิด</button></div>';
+        box.querySelector('p').textContent=message;
+        document.getElementById('wh-pdf-error')?.remove();document.body.appendChild(box);
+        box.querySelector('#wh-pdf-close-error').onclick=()=>box.remove();
+        box.querySelector('#wh-pdf-print-fallback').onclick=()=>{box.remove();whPrintSheet(kind);};
+      }finally{if(button){button.disabled=false;button.textContent=button.dataset.originalText||'⬇️ ดาวน์โหลด PDF';}}
     }
     function whOpenProductionDashboard(){
       const q=String(document.getElementById('wh-job-search')?.value||'').toLocaleLowerCase();
