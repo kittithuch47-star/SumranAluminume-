@@ -660,7 +660,7 @@
     <button type="button" onclick="switchTab('history')" class="mobile-nav-item">
       <i data-lucide="file-text"></i><span>เอกสาร</span>
     </button>
-    <button type="button" onclick="switchTab('editor')" class="mobile-nav-add" aria-label="สร้างเอกสารใหม่">
+    <button type="button" onclick="createNewDocument()" class="mobile-nav-add" aria-label="สร้างเอกสารใหม่">
       <i data-lucide="plus"></i>
     </button>
     <button type="button" onclick="switchTab('preview')" class="mobile-nav-item">
@@ -709,7 +709,7 @@
       </div>
       <div class="app-home-section"><h2>เมนูจัดการร้าน</h2><span class="text-xs text-slate-500">เลือกเมนูที่ต้องการ</span></div>
       <div class="app-home-grid">
-        <button type="button" class="app-home-tile" onclick="switchTab('editor')"><span class="app-home-icon" style="background:#dbeafe;color:#1d4ed8"><i data-lucide="file-plus-2"></i></span><strong>สร้างเอกสาร</strong><small>ใบเสนอราคา ใบส่งของ ใบเสร็จ และใบแจ้งหนี้</small></button>
+        <button type="button" class="app-home-tile" onclick="createNewDocument()"><span class="app-home-icon" style="background:#dbeafe;color:#1d4ed8"><i data-lucide="file-plus-2"></i></span><strong>สร้างเอกสาร</strong><small>ใบเสนอราคา ใบส่งของ ใบเสร็จ และใบแจ้งหนี้</small></button>
         <button type="button" class="app-home-tile" onclick="switchTab('history')"><span class="app-home-icon" style="background:#dcfce7;color:#15803d"><i data-lucide="files"></i></span><strong>ประวัติเอกสาร</strong><small>ค้นหาเอกสารและติดตามงานที่บันทึกไว้</small></button>
         <button type="button" class="app-home-tile" onclick="openPrintPicker()"><span class="app-home-icon" style="background:#fef3c7;color:#b45309"><i data-lucide="printer"></i></span><strong>พรีวิวและ PDF</strong><small>ตรวจสอบเอกสารก่อนดาวน์โหลดหรือพิมพ์</small></button>
         <button type="button" class="app-home-tile" onclick="openCashBill()"><span class="app-home-icon" style="background:#fce7f3;color:#be185d"><i data-lucide="wallet"></i></span><strong>บิลเงินสด</strong><small>เข้าสู่หน้าบิลเงินสดโดยตรง</small></button>
@@ -1352,9 +1352,9 @@
       const i=document.getElementById('preset-new-color'),v=String(i?.value||'').trim();
       if(!v)return showToast('กรุณาพิมพ์ชื่อสี');
       if(!state.presetColors.includes(v))state.presetColors.push(v);
-      persist();renderPresetEditorOptions();
+      persist();renderPresetEditorOptions();renderItems();
       const c=document.getElementById('preset-alu-color');if(c)c.value=v;if(i)i.value='';
-      if(userId&&db)setDoc(cloudPath('presetColors','color-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(()=>{});
+      if(userId&&db)setDoc(cloudPath('presetColors','color-'+encodeURIComponent(v)),{name:v},{merge:true}).catch(e=>cloudError('Save color',e));
       showToast('เพิ่มสีแล้ว');
     }
     async function deletePresetColor(v){
@@ -1404,7 +1404,7 @@
       if(!name)return showToast('กรุณาระบุชนิดกระจก');
       const kinds=glassKinds();
       if(!kinds.includes(name)){kinds.push(name);localStorage.setItem('sumran-glass-kinds',JSON.stringify(kinds));}
-      setItemGlassChoice(id,name);
+      saveSharedGlassKind(name);setItemGlassChoice(id,name);
       showToast('เพิ่มชนิดกระจกสำหรับเลือกแล้ว');
     }
     function getGlassParts(value){
@@ -1829,6 +1829,17 @@
         }
       },e=>cloudError('Load shop settings',e)));
 
+      unsubscribeFns.push(onSnapshot(cloudCollection('presetColors'), snap=>{
+        const names=snap.docs.map(d=>String(d.data().name||'').trim()).filter(Boolean);
+        state.presetColors=[...new Set([...DEFAULT_PRESET_COLORS,...(state.presetColors||[]),...names])];
+        renderPresetEditorOptions();renderItems();
+      },e=>cloudError('Load shared colors',e)));
+      unsubscribeFns.push(onSnapshot(cloudCollection('glassKinds'), snap=>{
+        sharedGlassKinds=snap.docs.map(d=>String(d.data().name||'').trim()).filter(Boolean);
+        const select=document.getElementById('preset-glass-kind');
+        if(select){const old=select.value;select.innerHTML=glassKinds().map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');if(glassKinds().includes(old))select.value=old;updatePresetGlassValue();}
+        renderItems();
+      },e=>cloudError('Load shared glass kinds',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('presets'), snap=>{
         state.presets=[]; snap.forEach(d=>state.presets.push(d.data())); renderPresets(); persist();
       },e=>cloudError('Load presets',e)));
@@ -3591,13 +3602,15 @@
 
     // Glass catalog UI only; retains the existing glassType string and Firestore schema.
     const defaultGlassKinds=['ใส','เขียวตัดแสง','ใสเขียว','ชาดำ','ฝ้า','สะท้อนแสง','เทมเปอร์','ลามิเนต','Low-E'];
-    function glassKinds(){try{return [...new Set([...defaultGlassKinds,...JSON.parse(localStorage.getItem('sumran-glass-kinds')||'[]')])]}catch(e){return [...defaultGlassKinds]}}
+    let sharedGlassKinds=[];
+    function glassKinds(){try{return [...new Set([...defaultGlassKinds,...sharedGlassKinds,...JSON.parse(localStorage.getItem('sumran-glass-kinds')||'[]')])]}catch(e){return [...new Set([...defaultGlassKinds,...sharedGlassKinds])]}}
+    function saveSharedGlassKind(name){if(userId&&db)setDoc(cloudPath('glassKinds','kind-'+encodeURIComponent(name)),{name},{merge:true}).catch(e=>cloudError('Save glass kind',e));}
     function addGlassKind(){
       const input=document.getElementById('preset-glass-new-kind');const name=String(input?.value||'').trim();
       if(!name)return showToast('กรุณากรอกชนิดกระจก');
       const kinds=glassKinds();if(!kinds.includes(name)){kinds.push(name);localStorage.setItem('sumran-glass-kinds',JSON.stringify(kinds));}
       const select=document.getElementById('preset-glass-kind');if(select){select.innerHTML=glassKinds().map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');select.value=name;}
-      if(input)input.value='';updatePresetGlassValue();showToast('เพิ่มชนิดกระจกแล้ว');
+      saveSharedGlassKind(name);if(input)input.value='';updatePresetGlassValue();renderItems();showToast('เพิ่มชนิดกระจกแล้ว');
     }
     function updatePresetGlassValue(){
       const kind=document.getElementById('preset-glass-kind')?.value||'';
@@ -3640,7 +3653,7 @@
           const qty=document.getElementById('preset-show-qty'),unit=document.getElementById('preset-show-unit');
           if(qty)qty.checked=p.showQty!==false;if(unit)unit.checked=p.showUnit!==false;
           const parts=String(p.glassType||'').match(/^(.*?)\\s+(\\d+(?:\\.\\d+)?)\\s*(มม\\.|ซม\\.|นิ้ว)$/);
-          if(parts){set('preset-glass-kind',parts[1]);set('preset-glass-size',parts[2]);set('preset-glass-unit',parts[3]);}
+          if(parts){const kind=document.getElementById('preset-glass-kind');if(kind&&!glassKinds().includes(parts[1]))kind.add(new Option(parts[1],parts[1]));set('preset-glass-kind',parts[1]);set('preset-glass-size',parts[2]);set('preset-glass-unit',parts[3]);}
           updatePresetGlassValue();
         }
       }
