@@ -727,7 +727,7 @@
  <div class="wh-kpis"><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('all')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('all')" style="cursor:pointer">📦 วัสดุในทะเบียน<strong id="wh-kpi-items">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('low')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('low')" style="cursor:pointer">⚠️ วัสดุใกล้หมด<strong id="wh-kpi-low">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('out')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('out')" style="cursor:pointer">❌ วัสดุหมด<strong id="wh-kpi-out">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('ordered')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('ordered')" style="cursor:pointer">🛒 งานที่รอซื้อ<strong id="wh-kpi-pending">0</strong>งาน</div></div>
  <div class="wh-steps"><span class="wh-step on"><b>1</b>เลือกงาน</span><span class="wh-step"><b>2</b>ตรวจวัสดุ</span><span class="wh-step"><b>3</b>จัดซื้อ</span><span class="wh-step"><b>4</b>เบิกจากคลัง</span><span class="wh-step"><b>5</b>เริ่มผลิต</span></div>
  <div class="wh-layout"><div class="wh-panel"><div class="wh-heading">เลือกงานที่ต้องการทำ</div><p class="wh-sub">รายการอ้างอิงเอกสารจริงในระบบ</p><input id="wh-job-search" class="wh-input" placeholder="ค้นหาเลขเอกสาร / ลูกค้า" oninput="whRender()" style="margin-top:12px"><div id="wh-jobs" style="margin-top:9px"></div></div>
- <div class="wh-panel"><div class="wh-row"><div><div class="wh-heading">วัสดุที่ต้องใช้ <span id="wh-selected-no" style="color:#0076ce"></span></div><p class="wh-sub" id="wh-customer">เลือกงานจากด้านซ้าย</p></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="wh-btn primary" onclick="whOpenRecipes()">🧮 สูตรงานผลิต</button><button class="wh-btn" onclick="whOpenPlan()">✎ กำหนดวัสดุของงาน</button></div></div><div id="wh-auto-job-preview" style="margin-top:12px"></div><div style="overflow:auto;margin-top:13px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="wh-plan-rows"><tr><td colspan="4">กรุณาเลือกงาน</td></tr></tbody></table></div><p id="wh-job-dimensions" class="wh-sub" style="margin-top:10px"></p><div id="wh-alert" class="wh-notice" style="display:none"></div><div class="wh-row" style="margin-top:12px;flex-wrap:wrap"><button class="wh-btn" onclick="whShowStock()">📦 ดูสต็อกวัสดุ</button><button class="wh-btn" onclick="whShowHistory()">◷ ประวัติการเคลื่อนไหว</button><button class="wh-btn" onclick="whOpenSharedBoxes()">📦 วัสดุประจำช่าง / แจ้งหมด</button></div></div>
+ <div class="wh-panel"><div class="wh-row"><div><div class="wh-heading">วัสดุที่ต้องใช้ <span id="wh-selected-no" style="color:#0076ce"></span></div><p class="wh-sub" id="wh-customer">เลือกงานจากด้านซ้าย</p></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="wh-btn primary" onclick="whOpenRecipes()">🧮 สูตรงานผลิต</button><button class="wh-btn" onclick="whOpenComponents()">🧩 ส่วนประกอบ</button><button class="wh-btn" onclick="whOpenPlan()">✎ กำหนดวัสดุของงาน</button></div></div><div id="wh-auto-job-preview" style="margin-top:12px"></div><div style="overflow:auto;margin-top:13px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="wh-plan-rows"><tr><td colspan="4">กรุณาเลือกงาน</td></tr></tbody></table></div><p id="wh-job-dimensions" class="wh-sub" style="margin-top:10px"></p><div id="wh-alert" class="wh-notice" style="display:none"></div><div class="wh-row" style="margin-top:12px;flex-wrap:wrap"><button class="wh-btn" onclick="whShowStock()">📦 ดูสต็อกวัสดุ</button><button class="wh-btn" onclick="whShowHistory()">◷ ประวัติการเคลื่อนไหว</button><button class="wh-btn" onclick="whOpenSharedBoxes()">📦 วัสดุประจำช่าง / แจ้งหมด</button></div></div>
  <div class="wh-panel wh-side"><div class="wh-heading">สรุปสถานะวัสดุ</div><p class="wh-sub" id="wh-summary">ยังไม่ได้เลือกงาน</p><div id="wh-ring" style="width:140px;height:140px;border-radius:50%;background:conic-gradient(#dce7f0 0 100%);margin:19px auto;display:grid;place-items:center"><div id="wh-ring-label" style="background:white;width:93px;height:93px;border-radius:50%;display:grid;place-items:center;font-weight:800">—</div></div><div id="wh-status" style="font-size:12px;color:#5d748c"></div><div class="wh-heading" style="color:#0076ce;font-size:16px;margin-top:19px">การดำเนินการต่อไป</div><div class="wh-actions"><button class="wh-btn primary" onclick="whOrder()">🛒 บันทึกสั่งซื้อของที่ขาด</button><button class="wh-btn" onclick="whReceive()">📥 รับของเข้าคลัง</button><button class="wh-btn" onclick="whIssue()">📦 เบิกของสำหรับงานนี้</button><button class="wh-btn" onclick="whStartProduction()">▶ ยืนยันเริ่มผลิต</button></div><p class="wh-sub" style="margin-top:12px">การเบิกต้องมีวัสดุครบและมีแผนวัสดุของงานก่อน</p></div></div>
  <div id="wh-modal" class="wh-modal" style="display:none"><div class="wh-modal-body"><div class="wh-row"><h3 class="wh-heading" id="wh-modal-title"></h3><button class="wh-btn" onclick="whClose()">✕ ปิด</button></div><div id="wh-modal-content" style="margin-top:14px"></div></div></div>
 </section>
@@ -3781,6 +3781,38 @@
     // V11: read saved invoice item snapshots, never alter the document or stock automatically.
     const whNorm=x=>String(x||'').toLocaleLowerCase('th').replace(/[\s\-–—_.,()]+/g,'');
     const whInvoiceItems=job=>Array.isArray(job?.payload?.items)?job.payload.items:[];
+    // V11.2: reusable component templates share the existing warehouseRecipes collection.
+    // No new Firebase collection or Firestore rule is required.
+    const whComponentKinds=['ช่องแสงบน','ช่องแสงข้าง','ช่องแสง','ลูกฟัก','มุ้งลวด','บานประตู','บานหน้าต่าง','อื่น ๆ'];
+    const whComponentTemplates=()=>whRecipes.filter(r=>r.templateType==='component');
+    const whProductionRecipes=()=>whRecipes.filter(r=>r.templateType!=='component');
+    function whOpenComponents(){
+      const cards=whComponentTemplates().map(r=>`<div class="wh-stockitem"><div><b>${whEsc(r.componentKind||'ส่วนประกอบ')} · ${whEsc(r.name)}</b><div class="wh-sub">${whEsc(r.description||'')} · ${(r.lines||[]).length} วัสดุในสูตร</div></div><div style="display:flex;gap:5px;flex-wrap:wrap"><button class="wh-btn" onclick="whEditRecipe('${whEsc(r.id)}')">ออกแบบสูตร</button><button class="wh-btn" onclick="whEditComponent('${whEsc(r.id)}')">แก้ไขชื่อ/ประเภท</button><button class="wh-btn red" onclick="whDeleteRecipe('${whEsc(r.id)}')">ลบ</button></div></div>`).join('');
+      whOpen('🧩 จัดการส่วนประกอบ V11.2',`<p class="wh-sub">เพิ่มรูปแบบได้ไม่จำกัด แก้ไขและลบได้ · สูตรส่วนประกอบเป็นแม่แบบ ไม่ผูกสีและไม่ตัดสต็อกโดยอัตโนมัติ · เมื่อใช้กับงานจริงต้องตรวจสอบและยืนยันแผน</p><button class="wh-btn primary" style="margin:12px 0" onclick="whEditComponent()">＋ เพิ่มรูปแบบส่วนประกอบ</button><div class="wh-stocklist">${cards||'<p class="wh-sub">ยังไม่มีรูปแบบส่วนประกอบ</p>'}</div>`);
+    }
+    function whEditComponent(id=''){
+      const r=whComponentTemplates().find(x=>x.id===id);
+      whOpen(r?'แก้ไขรูปแบบส่วนประกอบ':'สร้างรูปแบบส่วนประกอบ',`<form onsubmit="whSaveComponent(event)"><input type="hidden" name="id" value="${whEsc(id)}"><label class="wh-sub">ประเภทส่วนประกอบ<select class="wh-input" name="kind">${whComponentKinds.map(k=>`<option ${r?.componentKind===k?'selected':''}>${whEsc(k)}</option>`).join('')}</select></label><label class="wh-sub" style="display:block;margin-top:12px">ชื่อรูปแบบ<input class="wh-input" name="name" required maxlength="120" value="${whEsc(r?.name||'')}" placeholder="เช่น ช่องแสงโค้งแบ่ง 3 ช่อง"></label><label class="wh-sub" style="display:block;margin-top:12px">คำอธิบาย<input class="wh-input" name="description" maxlength="300" value="${whEsc(r?.description||'')}"></label><p class="wh-sub" style="margin:12px 0">บันทึกแล้วสามารถเปิดออกแบบสูตรวัสดุได้ โดยไม่ต้องสร้างรูปแบบใหม่</p><button class="wh-btn primary" type="submit">บันทึกรูปแบบ</button></form>`);
+    }
+    async function whSaveComponent(e){
+      e.preventDefault();if(!whCanWrite())return;
+      const f=new FormData(e.target),id=String(f.get('id')||'')||whId(),old=whComponentTemplates().find(x=>x.id===id);
+      const name=String(f.get('name')||'').trim();if(!name)return;
+      try{await setDoc(cloudPath('warehouseRecipes',id),{...(old||{}),name,description:String(f.get('description')||''),componentKind:String(f.get('kind')||'อื่น ๆ'),templateType:'component',lines:old?.lines||[],updatedAt:new Date().toISOString(),updatedBy:userId});whOpenComponents();showToast('บันทึกรูปแบบส่วนประกอบแล้ว');}catch(err){cloudError('Save component',err);showToast('บันทึกส่วนประกอบไม่สำเร็จ');}
+    }
+    function whResolveBillMaterial(material,color,system){
+      if(!material)return {error:'ไม่พบวัสดุต้นแบบในทะเบียน'};
+      if(!['AL','GL'].includes(material.category))return {item:material};
+      const requested=String(color||'').trim();
+      if(!requested||requested==='-')return {error:'กรุณายืนยัน'+(material.category==='GL'?'ชนิด/สีกระจก':'สีอะลูมิเนียม')+'ในบิลก่อน'};
+      const same=whItems.filter(i=>i.category===material.category&&whNorm(i.name)===whNorm(material.name)&&whNorm(i.sku||'')===whNorm(material.sku||'')&&(!system||!i.system||whNorm(i.system)===whNorm(system))&&whNorm(i.color)===whNorm(requested));
+      if(same.length===1)return {item:same[0]};
+      if(same.length>1)return {error:'มีวัสดุสี '+requested+' ตรงกันหลายทะเบียน กรุณาตรวจสอบ'};
+      if(whNorm(material.color)===whNorm(requested)&&(!system||!material.system||whNorm(material.system)===whNorm(system)))return {item:material};
+      return {error:'ไม่พบวัสดุ '+material.name+' สี '+requested+' ในทะเบียน'};
+    }
+    function whBillGlass(it){return String(it.glassColor||it.glassType||it.glassName||it.glass?.color||it.glass?.type||'').trim();}
+    function whBillSystem(it){return String(it.aluSystem||it.system||it.series||'').trim().replace(/ชุดดารา/g,'ชุดตลาด');}
     function whAutoDetect(job){
       const items=whInvoiceItems(job),results=[],warnings=[];
       for(let index=0;index<items.length;index++){
@@ -3788,11 +3820,11 @@
         const alu=it.type==='alu'||/อะลูมิเนียม|อลูมิเนียม|บานเลื่อน|บานเปิด|หน้าต่างกระจก/.test(name);
         if(!alu)continue;
         const key=whNorm(name);
-        const exact=whRecipes.filter(r=>whNorm(r.name)===key);
-        const candidates=exact.length?exact:whRecipes.filter(r=>{const k=whNorm(r.name);return k.length>=5&&key.includes(k);});
+        const exact=whProductionRecipes().filter(r=>whNorm(r.name)===key);
+        const candidates=exact.length?exact:whProductionRecipes().filter(r=>{const k=whNorm(r.name);return k.length>=5&&key.includes(k);});
         const w=Number(it.width)*100,h=Number(it.height)*100,sets=Number(it.qty);
         const color=String(it.aluColor||'').trim();
-        const declaredSystem=String(it.aluSystem||it.system||it.series||'').trim();
+        const declaredSystem=whBillSystem(it);
         const matched=candidates.length===1?candidates[0]:null;
         const entry={index,it,name,w,h,sets,color,system:declaredSystem,recipe:matched,warnings:[],lines:[],cutDetails:[]};
         if(!matched)entry.warnings.push(candidates.length>1?'มีสูตรที่อาจตรงกันหลายสูตร ต้องระบุสูตรให้ชัดเจน':'ไม่พบสูตรที่ตรงกับชื่อรายการในบิล');
@@ -3805,8 +3837,23 @@
           const billText=whNorm([name,declaredSystem].join(' '));
           if(systems.length>1 && !declaredSystem && !systems.some(x=>billText.includes(whNorm(x))))entry.warnings.push('สูตรมีวัสดุหลายระบบ/รุ่น แต่บิลไม่ระบุชุดให้ชัดเจน');
           if(systems.length===1 && declaredSystem && whNorm(systems[0])!==whNorm(declaredSystem))entry.warnings.push('ระบบ/รุ่นในบิลไม่ตรงกับวัสดุในสูตร');
-          if(color && color!=='-' && colors.some(x=>whNorm(x)!==whNorm(color)))entry.warnings.push('สีอะลูมิเนียมในสูตรไม่ตรงกับสีในบิล');
-          if(w>0&&h>0&&sets>0){const calc=whRecipeDetailed(matched,w,h,sets);entry.lines=calc.lines;entry.cutDetails=calc.cutDetails;entry.warnings.push(...calc.warnings);}
+          if(w>0&&h>0&&sets>0){
+            const calc=whRecipeDetailed(matched,w,h,sets);
+            entry.cutDetails=calc.cutDetails;
+            entry.warnings.push(...calc.warnings);
+            const glass=whBillGlass(it);
+            const mapped=new Map();
+            for(const line of calc.lines){
+              const source=whItems.find(i=>i.id===line.itemId);
+              const selectedColor=source?.category==='GL'?glass:source?.category==='AL'?color:'';
+              const resolved=whResolveBillMaterial(source,selectedColor,declaredSystem);
+              if(resolved.error){entry.warnings.push((source?.name||'วัสดุ')+': '+resolved.error);continue;}
+              mapped.set(resolved.item.id,(mapped.get(resolved.item.id)||0)+line.qty);
+            }
+            entry.lines=[...mapped].map(([itemId,qty])=>({itemId,qty}));
+            if(details.some(i=>i.category==='GL')&&!glass)entry.warnings.push('บิลไม่ระบุชนิด/สีกระจก ต้องตรวจสอบก่อนยืนยัน');
+            if(details.some(i=>i.category==='AL')&&!color)entry.warnings.push('บิลไม่ระบุสีอะลูมิเนียม ต้องตรวจสอบก่อนยืนยัน');
+          }
         }
         results.push(entry);
       }
@@ -3822,7 +3869,7 @@
     function whAutoJobHtml(job,plan){
       if(!job)return '';
       const summary=whAutoSummary(job),items=whInvoiceItems(job);
-      const detail=items.map((it,index)=>`<div style="padding:9px 0;border-bottom:1px solid #e2e8f0"><b>${index+1}. ${whEsc(it.name||'ไม่ระบุรายการ')}</b><div class="wh-sub">${whEsc(it.type==='alu'?'งานกระจก/อะลูมิเนียม':'งานทั่วไป')} · ${whEsc(it.aluColor&&it.aluColor!=='-'?'สี '+it.aluColor+' · ':'')}${Number(it.width)>0&&Number(it.height)>0?whQtyText(it.width*100)+' × '+whQtyText(it.height*100)+' ซม. · ':''}${whQtyText(it.qty||0)} ${whEsc(it.unit||'ชุด')}</div></div>`).join('');
+      const detail=items.map((it,index)=>`<div style="padding:9px 0;border-bottom:1px solid #e2e8f0"><b>${index+1}. ${whEsc(it.name||'ไม่ระบุรายการ')}</b><div class="wh-sub">${whEsc(it.type==='alu'?'งานกระจก/อะลูมิเนียม':'งานทั่วไป')} · ${whEsc(it.aluColor&&it.aluColor!=='-'?'สี '+it.aluColor+' · ':'')}${Number(it.width)>0&&Number(it.height)>0?whQtyText(it.width*100)+' × '+whQtyText(it.height*100)+' ซม. · ':''}${whQtyText(it.qty||0)} ${whEsc(it.unit||'ชุด')}${whBillSystem(it)?' · ชุด '+whEsc(whBillSystem(it)):''}${whBillGlass(it)?' · กระจก '+whEsc(whBillGlass(it)):''}</div></div>`).join('');
       const checks=summary.matches.map(m=>`<div style="padding:8px 0;border-bottom:1px solid #e2e8f0"><b>${whEsc(m.name)}</b> ${m.warnings.length?'<span style="color:#b91c1c;font-weight:700">⚠ ต้องตรวจสอบ</span>':'<span style="color:#15803d;font-weight:700">✓ จับคู่สูตรแล้ว</span>'}<div class="wh-sub">${m.recipe?'สูตร: '+whEsc(m.recipe.name)+' · ':''}${whQtyText(m.w)} × ${whQtyText(m.h)} ซม. · ${whQtyText(m.sets)} ชุด</div>${m.warnings.length?`<div style="color:#b91c1c;font-size:12px">${m.warnings.map(whEsc).join(' · ')}</div>`:''}</div>`).join('');
       return `<div style="border:1px solid #bfdbfe;border-radius:13px;padding:12px;background:#f8fbff"><b>📄 รายละเอียดจากบิล ${whEsc(job.docNo)}</b><div class="wh-sub">${whEsc(job.customerName||job.custName||'')} · ${whEsc(job.project||'')} · ${items.length} รายการ</div><details style="margin:9px 0"><summary style="cursor:pointer;color:#075985;font-weight:700">ดูรายการสินค้าและขนาดทั้งหมดในบิล</summary>${detail||'<p class="wh-sub">ไม่พบรายการสินค้าในข้อมูลบิล</p>'}</details>${summary.matches.length?`<b>🧮 ตรวจจับสูตรผลิตอัตโนมัติ</b>${checks}`:'<p class="wh-sub" style="margin-top:8px">ไม่พบรายการงานกระจก/อะลูมิเนียมที่มีข้อมูลสำหรับจับคู่สูตร · งานประเภทอื่นใช้ปุ่มกำหนดวัสดุของงานได้</p>'}${summary.blocked.length?`<div class="wh-notice">⚠ มี ${summary.blocked.length} รายการที่ต้องตรวจสอบก่อนสร้างแผนวัสดุ ไม่เลือกสูตรแทนช่างโดยการเดา</div>`:''}${summary.valid.length&&!plan?`<p class="wh-sub" style="margin-top:10px">ตารางด้านล่างเป็นการคำนวณอัตโนมัติจากบิล ยังไม่บันทึกแผนหรือเบิกสต็อก</p><button class="wh-btn primary" style="margin-top:8px" ${summary.blocked.length?'disabled title="ตรวจสอบรายการที่จับคู่ไม่ได้ก่อน"':''} onclick="whSaveAutoJobPlan()">✓ ยืนยันแผนวัสดุจากบิลนี้</button>`:''}${plan?'<p class="wh-sub" style="margin-top:8px">มีแผนวัสดุที่บันทึกไว้แล้ว ระบบแสดงแผนเดิมเพื่อป้องกันการเปลี่ยนยอดเบิกโดยไม่ตั้งใจ</p>':''}</div>`;
     }
@@ -4008,7 +4055,7 @@
       row.querySelector('.wh-r-results').style.display='none';
     }
     function whOpenRecipes(){
-      const cards=whRecipes.map(r=>`<div class="wh-stockitem"><div><b>${whEsc(r.name)}</b><div class="wh-sub">${(r.lines||[]).length} รายการ · ${whEsc(r.description||'สูตรที่ผู้ใช้กำหนด')}</div></div><div style="display:flex;gap:5px"><button class="wh-btn" onclick="whTryRecipe('${whEsc(r.id)}')">ทดลอง</button><button class="wh-btn" onclick="whEditRecipe('${whEsc(r.id)}')">แก้ไข</button><button class="wh-btn red" onclick="whDeleteRecipe('${whEsc(r.id)}')">ลบ</button></div></div>`).join('');
+      const cards=whProductionRecipes().map(r=>`<div class="wh-stockitem"><div><b>${whEsc(r.name)}</b><div class="wh-sub">${(r.lines||[]).length} รายการ · ${whEsc(r.description||'สูตรที่ผู้ใช้กำหนด')}</div></div><div style="display:flex;gap:5px"><button class="wh-btn" onclick="whTryRecipe('${whEsc(r.id)}')">ทดลอง</button><button class="wh-btn" onclick="whEditRecipe('${whEsc(r.id)}')">แก้ไข</button><button class="wh-btn red" onclick="whDeleteRecipe('${whEsc(r.id)}')">ลบ</button></div></div>`).join('');
       whOpen('🧮 สูตรงานผลิตและประเภทงาน',`<p class="wh-sub">เพิ่มประเภทงานได้เอง ไม่จำกัดบานเลื่อน/บานเปิด/บานฟิกซ์ · สูตรจะไม่ตัดสต็อกจนกว่าจะบันทึกแผนและเบิกจริง</p><button class="wh-btn primary" style="margin:12px 0" onclick="whEditRecipe()">＋ สร้างสูตรใหม่</button><div class="wh-stocklist">${cards||'<p class="wh-sub">ยังไม่มีสูตร กดสร้างสูตรใหม่เพื่อเริ่มต้น</p>'}</div>`);
     }
     // V9: template cut rules. Every profile has its own cutting plan.
@@ -4056,7 +4103,7 @@
         kerfCm:Number(row.querySelector('.wh-r-kerf').value),a:Number(row.querySelector('.wh-r-a').value),b:Number(row.querySelector('.wh-r-b').value)
       }));
       if(!name||!lines.length||lines.some(l=>!l.itemId||!Number.isFinite(l.factor)||l.factor<=0||!Number.isFinite(l.waste)||l.waste<0||!Number.isFinite(l.offsetCm)||!Number.isFinite(l.kerfCm)||l.kerfCm<0||(l.mode.startsWith('cut_')&&(!Number.isInteger(l.factor)||!(l.stockLengthCm>0))))){showToast('ตรวจชื่อสูตร วัสดุ จำนวนชิ้น และความยาวต่อเส้น');return;}
-      try{await setDoc(cloudPath('warehouseRecipes',id||whId()),{name,description:String(f.get('description')||''),lines,updatedAt:new Date().toISOString(),updatedBy:userId});whOpenRecipes();showToast('บันทึกสูตร V9 แล้ว');}catch(err){cloudError('Save recipe',err);}
+      try{await setDoc(cloudPath('warehouseRecipes',id||whId()),{name,description:String(f.get('description')||''),lines,...(whRecipes.find(x=>x.id===id)?.templateType==='component'?{templateType:'component',componentKind:whRecipes.find(x=>x.id===id).componentKind}:{}),updatedAt:new Date().toISOString(),updatedBy:userId});(whRecipes.find(x=>x.id===id)?.templateType==='component'?whOpenComponents():whOpenRecipes());showToast('บันทึกสูตรแล้ว');}catch(err){cloudError('Save recipe',err);}
     }
     function whRecipeDetailed(r,w,h,sets){
       const totals=new Map(),cuts=new Map(),warnings=[];
@@ -4123,7 +4170,8 @@
       if(!confirm('นำรายการคำนวณไปแทนแผนวัสดุเดิมของ '+whSelected+'? ยังไม่ตัดสต็อก'))return;
       try{await setDoc(cloudPath('warehouseJobPlans',encodeURIComponent(whSelected)),{docNo:whSelected,lines:result.lines,cutDetails:result.cutDetails,recipeId:id,recipeName:r.name,widthCm:w,heightCm:h,sets,status:'planned',updatedAt:new Date().toISOString(),updatedBy:userId});whClose();showToast('นำสูตรไปใช้กับงานแล้ว กรุณาตรวจรายการก่อนเบิก');}catch(err){cloudError('Apply recipe',err);}
     }
-    async function whDeleteRecipe(id){const r=whRecipes.find(x=>x.id===id);if(!r||!whCanWrite())return;if(whPlans.some(p=>p.recipeId===id)){showToast('สูตรนี้มีงานอ้างอิงอยู่ ไม่สามารถลบได้');return;}if(!confirm('ลบสูตร '+r.name+'? ไม่กระทบเอกสารลูกค้า'))return;try{await deleteDoc(cloudPath('warehouseRecipes',id));whOpenRecipes();showToast('ลบสูตรแล้ว');}catch(err){cloudError('Delete recipe',err);}}
+    async function whDeleteRecipe(id){const r=whRecipes.find(x=>x.id===id);if(!r||!whCanWrite())return;if(whPlans.some(p=>p.recipeId===id)){showToast('สูตรนี้มีงานอ้างอิงอยู่ ไม่สามารถลบได้');return;}if(!confirm('ลบสูตร '+r.name+'? ไม่กระทบเอกสารลูกค้า'))return;try{await deleteDoc(cloudPath('warehouseRecipes',id));(r.templateType==='component'?whOpenComponents():whOpenRecipes());showToast('ลบสูตรแล้ว');}catch(err){cloudError('Delete recipe',err);}}
+    window.whOpenComponents=whOpenComponents;window.whEditComponent=whEditComponent;window.whSaveComponent=whSaveComponent;
     window.whOpenRecipes=whOpenRecipes;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whRecipeUpdateLine=whRecipeUpdateLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
     window.whSharedIssueUnit=whSharedIssueUnit;window.whToggleSharedMode=whToggleSharedMode;window.whOpenSharedBoxes=whOpenSharedBoxes;window.whOpenSharedIssue=whOpenSharedIssue;window.whSaveSharedIssue=whSaveSharedIssue;window.whReportSharedEmpty=whReportSharedEmpty;window.whAcknowledgeSharedAlert=whAcknowledgeSharedAlert;
     window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
