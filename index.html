@@ -4140,7 +4140,7 @@
       whOpen(i?'แก้ไขทะเบียนวัสดุ':'เพิ่มวัสดุในทะเบียน',`<form onsubmit="whSaveMaterial(event)" class="wh-form-grid">
         <input type="hidden" name="materialId" value="${whEsc(id)}">
         <label>ชื่อวัสดุ<input class="wh-input" name="name" required value="${whEsc(i?.name||'')}" placeholder="เช่น เฟรมบน–ล่าง ยูโร"></label>
-        <label>หมวดวัสดุ<select class="wh-input" name="category" onchange="whCategoryColorDefault(this)" ${i?'disabled':''}>${whCategories.map(([c,n])=>`<option value="${c}" ${c===(i?.category||'AL')?'selected':''}>${n} (${c})</option>`).join('')}</select></label>
+        <label>หมวดวัสดุ<select class="wh-input" name="category" onchange="whCategoryColorDefault(this)">${whCategories.map(([c,n])=>`<option value="${c}" ${c===(i?.category||'AL')?'selected':''}>${n} (${c})</option>`).join('')}</select></label>
         <label>รหัสสินค้าผู้ผลิต<input class="wh-input" name="sku" value="${whEsc(i?.sku||'')}" placeholder="เช่น 6T317"></label>
         <label>ระบบ/รุ่น<input class="wh-input" name="system" value="${whEsc(i?.system||'')}" placeholder="เช่น ยูโร 4 นิ้ว"></label>
         ${i?`<label>สี<input class="wh-input" name="color" value="${whEsc(i?.color||'')}" placeholder="เช่น ขาวนม"></label>`:`<div style="grid-column:1/-1;display:grid;gap:10px;border:1px solid #bfdbfe;border-radius:14px;padding:14px;background:#f8fbff"><b>🎨 สีวัสดุ (ไม่บังคับ)</b><label style="display:flex;gap:8px;align-items:center;padding:10px;border-radius:10px;background:#e0f2fe"><input type="checkbox" name="noColor" onchange="whToggleNoColor(this)" ${["HW","RB","OT"].includes(i?.category||"AL")?"checked":""}> ไม่ระบุสี / อุปกรณ์ไม่มีสี (สร้างทะเบียนเดียว)</label><div class="wh-sub">ถ้าอุปกรณ์ไม่มีสี ให้ติ๊ก “ไม่ระบุสี” โดยไม่ต้องเลือกสีใด ๆ หากมีหลายสีจึงเลือกได้หลายรายการ</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=true)">เลือกทุกสี</button><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=false)">ล้างการเลือก</button><button type="button" class="wh-btn" onclick="whAddSharedColor()">＋ เพิ่มสีส่วนกลาง</button></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px">${whColorChoices()}</div><label>หรือพิมพ์สีเพิ่มเติม (คั่นด้วยจุลภาค)<input class="wh-input" name="extraColors" placeholder="เช่น เทา, น้ำตาล, แชมเปญ"></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="skipDuplicates" checked> ข้ามสีที่มีทะเบียนวัสดุรุ่นนี้อยู่แล้ว</label></div>`}
@@ -4158,7 +4158,7 @@
     async function whSaveMaterial(e){
       e.preventDefault();if(!whCanWrite()||whBusy)return;
       const f=new FormData(e.target),name=String(f.get('name')||'').trim(),id=String(f.get('materialId')||'');
-      const category=id?(whItems.find(x=>x.id===id)?.category||'OT'):String(f.get('category')||'OT');
+      const category=String(f.get('category')||'OT');
       if(!name||!whCategories.some(x=>x[0]===category))return;
       const fields={name,category,sku:String(f.get('sku')||'').trim(),system:String(f.get('system')||'').trim(),color:String(f.get('color')||'').trim(),unit:String(f.get('unit')||'ชิ้น').trim(),minQty:whNum(f.get('minQty')),trackingMode:String(f.get('trackingMode')||'job'),updatedAt:new Date().toISOString(),updatedBy:userId};
       let colors=[];
@@ -4177,12 +4177,30 @@
       }
       whBusy=true;
       try{
-        if(id){await updateDoc(cloudPath('warehouseMaterials',id),fields);}
+        if(id){
+          const original=whItems.find(x=>x.id===id);
+          if(!original)throw Error('ไม่พบทะเบียนวัสดุที่ต้องการแก้ไข');
+          if(original.category===category){await updateDoc(cloudPath('warehouseMaterials',id),fields);}
+          else{
+            if(!confirm('เปลี่ยนหมวดจาก '+whCategoryName(original.category)+' เป็น '+whCategoryName(category)+'? ระบบจะออกเลขทะเบียนหมวดใหม่โดยอัตโนมัติ แต่คงรหัสอ้างอิงภายในและยอดสต๊อกเดิมไว้'))return;
+            const counterRef=cloudPath('warehouseMaterials','_counter_'+category);
+            const materialRef=cloudPath('warehouseMaterials',id);
+            await runTransaction(db,async tx=>{
+              const [materialSnap,counterSnap]=await Promise.all([tx.get(materialRef),tx.get(counterRef)]);
+              if(!materialSnap.exists())throw Error('ทะเบียนวัสดุถูกลบไปแล้ว');
+              if(materialSnap.data().category!==original.category)throw Error('หมวดวัสดุมีการเปลี่ยนแปลง กรุณาโหลดหน้าใหม่');
+              const existingMax=whItems.filter(x=>x.category===category).reduce((m,x)=>Math.max(m,Number(String(x.registerNo||'').match(new RegExp('^'+category+'-(\d+)$'))?.[1]||0)),0);
+              const next=Math.max(whNum(counterSnap.exists()?counterSnap.data().nextNo:0),existingMax)+1;
+              tx.set(counterRef,{nextNo:next,isCounter:true,category});
+              tx.update(materialRef,{...fields,registerNo:category+'-'+String(next).padStart(5,'0'),previousRegisterNo:original.registerNo||'',categoryChangedAt:new Date().toISOString()});
+            });
+          }
+        }
         else{
           const counterRef=cloudPath('warehouseMaterials','_counter_'+category),ids=colors.map(()=>whId());
           await runTransaction(db,async tx=>{
             const snap=await tx.get(counterRef);
-            const existingMax=whItems.filter(x=>x.category===category).reduce((m,x)=>Math.max(m,Number(String(x.registerNo||'').match(new RegExp('^'+category+'-(\\d+)$'))?.[1]||0)),0);
+            const existingMax=whItems.filter(x=>x.category===category).reduce((m,x)=>Math.max(m,Number(String(x.registerNo||'').match(new RegExp('^'+category+'-(\d+)$'))?.[1]||0)),0);
             const first=Math.max(whNum(snap.exists()?snap.data().nextNo:0),existingMax)+1;
             tx.set(counterRef,{nextNo:first+colors.length-1,isCounter:true,category});
             colors.forEach((color,k)=>tx.set(cloudPath('warehouseMaterials',ids[k]),{...fields,color,registerNo:category+'-'+String(first+k).padStart(5,'0'),qty:0,createdAt:new Date().toISOString(),createdBy:userId}));
