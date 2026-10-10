@@ -3799,10 +3799,10 @@
       whOpen(i?'แก้ไขทะเบียนวัสดุ':'เพิ่มวัสดุในทะเบียน',`<form onsubmit="whSaveMaterial(event)" class="wh-form-grid">
         <input type="hidden" name="materialId" value="${whEsc(id)}">
         <label>ชื่อวัสดุ<input class="wh-input" name="name" required value="${whEsc(i?.name||'')}" placeholder="เช่น เฟรมบน–ล่าง ยูโร"></label>
-        <label>หมวดวัสดุ<select class="wh-input" name="category" ${i?'disabled':''}>${whCategories.map(([c,n])=>`<option value="${c}" ${c===(i?.category||'AL')?'selected':''}>${n} (${c})</option>`).join('')}</select></label>
+        <label>หมวดวัสดุ<select class="wh-input" name="category" onchange="whCategoryColorDefault(this)" ${i?'disabled':''}>${whCategories.map(([c,n])=>`<option value="${c}" ${c===(i?.category||'AL')?'selected':''}>${n} (${c})</option>`).join('')}</select></label>
         <label>รหัสสินค้าผู้ผลิต<input class="wh-input" name="sku" value="${whEsc(i?.sku||'')}" placeholder="เช่น 6T317"></label>
         <label>ระบบ/รุ่น<input class="wh-input" name="system" value="${whEsc(i?.system||'')}" placeholder="เช่น ยูโร 4 นิ้ว"></label>
-        ${i?`<label>สี<input class="wh-input" name="color" value="${whEsc(i?.color||'')}" placeholder="เช่น ขาวนม"></label>`:`<div style="grid-column:1/-1;display:grid;gap:10px;border:1px solid #bfdbfe;border-radius:14px;padding:14px;background:#f8fbff"><b>🎨 เลือกหลายสีเพื่อสร้างทะเบียนพร้อมกัน</b><div class="wh-sub">สร้างวัสดุรุ่นเดียวกันได้หลายสีในครั้งเดียว แต่ละสีจะมีรหัสและยอดสต็อกแยกกัน</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=true)">เลือกทุกสี</button><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=false)">ล้างการเลือก</button><button type="button" class="wh-btn" onclick="whAddSharedColor()">＋ เพิ่มสีส่วนกลาง</button></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px">${whColorChoices()}</div><label>หรือพิมพ์สีเพิ่มเติม (คั่นด้วยจุลภาค)<input class="wh-input" name="extraColors" placeholder="เช่น เทา, น้ำตาล, แชมเปญ"></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="skipDuplicates" checked> ข้ามสีที่มีทะเบียนวัสดุรุ่นนี้อยู่แล้ว</label></div>`}
+        ${i?`<label>สี<input class="wh-input" name="color" value="${whEsc(i?.color||'')}" placeholder="เช่น ขาวนม"></label>`:`<div style="grid-column:1/-1;display:grid;gap:10px;border:1px solid #bfdbfe;border-radius:14px;padding:14px;background:#f8fbff"><b>🎨 สีวัสดุ (ไม่บังคับ)</b><label style="display:flex;gap:8px;align-items:center;padding:10px;border-radius:10px;background:#e0f2fe"><input type="checkbox" name="noColor" onchange="whToggleNoColor(this)" ${["HW","RB","OT"].includes(i?.category||"AL")?"checked":""}> ไม่ระบุสี / อุปกรณ์ไม่มีสี (สร้างทะเบียนเดียว)</label><div class="wh-sub">ถ้าอุปกรณ์ไม่มีสี ให้ติ๊ก “ไม่ระบุสี” โดยไม่ต้องเลือกสีใด ๆ หากมีหลายสีจึงเลือกได้หลายรายการ</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=true)">เลือกทุกสี</button><button type="button" class="wh-btn" onclick="this.closest('form').querySelectorAll('[name=selectedColors]').forEach(x=>x.checked=false)">ล้างการเลือก</button><button type="button" class="wh-btn" onclick="whAddSharedColor()">＋ เพิ่มสีส่วนกลาง</button></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px">${whColorChoices()}</div><label>หรือพิมพ์สีเพิ่มเติม (คั่นด้วยจุลภาค)<input class="wh-input" name="extraColors" placeholder="เช่น เทา, น้ำตาล, แชมเปญ"></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="skipDuplicates" checked> ข้ามสีที่มีทะเบียนวัสดุรุ่นนี้อยู่แล้ว</label></div>`}
         <label>การจัดการวัสดุ<select class="wh-input" name="trackingMode" onchange="whToggleSharedMode(this)"><option value="job" ${i?.trackingMode!=='shared_box'?'selected':''}>คำนวณและเบิกตามงาน</option><option value="shared_box" ${i?.trackingMode==='shared_box'?'selected':''}>วัสดุสิ้นเปลือง เบิกเป็นกล่อง ใช้หลายงาน</option></select></label>
         <label>หน่วยสต็อก<input class="wh-input" name="unit" value="${whEsc(i?.unit||(i?.trackingMode==='shared_box'?'กล่อง':'เส้น'))}" required></label>
         <div class="wh-shared-hint wh-sub" style="grid-column:1/-1;${i?.trackingMode==='shared_box'?'':'display:none'}">วัสดุแบบใช้ร่วมกัน: รับเข้า/เบิกเป็นกล่อง ไม่หักสต็อกตามสูตรแต่ละงาน ช่างแจ้งเมื่อใช้หมด เจ้าของร้านจึงตัดสินใจซื้อ</div>
@@ -3811,6 +3811,8 @@
         <button class="wh-btn primary" type="submit">${i?'บันทึกการแก้ไข':'สร้างทะเบียนวัสดุ'}</button>
       </form>`);
     }
+    function whToggleNoColor(el){const form=el.closest("form");const area=el.closest("div[style*=grid-column]");if(!area)return;area.querySelectorAll("[name=selectedColors]").forEach(x=>{if(el.checked)x.checked=false;x.disabled=el.checked});const extra=area.querySelector("[name=extraColors]");if(extra){if(el.checked)extra.value="";extra.disabled=el.checked;}area.querySelectorAll("button").forEach(b=>b.disabled=el.checked);}
+    function whCategoryColorDefault(el){const f=el.closest("form"),no=f.querySelector("[name=noColor]");if(no){no.checked=["HW","RB","OT"].includes(el.value);whToggleNoColor(no);}if(el.value==="HW"&&f.elements.unit.value==="เส้น")f.elements.unit.value="ตัว";}
     function whToggleSharedMode(el){const f=el.closest('form');f.querySelector('.wh-shared-hint').style.display=el.value==='shared_box'?'block':'none';if(el.value==='shared_box')f.elements.unit.value='กล่อง';}
     async function whSaveMaterial(e){
       e.preventDefault();if(!whCanWrite()||whBusy)return;
@@ -3822,14 +3824,15 @@
       if(!id){
         const raw=[...f.getAll('selectedColors'),...String(f.get('extraColors')||'').split(/[,，\n]+/)];
         colors=[...new Map(raw.map(x=>String(x).trim()).filter(Boolean).map(x=>[x.toLocaleLowerCase(),x])).values()];
-        if(!colors.length){showToast('กรุณาเลือกอย่างน้อย 1 สี');return;}
+        if(f.has('noColor'))colors=[''];
+        if(!colors.length){showToast('กรุณาเลือกสี หรือเลือก “ไม่ระบุสี” สำหรับอุปกรณ์ไม่มีสี');return;}
         if(colors.length>100){showToast('สร้างได้ครั้งละไม่เกิน 100 สี');return;}
         const sameBase=x=>x.category===category&&String(x.name||'').trim().toLocaleLowerCase()===name.toLocaleLowerCase()&&String(x.system||'').trim().toLocaleLowerCase()===fields.system.toLocaleLowerCase()&&String(x.sku||'').trim().toLocaleLowerCase()===fields.sku.toLocaleLowerCase();
         const existing=new Set(whItems.filter(sameBase).map(x=>String(x.color||'').trim().toLocaleLowerCase()));
         const duplicates=colors.filter(x=>existing.has(x.toLocaleLowerCase()));
         if(duplicates.length&&!f.has('skipDuplicates')){showToast('มีทะเบียนสีซ้ำแล้ว: '+duplicates.join(', '));return;}
         colors=colors.filter(x=>!existing.has(x.toLocaleLowerCase()));
-        if(!colors.length){showToast('สีที่เลือกมีทะเบียนอยู่แล้วทั้งหมด');return;}
+        if(!colors.length){showToast('วัสดุรุ่นนี้และสีที่เลือกมีทะเบียนอยู่แล้ว');return;}
       }
       whBusy=true;
       try{
@@ -3844,7 +3847,7 @@
             colors.forEach((color,k)=>tx.set(cloudPath('warehouseMaterials',ids[k]),{...fields,color,registerNo:category+'-'+String(first+k).padStart(5,'0'),qty:0,createdAt:new Date().toISOString(),createdBy:userId}));
           });
         }
-        whClose();showToast(id?'แก้ไขทะเบียนแล้ว':'สร้างทะเบียนแยกตามสีสำเร็จ '+colors.length+' รายการ');
+        whClose();showToast(id?'แก้ไขทะเบียนแล้ว':'สร้างทะเบียนวัสดุสำเร็จ '+colors.length+' รายการ');
       }catch(err){cloudError('Save material',err);showToast(err.message||'สร้างทะเบียนไม่สำเร็จ');}finally{whBusy=false;}
     }
     async function whDeleteMaterial(id){
