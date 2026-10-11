@@ -3830,8 +3830,15 @@
     const whEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const whNum=x=>Math.max(0,Number(x)||0);
     const whId=()=>crypto.randomUUID?.()||('w'+Date.now()+Math.random().toString(36).slice(2));
+    // V11.21: all documents linked to the same real job share one warehouse identity.
+    const whJobKey=h=>h?String(jobKey(h,state.history)||h.docNo||''):'';
+    const whGroupDocs=h=>h?state.history.filter(x=>x.docNo&&whJobKey(x)===whJobKey(h)):[];
     const whDoc=()=>state.history.find(x=>x.docNo===whSelected);
-    const whPlan=()=>whPlans.find(x=>x.id===encodeURIComponent(whSelected));
+    const whGroupPlans=()=>{const h=whDoc();if(!h)return [];const names=new Set(whGroupDocs(h).map(x=>x.docNo));return whPlans.filter(p=>names.has(p.docNo||decodeURIComponent(p.id||''))||(p.jobId&&p.jobId===whJobKey(h)));};
+    const whPlan=()=>{const group=whGroupPlans();return group.find(p=>['completed','producing','issued'].includes(p.status))||group[0]||null;};
+    const whIssuedStatuses=['issued','producing','completed'];
+    const whIssuedForJob=()=>whGroupPlans().some(p=>whIssuedStatuses.includes(p.status));
+    const whPlanWriteAllowed=()=>{if(whIssuedForJob()){showToast('งานนี้เคยเบิกวัสดุแล้ว ห้ามสร้างแผนหรือเบิกซ้ำจากเอกสารอื่น');return false;}return true;};
     const whSearchText=i=>[i.registerNo,i.name,i.sku,i.system,i.color,whCategoryName(i.category)].join(' ').toLocaleLowerCase();
     const whCanWrite=()=>{if(!userId||!companyAccessReady){showToast('กรุณาเข้าสู่ระบบก่อน');return false;}return true;};
     const whQtyText=n=>Number(Number(n).toFixed(3)).toLocaleString('th-TH',{maximumFractionDigits:3});
@@ -4079,7 +4086,7 @@
       }
     }
     async function whSaveGlassCutPlan(){
-      if(!whCanWrite()||whBusy||!whSelected)return;
+      if(!whCanWrite()||whBusy||!whSelected||!whPlanWriteAllowed())return;
       if(!document.getElementById('wh-glass-verified')?.checked){showToast('กรุณาให้ช่างตรวจและติ๊กยืนยันขนาดก่อน');return;}
       const job=whDoc(),needs=whGlassNeeds(job),entries=whGlassCutRows();
       if(!needs.length||entries.length!==needs.length){showToast('รายการกระจกไม่ครบ');return;}
@@ -4116,7 +4123,7 @@
       return `<div style="border:1px solid #bfdbfe;border-radius:13px;padding:12px;background:#f8fbff"><b>📄 รายละเอียดจากบิล ${whEsc(job.docNo)}</b><div class="wh-sub">${whEsc(job.customerName||job.custName||'')} · ${whEsc(job.project||'')} · ${items.length} รายการ</div><details style="margin:9px 0"><summary style="cursor:pointer;color:#075985;font-weight:700">ดูรายการสินค้าและขนาดทั้งหมดในบิล</summary>${detail||'<p class="wh-sub">ไม่พบรายการสินค้าในข้อมูลบิล</p>'}</details>${whGlassNeeds(job).length?`<button class="wh-btn primary" style="margin:10px 0" onclick="whOpenGlassCutPlan()">🪟 ${plan?.glassCutPlan?.signature===whGlassSignature(job)?'แผนตัดกระจกยืนยันแล้ว ✓':'ขั้นตอนถัดไป: ตรวจขนาดกระจก'}</button>`:''}${summary.matches.length?`<details style="margin-top:12px" ${summary.blocked.length?'open':''}><summary style="cursor:pointer;font-weight:700;color:#075985">🧮 รายละเอียดการตรวจสูตร ${summary.blocked.length?'· ต้องแก้ '+summary.blocked.length+' รายการ':'· ผ่านแล้ว ✓'} (กดเพื่อดู/ซ่อน)</summary>${checks}</details>`:'<p class="wh-sub" style="margin-top:8px">ไม่พบรายการงานกระจก/อะลูมิเนียมที่มีข้อมูลสำหรับจับคู่สูตร · งานประเภทอื่นใช้ปุ่มกำหนดวัสดุของงานได้</p>'}${summary.blocked.length?`<div class="wh-notice">⚠ มีข้อมูลสูตรที่ต้องแก้จริง: เปิดรายละเอียดด้านบนเพื่อดูรายการที่ผิด · การยืนยันกระจกทำผ่านปุ่มตรวจขนาดกระจก</div>`:''}${summary.valid.length&&!plan&&!whGlassNeeds(job).length?`<p class="wh-sub" style="margin-top:10px">ตารางด้านล่างเป็นการคำนวณอัตโนมัติจากบิล ยังไม่บันทึกแผนหรือเบิกสต็อก</p><button class="wh-btn primary" style="margin-top:8px" ${summary.blocked.length?'disabled title="ตรวจสอบรายการที่จับคู่ไม่ได้ก่อน"':''} onclick="whSaveAutoJobPlan()">✓ ยืนยันแผนวัสดุจากบิลนี้</button>`:''}${plan?'<p class="wh-sub" style="margin-top:8px">มีแผนวัสดุที่บันทึกไว้แล้ว ระบบแสดงแผนเดิมเพื่อป้องกันการเปลี่ยนยอดเบิกโดยไม่ตั้งใจ</p>':''}</div>`;
     }
     async function whSaveAutoJobPlan(){
-      if(!whSelected||!whCanWrite())return;
+      if(!whSelected||!whCanWrite()||!whPlanWriteAllowed())return;
       if(whPlan()){showToast('งานนี้มีแผนแล้ว กรุณาตรวจแผนเดิม');return;}
       const job=whDoc(),summary=whAutoSummary(job);if(whInvoiceItems(job).some((it,index)=>whWorkClass(job,index,it)!=='internal')){showToast('บิลนี้มีงานจ้างภายนอก งานผสม หรือรอตรวจสอบ กรุณาจัดทำแผนเฉพาะรายการที่ยืนยันแล้ว');return;}
       if(!summary.valid.length||summary.blocked.length){showToast('ยังมีรายการที่จับคู่สูตรไม่ได้ กรุณาตรวจสอบ');return;}
@@ -4218,9 +4225,20 @@
     }
     function whRender(){
       if(!document.getElementById('wh-jobs'))return;
-      const jobs=[...new Map(state.history.filter(h=>h.docNo).map(h=>[h.docNo,h])).values()].sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+      const grouped=new Map();
+      for(const h of state.history.filter(h=>h.docNo)){
+        const key=whJobKey(h);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(h);
+      }
+      const jobs=[...grouped.values()].map(docs=>{
+        const root=docs.find(h=>h.docNo===getRootDocNo(h,state.history));
+        const withPlan=docs.find(h=>whPlans.some(p=>p.docNo===h.docNo));
+        const h=withPlan||root||docs[0];
+        return {...h,_whDocs:docs,_whSearch:docs.map(x=>x.docNo).join(' ')};
+      }).sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+      // Keep the current selection mapped to the representative document for this job.
+      if(whSelected){const active=jobs.find(h=>h._whDocs.some(d=>d.docNo===whSelected));if(active)whSelected=active.docNo;}
       const q=(document.getElementById('wh-job-search')?.value||'').toLowerCase();whLoadNote();
-      document.getElementById('wh-jobs').innerHTML=jobs.filter(h=>(String(h.docNo)+' '+String(h.custName||h.customerName||'')).toLowerCase().includes(q)).map(h=>`<button class="wh-job ${whSelected===h.docNo?'selected':''}" onclick="whSelect('${whEsc(h.docNo).replace(/'/g,'&#39;')}')"><strong>${whEsc(h.docNo)}</strong><small>${whEsc(h.custName||h.customerName||h.customer?.name||'ไม่ระบุลูกค้า')}</small></button>`).join('')||'<p class="wh-sub">ไม่พบเอกสาร</p>';
+      document.getElementById('wh-jobs').innerHTML=jobs.filter(h=>(String(h._whSearch)+' '+String(h.custName||h.customerName||'')).toLowerCase().includes(q)).map(h=>`<button class="wh-job ${whSelected===h.docNo?'selected':''}" onclick="whSelect('${whEsc(h.docNo).replace(/'/g,'&#39;')}')"><strong>${whEsc(h.docNo)}</strong><small>${whEsc(h.custName||h.customerName||h.customer?.name||'ไม่ระบุลูกค้า')} · ${h._whDocs.length} เอกสารในงานเดียวกัน</small><small>${whEsc(h._whSearch)}</small></button>`).join('')||'<p class="wh-sub">ไม่พบเอกสาร</p>';
       const boxBanner=document.getElementById('wh-consumable-alert-banner');
       if(boxBanner){const n=whBoxAlerts.filter(a=>a.status==='pending').length;boxBanner.style.display=n?'block':'none';boxBanner.innerHTML=n?`🔔 <b>ช่างแจ้งวัสดุสิ้นเปลืองหมด ${n} รายการ</b> <button class="wh-btn" onclick="whOpenSharedBoxes()" style="margin-left:8px">เปิดดูและรับทราบ</button>`:'';}
       document.getElementById('wh-kpi-items').textContent=whItems.length;
@@ -4242,7 +4260,7 @@
       document.getElementById('wh-summary').textContent=alreadyIssued?`เบิกแล้ว ${total} รายการ` :total?`จาก ${total} รายการ`:whSelected?'งานนี้ยังไม่มีแผนวัสดุ':'ภาพรวมคลังสินค้า · เลือกงานเพื่อดูความพร้อมผลิต';
       document.getElementById('wh-status').textContent=alreadyIssued?`✓ เบิกวัสดุแล้ว ${total} รายการ · ${plan.status==='completed'?'งานเสร็จสิ้น':plan.status==='producing'?'กำลังผลิต':'พร้อมเริ่มผลิต'} · ไม่ตรวจยอดขาดซ้ำ` :total?`พอใช้ ${good} รายการ · ขาด ${bad} รายการ${plan?.status?' · '+({ordered:'สั่งซื้อแล้ว',issued:'เบิกแล้ว',producing:'กำลังผลิต'}[plan.status]||''):''}`:`คลังมี ${whItems.length} ทะเบียน · ใกล้หมด ${whItems.filter(i=>whNum(i.qty)>0&&whNum(i.qty)<=whNum(i.minQty)).length} · หมด ${whItems.filter(i=>whNum(i.qty)===0).length} (กดกล่องด้านบนเพื่อดูรายชื่อ)`;
       const alert=document.getElementById('wh-alert');alert.style.display=bad&&!alreadyIssued?'block':'none';alert.textContent=bad?`⚠️ วัสดุไม่เพียงพอ ${bad} รายการ · ดูตัวเลขสีแดงและจำนวนที่ขาดในตาราง · ต้องรับของเข้าคลังให้ครบก่อนเบิก`:'';
-      const buttons=document.querySelectorAll('#tab-warehouse .wh-actions button');buttons[0].disabled=!plan||!bad||['issued','producing'].includes(plan.status);buttons[1].disabled=!whItems.length;buttons[2].disabled=!total||!!bad||['issued','producing','completed'].includes(plan?.status)||(job&&whGlassNeeds(job).length>0&&plan?.glassCutPlan?.signature!==whGlassSignature(job));buttons[3].disabled=plan?.status!=='issued';
+      const buttons=document.querySelectorAll('#tab-warehouse .wh-actions button');buttons[0].disabled=!plan||!bad||whIssuedStatuses.includes(plan.status);buttons[1].disabled=!whItems.length;buttons[2].disabled=!total||!!bad||['issued','producing','completed'].includes(plan?.status)||(job&&whGlassNeeds(job).length>0&&plan?.glassCutPlan?.signature!==whGlassSignature(job));buttons[3].disabled=plan?.status!=='issued';
       // V11.20.1: use the same saved plan status as the next-action card.
       const workflowIndex = !job ? 0 : ['completed','producing'].includes(plan?.status) ? 4 : plan?.status==='issued' ? 3 : bad && plan?.status==='ordered' ? 2 : bad ? 1 : total ? 3 : 0;
       document.querySelectorAll('#tab-warehouse .wh-step').forEach((el,i)=>{
@@ -4454,7 +4472,7 @@
     function whSearchPlanMaterial(input){const row=input.closest('.wh-plan-line'),target=row?.querySelector('.wh-plan-results');if(!target)return;const q=input.value.trim().toLocaleLowerCase();const matches=whItems.filter(i=>!whIsShared(i)&&whSearchText(i).includes(q)).slice(0,40);target.style.display='block';target.innerHTML=matches.map(i=>`<button type="button" class="wh-btn" style="display:block;width:100%;text-align:left;white-space:normal;margin:3px 0" onclick="whPickPlanMaterial(this,'${whEsc(i.id)}')">${whEsc(i.registerNo||'')} · ${whEsc(i.name)} · ${whEsc(i.color||'')} · ${whEsc(i.unit||'')}</button>`).join('')||'<p class="wh-sub">ไม่พบวัสดุ</p>';}
     function whPickPlanMaterial(btn,id){const row=btn.closest('.wh-plan-line'),item=whItems.find(i=>i.id===id);if(!row||!item)return;row.querySelector('.wh-line-item').value=id;row.querySelector('.wh-plan-search').value=[item.registerNo,item.name,item.color||'',item.unit].filter(Boolean).join(' · ');row.querySelector('.wh-plan-results').style.display='none';}
     function whAddLine(){document.getElementById('wh-edit-lines').insertAdjacentHTML('beforeend',whLineHtml('',{}));}
-    async function whSavePlan(){if(!whCanWrite())return;const rows=[...document.querySelectorAll('#wh-edit-lines .wh-plan-line')];const lines=rows.map(r=>({itemId:r.querySelector('.wh-line-item').value,qty:Number(r.querySelector('.wh-line-qty').value)}));if(lines.some(l=>!l.itemId||!Number.isFinite(l.qty)||l.qty<=0)){showToast('กรุณากรอกจำนวนให้ถูกต้อง');return;}const combined=new Map();for(const l of lines)combined.set(l.itemId,(combined.get(l.itemId)||0)+l.qty);const existing=whPlan();if(['issued','producing'].includes(existing?.status)){showToast('งานนี้เบิกแล้ว ไม่สามารถแก้แผนย้อนหลัง');return;}try{await setDoc(cloudPath('warehouseJobPlans',encodeURIComponent(whSelected)),{docNo:whSelected,lines:[...combined].map(([itemId,qty])=>({itemId,qty})),status:'planned',glassCutPlan:null,...(existing?.widthCm?{widthCm:existing.widthCm,heightCm:existing.heightCm,sets:existing.sets,recipeId:existing.recipeId||'',recipeName:existing.recipeName||''}:{}),updatedAt:new Date().toISOString(),updatedBy:userId});whClose();showToast('บันทึกแผนวัสดุแล้ว');}catch(err){cloudError('Save plan',err)}}
+    async function whSavePlan(){if(!whCanWrite()||!whPlanWriteAllowed())return;const rows=[...document.querySelectorAll('#wh-edit-lines .wh-plan-line')];const lines=rows.map(r=>({itemId:r.querySelector('.wh-line-item').value,qty:Number(r.querySelector('.wh-line-qty').value)}));if(lines.some(l=>!l.itemId||!Number.isFinite(l.qty)||l.qty<=0)){showToast('กรุณากรอกจำนวนให้ถูกต้อง');return;}const combined=new Map();for(const l of lines)combined.set(l.itemId,(combined.get(l.itemId)||0)+l.qty);const existing=whPlan();if(['issued','producing'].includes(existing?.status)){showToast('งานนี้เบิกแล้ว ไม่สามารถแก้แผนย้อนหลัง');return;}try{await setDoc(cloudPath('warehouseJobPlans',encodeURIComponent(whSelected)),{docNo:whSelected,lines:[...combined].map(([itemId,qty])=>({itemId,qty})),status:'planned',glassCutPlan:null,...(existing?.widthCm?{widthCm:existing.widthCm,heightCm:existing.heightCm,sets:existing.sets,recipeId:existing.recipeId||'',recipeName:existing.recipeName||''}:{}),updatedAt:new Date().toISOString(),updatedBy:userId});whClose();showToast('บันทึกแผนวัสดุแล้ว');}catch(err){cloudError('Save plan',err)}}
     async function whOrder(){const p=whPlan();if(!p||!whCanWrite())return;try{await updateDoc(cloudPath('warehouseJobPlans',p.id),{status:'ordered',orderedAt:new Date().toISOString(),updatedBy:userId});showToast('บันทึกสถานะรอจัดซื้อแล้ว — ยังไม่เพิ่มสต็อก');}catch(e){cloudError('Order materials',e)}}
     // V11.10.1: one consistent, searchable material identity across stock forms.
     function whFullMaterialName(i){
@@ -4474,7 +4492,46 @@
       whOpen('รับวัสดุเข้าคลัง',`<form onsubmit="whSaveReceive(event)" class="wh-form-grid"><label style="grid-column:1/-1">🔎 ค้นหาชื่อ รหัส สี รุ่น หรือขนาด<input class="wh-input" type="search" placeholder="เช่น เขียวตัดแสง 6 มม. / RB-00001" oninput="whReceiveSearch(this)"><small class="wh-receive-count">${whItems.length} รายการในทะเบียน</small></label><label style="grid-column:1/-1">เลือกวัสดุ (แสดงชื่อเต็มและสเป็ก)<select class="wh-input" name="itemId" required><option value="">— เลือกวัสดุที่ต้องการรับ —</option>${opts}</select></label><label>จำนวนรับจริง<input class="wh-input" name="qty" type="number" min="0.001" step="any" required></label><label style="grid-column:1/-1">หมายเหตุ / เลขใบซื้อ<input class="wh-input" name="note" placeholder="เช่น รับจากร้านค้า"></label><button class="wh-btn primary">ยืนยันรับเข้าและเพิ่มสต็อก</button></form>`);
     }
     async function whSaveReceive(e){e.preventDefault();if(!whCanWrite()||whBusy)return;const f=new FormData(e.target),id=String(f.get('itemId')),qty=Number(f.get('qty'));if(!(qty>0&&Number.isFinite(qty)))return;whBusy=true;try{const moveId=whId();await runTransaction(db,async tx=>{const ref=cloudPath('warehouseMaterials',id),snap=await tx.get(ref);if(!snap.exists())throw Error('ไม่พบวัสดุ');tx.update(ref,{qty:whNum(snap.data().qty)+qty});tx.set(cloudPath('warehouseMovements',moveId),{type:'receive',itemId:id,qty,docNo:whSelected||'',note:String(f.get('note')||''),createdAt:new Date().toISOString(),createdBy:userId});});whClose();showToast('รับเข้าและอัปเดตสต็อกแล้ว');}catch(err){cloudError('Receive material',err)}finally{whBusy=false;}}
-    async function whIssue(){const p=whPlan();if(!p||!whCanWrite()||whBusy)return;const job=whDoc();if(job&&whGlassNeeds(job).length&&p.glassCutPlan?.signature!==whGlassSignature(job)){showToast('ต้องให้ช่างยืนยันแผนตัดกระจกก่อนเบิก');return;}if(!confirm('ยืนยันเบิกวัสดุสำหรับงาน '+whSelected+'? ระบบจะหักสต็อกจริง'))return;whBusy=true;try{const movementId=whId();await runTransaction(db,async tx=>{const planRef=cloudPath('warehouseJobPlans',p.id),planSnap=await tx.get(planRef);if(!planSnap.exists()||['issued','producing'].includes(planSnap.data().status))throw Error('งานนี้ถูกเบิกไปแล้ว');if(job&&whGlassNeeds(job).length&&planSnap.data().glassCutPlan?.signature!==whGlassSignature(job))throw Error('แผนตัดกระจกยังไม่ได้รับการยืนยันหรือบิลเปลี่ยน');const lines=planSnap.data().lines||[],reads=[];for(const l of lines){const ref=cloudPath('warehouseMaterials',l.itemId);reads.push({l,ref,snap:await tx.get(ref)});}for(const r of reads){if(!r.snap.exists()||whNum(r.snap.data().qty)<whNum(r.l.qty))throw Error('วัสดุไม่ครบ กรุณาตรวจสต็อกใหม่');}const stockSnapshots=reads.map(r=>({itemId:r.l.itemId,before:whNum(r.snap.data().qty),issued:whNum(r.l.qty),after:whNum(r.snap.data().qty)-whNum(r.l.qty)}));for(const r of reads)tx.update(r.ref,{qty:whNum(r.snap.data().qty)-whNum(r.l.qty)});tx.update(planRef,{status:'issued',issuedAt:new Date().toISOString(),issuedBy:userId});tx.set(cloudPath('warehouseMovements',movementId),{type:'issue',docNo:whSelected,lines,stockSnapshots,createdAt:new Date().toISOString(),createdBy:userId});});showToast('เบิกวัสดุครบงานแล้ว');}catch(err){cloudError('Issue materials',err);showToast(err.message)}finally{whBusy=false;}}
+    async function whIssue(){
+      const p=whPlan(),job=whDoc();
+      if(!p||!whCanWrite()||whBusy)return;
+      if(whIssuedForJob()){showToast('งานนี้เบิกวัสดุแล้ว ไม่สามารถเบิกซ้ำจากใบอื่นได้');return;}
+      if(job&&whGlassNeeds(job).length&&p.glassCutPlan?.signature!==whGlassSignature(job)){showToast('ต้องให้ช่างยืนยันแผนตัดกระจกก่อนเบิก');return;}
+      const key=whJobKey(job);
+      if(!key){showToast('ไม่พบรหัสงานหลัก');return;}
+      const siblingDocs=whGroupDocs(job),siblingPlanIds=[...new Set([...siblingDocs.map(x=>encodeURIComponent(x.docNo)),p.id])];
+      if(!confirm('ยืนยันเบิกวัสดุหนึ่งครั้งสำหรับงาน '+key+' ('+siblingDocs.map(x=>x.docNo).join(', ')+')? ระบบจะหักสต็อกจริง'))return;
+      whBusy=true;
+      try{
+        const movementId=whId(),lockRef=cloudPath('warehouseJobPlans','_issue_lock_'+encodeURIComponent(key));
+        await runTransaction(db,async tx=>{
+          const lockSnap=await tx.get(lockRef);
+          if(lockSnap.exists()&&lockSnap.data().issued===true)throw Error('งานนี้มีประวัติเบิกวัสดุแล้ว ห้ามเบิกซ้ำ');
+          const planReads=[];
+          for(const id of siblingPlanIds){const ref=cloudPath('warehouseJobPlans',id);planReads.push({ref,snap:await tx.get(ref)});}
+          const active=planReads.find(r=>r.ref.id===p.id);
+          if(!active?.snap.exists())throw Error('ไม่พบแผนวัสดุ กรุณาโหลดข้อมูลใหม่');
+          if(planReads.some(r=>r.snap.exists()&&whIssuedStatuses.includes(r.snap.data().status)))throw Error('งานนี้เคยเบิกวัสดุผ่านเอกสารอื่นแล้ว');
+          if(!['planned','ordered'].includes(active.snap.data().status))throw Error('สถานะแผนไม่อนุญาตให้เบิก');
+          if(job&&whGlassNeeds(job).length&&active.snap.data().glassCutPlan?.signature!==whGlassSignature(job))throw Error('แผนตัดกระจกยังไม่ได้รับการยืนยันหรือบิลเปลี่ยน');
+          const lines=active.snap.data().lines||[];
+          if(!lines.length)throw Error('ไม่มีวัสดุให้เบิก');
+          const requested=new Map();
+          for(const l of lines){const qty=Number(l.qty);if(!l.itemId||!Number.isFinite(qty)||qty<=0)throw Error('จำนวนวัสดุในแผนไม่ถูกต้อง');requested.set(l.itemId,(requested.get(l.itemId)||0)+qty);}
+          const reads=[];
+          for(const [itemId,qty] of requested){const ref=cloudPath('warehouseMaterials',itemId);reads.push({itemId,qty,ref,snap:await tx.get(ref)});}
+          for(const r of reads){if(!r.snap.exists()||whNum(r.snap.data().qty)<r.qty)throw Error('วัสดุไม่ครบ กรุณาตรวจสต็อกใหม่');}
+          const now=new Date().toISOString();
+          const stockSnapshots=reads.map(r=>({itemId:r.itemId,before:whNum(r.snap.data().qty),issued:r.qty,after:whNum(r.snap.data().qty)-r.qty}));
+          for(const r of reads)tx.update(r.ref,{qty:whNum(r.snap.data().qty)-r.qty});
+          tx.update(active.ref,{status:'issued',jobId:key,issuedAt:now,issuedBy:userId});
+          tx.set(lockRef,{issued:true,jobId:key,docNo:p.docNo||whSelected,planId:p.id,movementId,issuedAt:now,issuedBy:userId});
+          tx.set(cloudPath('warehouseMovements',movementId),{type:'issue',jobId:key,docNo:p.docNo||whSelected,linkedDocNos:siblingDocs.map(x=>x.docNo),lines,stockSnapshots,createdAt:now,createdBy:userId});
+        });
+        showToast('เบิกวัสดุสำเร็จหนึ่งครั้งสำหรับงานนี้ · เอกสารที่เชื่อมกันเบิกซ้ำไม่ได้');
+      }catch(err){cloudError('Issue materials',err);showToast(err.message||'เบิกไม่สำเร็จ');}
+      finally{whBusy=false;}
+    }
     // V11.11: printable job sheets and production progress, without stock mutations.
     const whProductionStages=['ตรวจแบบและวัดขนาด','ตัดอลูมิเนียม / เตรียมโครง','ประกอบเฟรมและอุปกรณ์','ตัดและติดตั้งกระจก','ตรวจคุณภาพและเก็บงาน','พร้อมส่งมอบ'];
     function whSheetRows(kind){
