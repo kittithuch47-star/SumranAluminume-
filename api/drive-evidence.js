@@ -5,6 +5,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_BASE64_LENGTH = Math.ceil(MAX_IMAGE_BYTES / 3) * 4;
 const BASE = 'artifacts/sumran-aluminum-billing/companies/sumran-aluminum-shop';
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const PHOTO_CATEGORIES = new Set(['before', 'during', 'after']);
 
 function reply(res, status, body) {
   return res.status(status).json(body);
@@ -13,7 +14,9 @@ function reply(res, status, body) {
 function getFirebase() {
   if (!admin.apps.length) {
     const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-    if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not configured');
+    if (!raw) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not configured');
+    }
 
     let serviceAccount;
     try {
@@ -22,7 +25,11 @@ function getFirebase() {
       throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON');
     }
 
-    if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+    if (
+      !serviceAccount.project_id ||
+      !serviceAccount.client_email ||
+      !serviceAccount.private_key
+    ) {
       throw new Error('Firebase service account is incomplete');
     }
 
@@ -40,7 +47,9 @@ function getFirebase() {
 function validImage(bytes, contentType) {
   if (contentType === 'image/png') {
     return bytes.length >= 8 &&
-      bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'));
+      bytes.subarray(0, 8).equals(
+        Buffer.from('89504e470d0a1a0a', 'hex')
+      );
   }
 
   if (contentType === 'image/jpeg') {
@@ -97,7 +106,10 @@ async function callAppsScript(payload) {
   }
 
   if (!response.ok || result?.ok !== true) {
-    console.error('Drive bridge error:', String(result?.error || response.status).slice(0, 250));
+    console.error(
+      'Drive bridge error:',
+      String(result?.error || response.status).slice(0, 250)
+    );
     throw new Error('Apps Script rejected the Drive request');
   }
 
@@ -106,11 +118,18 @@ async function callAppsScript(payload) {
 
 function linkedToJob(plan, fileId) {
   const evidence = plan.get('evidence') || {};
-  const photos = Array.isArray(evidence.photos) ? evidence.photos : [];
-  const signatures = evidence.signature ? [evidence.signature] : [];
+  const photos = Array.isArray(evidence.photos)
+    ? evidence.photos
+    : [];
+  const signatures = evidence.signature
+    ? [evidence.signature]
+    : [];
 
   return [...photos, ...signatures].some(
-    item => item && item.provider === 'drive' && item.fileId === fileId
+    item =>
+      item &&
+      item.provider === 'drive' &&
+      item.fileId === fileId
   );
 }
 
@@ -119,7 +138,10 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return reply(res, 405, { ok: false, error: 'POST only' });
+    return reply(res, 405, {
+      ok: false,
+      error: 'POST only'
+    });
   }
 
   try {
@@ -176,6 +198,7 @@ export default async function handler(req, res) {
       action,
       jobId,
       kind,
+      photoCategory,
       fileId,
       contentType,
       data,
@@ -218,6 +241,18 @@ export default async function handler(req, res) {
         });
       }
 
+      // V11.19: Validate the photo category.
+      // A category is mandatory for new photo uploads.
+      if (
+        kind === 'photo' &&
+        !PHOTO_CATEGORIES.has(photoCategory)
+      ) {
+        return reply(res, 400, {
+          ok: false,
+          error: 'Invalid or missing photoCategory'
+        });
+      }
+
       if (
         !IMAGE_TYPES.has(contentType) ||
         (kind === 'signature' && contentType !== 'image/png')
@@ -257,6 +292,7 @@ export default async function handler(req, res) {
         action: 'upload',
         jobId,
         kind,
+        ...(kind === 'photo' ? { photoCategory } : {}),
         contentType,
         data,
         name: String(name || '').slice(0, 120)
