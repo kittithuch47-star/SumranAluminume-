@@ -24,9 +24,12 @@
 <div class="panel"><div class="pill">● สถานะจำลอง</div><h3 id="detailTitle">ร้านสำราญอะลูมิเนียม</h3><p id="detailText">คลิกโต๊ะทำงาน ชั้นวางวัสดุ หรือช่างในฉาก เพื่อดูรายละเอียด แต่ละโซนอยู่ในร้านเดียวกันทั้งหมด</p><button onclick="resetView()">⌂ กลับมุมมองหลัก</button></div>
 <div class="hint">🖱 ลากเพื่อหมุน · เลื่อนเพื่อซูม · คลิกสิ่งของเพื่อดูสถานะ</div>
 <div class="bottom"><b>🎮 ร้านเดียว · ช่าง 5 คน · สลับหน้าที่ได้</b><button class="active" id="runBtn" onclick="toggleMotion()">⏸ หยุดแอนิเมชัน</button><button onclick="resetView()">↺ รีเซ็ตกล้อง</button><button onclick="changeShift()">⇄ สลับงานช่าง</button></div>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
+</script>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
-import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color('#eaf2ff');
 const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,150);camera.position.set(20,21,25);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.querySelector('#scene').append(renderer.domElement);
