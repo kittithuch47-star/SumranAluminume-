@@ -10,7 +10,7 @@ const BASE = 'artifacts/sumran-aluminum-billing/companies/sumran-aluminum-shop';
 const kinds = new Set(['before','during','after','other']);
 function send(res,status,obj){res.status(status).json(obj);}
 async function gas(payload){
-  const url=process.env.GAS_WEBAPP_URL;
+  const url=process.env.GOOGLE_APPS_SCRIPT_URL;
   const secret=process.env.DRIVE_BRIDGE_SECRET;
   if(!url||!secret)throw Error('Missing server Drive configuration');
   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...payload,secret}),redirect:'follow',signal:AbortSignal.timeout(25000)});
