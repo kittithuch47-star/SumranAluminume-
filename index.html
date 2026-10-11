@@ -644,6 +644,11 @@
 @media(max-width:1150px){#tab-warehouse .wh-layout{grid-template-columns:minmax(210px,260px) minmax(0,1fr)}#tab-warehouse .wh-side{grid-column:1/-1}}
 @media(max-width:760px){#tab-warehouse .wh-layout{grid-template-columns:1fr}#tab-warehouse .wh-side{grid-column:auto}#tab-warehouse .wh-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wh-hero{padding:15px}.wh-modal{padding:8px}.wh-modal-body{max-height:94dvh!important;border-radius:18px!important}#wh-modal-content{padding:14px}.wh-modal-head{padding:12px 14px}}
 @media print{.wh-workflow,.wh-more-tools{display:none!important}}
+
+/* V11.20.1: clear progress styling without changing warehouse records */
+#tab-warehouse .wh-step.done{color:#047857}
+#tab-warehouse .wh-step.done b{background:#dcfce7;color:#047857}
+#tab-warehouse .wh-step.on{font-weight:800}
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -4235,10 +4240,16 @@
       document.getElementById('wh-ring').style.background=`conic-gradient(#059669 0 ${percentage}%,#ed4251 ${percentage}% ${total?100:0}%,#dce7f0 ${total?100:0}% 100%)`;
       document.getElementById('wh-ring-label').textContent=total?`${good}/${total}`:'—';
       document.getElementById('wh-summary').textContent=alreadyIssued?`เบิกแล้ว ${total} รายการ` :total?`จาก ${total} รายการ`:whSelected?'งานนี้ยังไม่มีแผนวัสดุ':'ภาพรวมคลังสินค้า · เลือกงานเพื่อดูความพร้อมผลิต';
-      document.getElementById('wh-status').textContent=alreadyIssued?`✓ เบิกวัสดุแล้ว ${total} รายการ · ${plan.status==='producing'?'กำลังผลิต':'พร้อมเริ่มผลิต'} · ไม่ตรวจยอดขาดซ้ำ` :total?`พอใช้ ${good} รายการ · ขาด ${bad} รายการ${plan?.status?' · '+({ordered:'สั่งซื้อแล้ว',issued:'เบิกแล้ว',producing:'กำลังผลิต'}[plan.status]||''):''}`:`คลังมี ${whItems.length} ทะเบียน · ใกล้หมด ${whItems.filter(i=>whNum(i.qty)>0&&whNum(i.qty)<=whNum(i.minQty)).length} · หมด ${whItems.filter(i=>whNum(i.qty)===0).length} (กดกล่องด้านบนเพื่อดูรายชื่อ)`;
+      document.getElementById('wh-status').textContent=alreadyIssued?`✓ เบิกวัสดุแล้ว ${total} รายการ · ${plan.status==='completed'?'งานเสร็จสิ้น':plan.status==='producing'?'กำลังผลิต':'พร้อมเริ่มผลิต'} · ไม่ตรวจยอดขาดซ้ำ` :total?`พอใช้ ${good} รายการ · ขาด ${bad} รายการ${plan?.status?' · '+({ordered:'สั่งซื้อแล้ว',issued:'เบิกแล้ว',producing:'กำลังผลิต'}[plan.status]||''):''}`:`คลังมี ${whItems.length} ทะเบียน · ใกล้หมด ${whItems.filter(i=>whNum(i.qty)>0&&whNum(i.qty)<=whNum(i.minQty)).length} · หมด ${whItems.filter(i=>whNum(i.qty)===0).length} (กดกล่องด้านบนเพื่อดูรายชื่อ)`;
       const alert=document.getElementById('wh-alert');alert.style.display=bad&&!alreadyIssued?'block':'none';alert.textContent=bad?`⚠️ วัสดุไม่เพียงพอ ${bad} รายการ · ดูตัวเลขสีแดงและจำนวนที่ขาดในตาราง · ต้องรับของเข้าคลังให้ครบก่อนเบิก`:'';
       const buttons=document.querySelectorAll('#tab-warehouse .wh-actions button');buttons[0].disabled=!plan||!bad||['issued','producing'].includes(plan.status);buttons[1].disabled=!whItems.length;buttons[2].disabled=!total||!!bad||['issued','producing','completed'].includes(plan?.status)||(job&&whGlassNeeds(job).length>0&&plan?.glassCutPlan?.signature!==whGlassSignature(job));buttons[3].disabled=plan?.status!=='issued';
-      document.querySelectorAll('#tab-warehouse .wh-step').forEach((el,i)=>el.classList.toggle('on',i===(plan?.status==='producing'?4:plan?.status==='issued'?4:bad&&plan?.status==='ordered'?2:bad?1:total?3:0)));
+      // V11.20.1: use the same saved plan status as the next-action card.
+      const workflowIndex = !job ? 0 : ['completed','producing'].includes(plan?.status) ? 4 : plan?.status==='issued' ? 3 : bad && plan?.status==='ordered' ? 2 : bad ? 1 : total ? 3 : 0;
+      document.querySelectorAll('#tab-warehouse .wh-step').forEach((el,i)=>{
+        el.classList.toggle('on',i===workflowIndex);
+        el.classList.toggle('done',i<workflowIndex);
+        if(i===4)el.innerHTML='<b>5</b>'+(plan?.status==='completed'?'ผลิตเสร็จแล้ว':plan?.status==='producing'?'กำลังผลิต':'เริ่มผลิต');
+      });
       whUpdateNextAction({job,plan,total,bad,alreadyIssued});
     }
     // V11.20: presentation-only next-step guidance. Existing write functions are reused.
