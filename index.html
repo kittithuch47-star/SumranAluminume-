@@ -888,9 +888,9 @@ for(let stage=0;stage&lt;8;stage++){
  g.visible=false;
 }
 const workflowLabel=document.createElement(&#x27;div&#x27;);workflowLabel.style.cssText=&#x27;position:absolute;left:14px;top:14px;background:#ffffffed;border:1px solid #dce7fa;border-radius:13px;padding:9px 13px;color:#22528d;font:700 14px sans-serif;z-index:4;pointer-events:none&#x27;;document.body.appendChild(workflowLabel);
-let activeWorkflow=0;
+let activeWorkflow=0;let stageTransitionAt=0;
 function showWorkflow(stage){
- activeWorkflow=Math.max(0,Math.min(7,Number(stage)||0));
+ activeWorkflow=Math.max(0,Math.min(7,Number(stage)||0));stageTransitionAt=performance.now();
  sceneOriginals.forEach(o=&gt;o.visible=false);
  workflowGroups.forEach((g,i)=&gt;g.visible=i===activeWorkflow);
  workers.forEach((w,i)=&gt;{w.g.visible=true;w.g.position.set(-5+i*2.5,0,4.1);});
@@ -3969,6 +3969,11 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
           info=st==='completed'?'ผลิตเสร็จแล้ว · ตรวจสอบสถานะส่งมอบจากระบบงาน':'กำลังผลิต · '+done.length+'/6 ขั้นตอนที่บันทึกเสร็จ';
         }else if(st==='planned'){stage=1;info='มีแผนวัสดุแล้ว · ตรวจสอบสต็อกก่อนเบิก';}
       }
+      // Keep 3D aligned with the existing 5-step workflow, even while an order is pending.
+      const currentStep=[...document.querySelectorAll('#tab-warehouse .wh-step')].findIndex(el=>el.classList.contains('on'));
+      if(currentStep===2 && stage<2){stage=2;info='อยู่ขั้นจัดซื้อ · รอรับเข้าคลังจริง';}
+      if(currentStep===3 && stage<3){stage=3;info='อยู่ขั้นเบิกจากคลัง · ตรวจยอดที่รับเข้าจริงก่อนเบิก';}
+      if(currentStep===4 && stage<4){stage=4;info='อยู่ขั้นเริ่มผลิต · ดูสถานะผลิตจากข้อมูลที่บันทึกจริง';}
       // Delivery state is intentionally not inferred from production completion.
       wh3dLastStage=stage;
       title.textContent=job?('งาน '+String(job.docNo||'')+' · '+String(job.custName||job.customerName||job.customer?.name||'ลูกค้า')):'เลือกบิลจากรายการงานด้านล่าง';
@@ -3976,10 +3981,24 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
       steps.innerHTML=wh3dStages.map((v,i)=>'<div class="s3d-step '+(i===stage?'active':i<stage?'done':'')+'">'+(i<stage?'✓ ':i===stage?'● ':'○ ')+(i+1)+'. '+v+'</div>').join('');
       if(wh3dFrame?.contentWindow)wh3dFrame.contentWindow.postMessage({type:'sumran3d-stage',stage},'*');
     }
+    // Refresh 3D when the main workflow changes, without changing warehouse data.
+    let wh3dSyncQueued=false;
+    function wh3dScheduleSync(){
+      if(wh3dSyncQueued)return;
+      wh3dSyncQueued=true;
+      requestAnimationFrame(()=>{wh3dSyncQueued=false;if(wh3dOpen)wh3dRefresh();});
+    }
+    function wh3dObserveWorkflow(){
+      const bar=document.querySelector('#tab-warehouse .wh-steps');
+      if(!bar||bar.dataset.s3dWatching)return;
+      bar.dataset.s3dWatching='1';
+      new MutationObserver(wh3dScheduleSync).observe(bar,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
+    }
+    document.addEventListener('DOMContentLoaded',wh3dObserveWorkflow);
     function wh3dToggle(){
       const area=document.getElementById('s3d-scene'),btn=document.getElementById('s3d-toggle');if(!area)return;
       if(wh3dOpen){area.innerHTML='<div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center">ฉาก 3D ปิดแล้ว · กดเปิดอีกครั้งได้</div>';wh3dFrame=null;wh3dOpen=false;btn.textContent='▶ เปิดฉาก 3D';return;}
-      const template=document.getElementById('s3d-template');wh3dFrame=template.content.firstElementChild.cloneNode(true);area.replaceChildren(wh3dFrame);wh3dOpen=true;btn.textContent='⏹ ปิดฉาก 3D';wh3dFrame.addEventListener('load',()=>wh3dRefresh());wh3dRefresh();
+      wh3dObserveWorkflow();const template=document.getElementById('s3d-template');wh3dFrame=template.content.firstElementChild.cloneNode(true);area.replaceChildren(wh3dFrame);wh3dOpen=true;btn.textContent='⏹ ปิดฉาก 3D';wh3dFrame.addEventListener('load',()=>wh3dRefresh());wh3dRefresh();
     }
     window.sumran3dToggle=wh3dToggle;window.sumran3dRefresh=wh3dRefresh;
 
