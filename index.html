@@ -780,8 +780,8 @@
  <div id="wh-consumable-alert-banner" style="display:none;margin-bottom:12px;padding:13px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px"></div>
  <div class="wh-hero"><div><h2>📦 คลังสินค้าและงานผลิต</h2><p>เลือกงาน แล้วทำตามขั้นตอนที่ระบบแนะนำ · จัดการทะเบียนวัสดุและของประจำช่างได้ในเมนูเพิ่มเติม</p></div><button class="wh-btn primary" onclick="whOpenMaterial()">＋ เพิ่มวัสดุใหม่</button></div>
  <section id="sumran-3d-card" aria-label="ร้านจำลอง 3 มิติและสถานะงาน">
- <div class="s3d-head"><div><strong>🏠 ร้านสำราญอะลูมิเนียม 3D · ติดตามงานผลิต</strong><br><small>ร้านเดียว · ช่าง 5 คน · ภาพจำลองตามสถานะงานจริง</small></div><div class="s3d-controls"><button type="button" onclick="sumran3dToggle()" id="s3d-toggle">▶ เปิดฉาก 3D</button><button type="button" onclick="sumran3dRefresh()">↻ อัปเดตสถานะ</button></div></div>
- <div class="s3d-layout"><div class="s3d-scene" id="s3d-scene"><div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center;padding:20px">🏠 กด “เปิดฉาก 3D” เพื่อดูร้านจำลอง<br><small>โหลดเฉพาะเมื่อเปิด เพื่อให้ระบบร้านไม่ช้า</small></div></div>
+ <div class="s3d-head"><div><strong>🏠 ร้านสำราญอะลูมิเนียม 3D · ติดตามงานผลิต</strong><br><small>ร้านเดียว · ช่าง 5 คน · ภาพจำลองตามสถานะงานจริง</small></div><div class="s3d-controls"><button type="button" onclick="sumran3dToggle()" id="s3d-toggle" style="display:none">▶ เปิดฉาก 3D</button><button type="button" onclick="sumran3dRefresh()">↻ อัปเดตสถานะ</button></div></div>
+ <div class="s3d-layout"><div class="s3d-scene" id="s3d-scene"><div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center;padding:20px">🏠 กำลังเตรียมฉาก 3D อัตโนมัติ<br><small>โหลดเฉพาะเมื่อเปิด เพื่อให้ระบบร้านไม่ช้า</small></div></div>
  <div class="s3d-info"><h3 id="s3d-job">เลือกบิลจากรายการงานด้านล่าง</h3><p id="s3d-description">เมื่อเลือกบิล ระบบจะแสดงสูตรและสถานะจากแผนวัสดุและการผลิตที่บันทึกไว้</p><div id="s3d-steps" class="s3d-steps"></div><div class="s3d-note">ภาพช่างเป็นแอนิเมชันประกอบสถานะ ไม่ใช่หลักฐานว่าช่างกำลังทำจริง · ไม่มีการหักสต็อกหรือเขียน Firebase จากฉาก 3D</div></div></div>
  <template id="s3d-template"><iframe title="ร้านสำราญอะลูมิเนียม 3D" loading="lazy" referrerpolicy="no-referrer" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&quot;th&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
@@ -901,13 +901,66 @@ function showWorkflow(stage){
 }
 showWorkflow(0);
 
+// Animated production props are visual-only and never modify Firestore.
+const animatedProps=[];
+function movingBox(stage,w,h,d,x,y,z,material){
+ const o=miniBox(workflowGroups[stage],w,h,d,x,y,z,material);
+ animatedProps.push({stage,o,x,y,z});return o;
+}
+const sheet=movingBox(0,1.0,.055,.65,0,1.42,0,miniMaterial.paper);
+const scanner=movingBox(1,.7,.08,.6,0,1.38,2,miniMaterial.accent);
+const delivery=movingBox(2,.9,.65,.9,-4.2,.35,2.5,C.wood);
+const picked=movingBox(3,1.8,.11,.14,-4,1.05,2.8,C.steel);
+const cutBar=movingBox(4,2.5,.1,.12,-3,1.39,0,C.steel);
+const sawBlade=cylinder(.42,.08,-2.6,1.6,0,C.steel,workflowGroups[4]);sawBlade.rotation.x=Math.PI/2;
+const glassPane=movingBox(4,1.5,.05,1.0,3,1.39,0,C.glass);
+const assemblyPane=movingBox(5,2.65,1.4,.035,0,1.08,1,C.glass);
+const checkCard=movingBox(6,.8,.06,.5,-3,1.4,2,miniMaterial.paper);
+const loadedFrame=movingBox(7,1.7,1.6,.09,-3,.95,3,C.glass);
+const truck=new THREE.Group();workflowGroups[7].add(truck);
+miniBox(truck,2.3,.6,1.5,0,.72,0,C.blue);
+miniBox(truck,1,.9,1.5,.65,1.3,0,C.white);
+for(const xx of [-.7,.7])for(const zz of [-.65,.65]){const wheel=cylinder(.28,.14,xx,.28,zz,C.dark,truck);wheel.rotation.x=Math.PI/2}
 let moving=true,clock=new THREE.Clock();
-function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);if(moving){for(let w of workers){const t=clock.elapsedTime*.65+w.phase;const tx=-5+w.i*2.5,tz=4.1;w.g.position.x+=(tx-w.g.position.x)*Math.min(dt*1.25,1);w.g.position.z+=(tz-w.g.position.z)*Math.min(dt*1.25,1);w.g.rotation.y=0;w.g.position.y=0;}}controls.update();renderer.render(scene,camera)}loop();
+function loop(){
+ requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+ if(moving){
+   // Characters walk on ground and pause to operate at each station.
+   const destinations=[[-2.5,2.5],[-3,2.8],[-2.8,3.2],[-3,2.8],[-3,2.5],[0,3.2],[-3,3.4],[-2.7,3.8]];
+   const [baseX,baseZ]=destinations[activeWorkflow];
+   for(const w of workers){
+     const shift=w.i===0?0:(w.i-2)*1.05;
+     const walking=(t+w.phase)%8&lt;3.3;
+     const tx=Math.max(-5.8,Math.min(5.8,baseX+shift+(walking?Math.sin(t*.8+w.phase)*.45:0)));
+     const tz=baseZ+(w.i%2)*.7;
+     w.g.position.x+=(tx-w.g.position.x)*Math.min(dt*1.8,1);
+     w.g.position.z+=(tz-w.g.position.z)*Math.min(dt*1.8,1);
+     w.g.position.y=0;
+     w.g.rotation.y=Math.sin(t*.45+w.phase)*.16;
+     const limbs=w.g.children.filter(o=&gt;o.isMesh&amp;&amp;o.geometry?.type===&#x27;BoxGeometry&#x27;);
+     limbs.forEach((part,i)=&gt;{if(i&gt;=2)part.rotation.x=Math.sin(t*4+w.phase+i)*(walking?.24:.09)});
+   }
+   const cycle=(t%8)/8,tri=1-Math.abs(cycle*2-1);
+   sheet.position.x=tri*.45;
+   scanner.position.x=Math.sin(t*2)*.55;
+   delivery.position.x=-4.2+tri*6.2;
+   picked.position.x=-4+tri*5.5;
+   picked.position.y=1.05+Math.sin(Math.PI*cycle)*.5;
+   cutBar.position.x=-3+tri*.9;
+   sawBlade.rotation.z=t*13;
+   glassPane.position.z=Math.sin(t*1.2)*.36;
+   assemblyPane.position.y=.35+tri*.8;
+   checkCard.rotation.y=Math.sin(t*2)*.25;
+   loadedFrame.position.x=-3+tri*2.6;
+   truck.position.x=-4+tri*8;
+ }
+ controls.update();renderer.render(scene,camera);
+}loop();
 window.toggleMotion=()=&gt;{moving=!moving;document.querySelector(&#x27;#runBtn&#x27;).textContent=moving?&#x27;⏸ หยุดแอนิเมชัน&#x27;:&#x27;▶ เล่นแอนิเมชัน&#x27;};
 window.resetView=()=&gt;{camera.position.set(12,13,16);controls.target.set(0,.4,0);controls.update()};
 window.changeShift=()=&gt;{document.querySelector(&#x27;#detailText&#x27;).textContent=&#x27;หน้าที่ของช่างต้องอ้างอิงการมอบหมายงานจริง ไม่เปลี่ยนสถานะหรือหน้าที่จากแอนิเมชัน&#x27;};
 window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></template>
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe>
 </section>
  <div id="wh-load-diagnostic" role="status" style="display:none;padding:11px;margin:0 0 12px;border:1px solid #bfdbfe;border-radius:12px;font-size:12px"></div>
   <div class="wh-kpis"><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('all')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('all')" style="cursor:pointer">📦 วัสดุในทะเบียน<strong id="wh-kpi-items">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('low')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('low')" style="cursor:pointer">⚠️ วัสดุใกล้หมด<strong id="wh-kpi-low">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('out')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('out')" style="cursor:pointer">❌ วัสดุหมด<strong id="wh-kpi-out">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('ordered')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('ordered')" style="cursor:pointer">🛒 งานที่รอซื้อ<strong id="wh-kpi-pending">0</strong>งาน</div></div>
@@ -4000,6 +4053,26 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
       if(wh3dOpen){area.innerHTML='<div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center">ฉาก 3D ปิดแล้ว · กดเปิดอีกครั้งได้</div>';wh3dFrame=null;wh3dOpen=false;btn.textContent='▶ เปิดฉาก 3D';return;}
       wh3dObserveWorkflow();const template=document.getElementById('s3d-template');wh3dFrame=template.content.firstElementChild.cloneNode(true);area.replaceChildren(wh3dFrame);wh3dOpen=true;btn.textContent='⏹ ปิดฉาก 3D';wh3dFrame.addEventListener('load',()=>wh3dRefresh());wh3dRefresh();
     }
+    // Automatically start the 3D scene once the warehouse visualization enters view.
+    // This is display-only; it never performs inventory writes.
+    function wh3dAutoStart(){
+      const card=document.getElementById('sumran-3d-card');
+      if(!card||card.dataset.s3dAutoBound)return;
+      card.dataset.s3dAutoBound='1';
+      if('IntersectionObserver' in window){
+        const observer=new IntersectionObserver(entries=>{
+          if(entries.some(e=>e.isIntersecting)){
+            if(!wh3dOpen)wh3dToggle();
+            observer.disconnect();
+          }
+        },{threshold:0.01});
+        observer.observe(card);
+      }else{
+        if(!wh3dOpen)wh3dToggle();
+      }
+    }
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wh3dAutoStart);
+    else wh3dAutoStart();
     window.sumran3dToggle=wh3dToggle;window.sumran3dRefresh=wh3dRefresh;
 
     // Expose all globals
