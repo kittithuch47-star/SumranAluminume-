@@ -602,6 +602,48 @@
 .wh-short-summary{background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;padding:12px 14px;border-radius:12px;font-weight:800;font-size:13px;margin:10px 0}
 .wh-enough-label{color:#15803d;font-size:11px;margin-top:4px;font-weight:700}
 .wh-enough-summary{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:12px 14px;border-radius:12px;font-size:12px;font-weight:700;margin:10px 0}
+
+/* V11.20 Warehouse experience: UI only, no changes to Firestore writes */
+#tab-warehouse{--wh-blue:#087be4;--wh-ink:#132c4c;--wh-border:#dce8f6}
+#tab-warehouse .wh-panel{border-radius:22px;box-shadow:0 8px 25px #174a780b}
+#tab-warehouse .wh-kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin:16px 0}
+#tab-warehouse .wh-kpi{border-radius:18px;padding:16px;background:linear-gradient(155deg,#fff,#f6faff)}
+#tab-warehouse .wh-kpi strong{font-size:27px;margin:4px 0}
+#tab-warehouse .wh-job{transition:background .15s,border-color .15s}
+#tab-warehouse .wh-job:hover{border-color:#60a5fa;background:#f5faff}
+#tab-warehouse .wh-layout{grid-template-columns:minmax(220px,260px) minmax(0,1fr) minmax(220px,265px)}
+#tab-warehouse .wh-steps{gap:5px;padding:10px;background:white;border:1px solid var(--wh-border);border-radius:18px}
+#tab-warehouse .wh-step{white-space:normal;line-height:1.5;padding:6px 2px}
+#tab-warehouse .wh-step.on{color:#0369a1}
+#tab-warehouse .wh-step.on b{box-shadow:0 0 0 4px #dbeafe}
+.wh-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(120deg,#eef7ff,#fff);border:1px solid #d6eafa;padding:18px 20px;border-radius:22px}
+.wh-hero h2{font-size:clamp(21px,3vw,28px);font-weight:800;color:#123052}
+.wh-hero p{color:#647b96;font-size:12px;margin-top:4px}
+.wh-workflow{background:linear-gradient(120deg,#eff8ff,#f4fbff);border:1px solid #cfe7fa;border-radius:16px;padding:14px;margin-top:14px}
+.wh-workflow-kicker{font-size:11px;font-weight:700;color:#0369a1}
+.wh-workflow-title{font-size:16px;font-weight:800;margin:5px 0;color:#173755}
+.wh-workflow-description{font-size:12px;color:#56718c;line-height:1.7}
+.wh-workflow-cta{display:block;width:100%;margin-top:12px;padding:12px;border-radius:12px;background:#087be4;color:white;font-weight:700;font-size:13px;text-align:center}
+.wh-workflow-cta:disabled{background:#cbd5e1;color:#475569}
+.wh-more-tools{margin-top:12px;border:1px solid #e1ebf5;border-radius:13px;background:#fff}
+.wh-more-tools>summary{padding:12px;cursor:pointer;font-size:12px;font-weight:700;color:#315b83;list-style:none}
+.wh-more-tools>summary:after{content:'⌄';float:right}
+.wh-more-tools[open]>summary:after{content:'⌃'}
+.wh-more-tools-content{padding:0 12px 12px;display:flex;gap:7px;flex-wrap:wrap}
+.wh-more-tools-content .wh-btn{flex:1 1 130px;text-align:center}
+#tab-warehouse .wh-actions{display:none}
+#tab-warehouse .wh-side .wh-utility-actions{display:grid;gap:7px}
+.wh-modal{z-index:150!important}
+.wh-modal-body{display:flex!important;flex-direction:column!important;overflow:hidden!important;max-height:min(92dvh,950px)!important;width:min(740px,100%)!important;padding:0!important;box-shadow:0 25px 75px #051b3655}
+.wh-modal-head{flex:none;position:relative;z-index:2;background:white;border-bottom:1px solid #e1eaf5;padding:16px 20px;min-height:64px}
+.wh-modal-head .wh-heading{min-width:0;overflow-wrap:anywhere}
+.wh-modal-head .wh-close{flex:none;border-radius:50%;width:38px;height:38px;padding:0;font-size:19px}
+#wh-modal-content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:18px 20px 28px;margin-top:0!important}
+#generic-modal>div,#print-picker>div{min-height:0}
+#generic-modal>div>div:first-child,#print-picker>div>div:first-child{flex-shrink:0}
+@media(max-width:1150px){#tab-warehouse .wh-layout{grid-template-columns:minmax(210px,260px) minmax(0,1fr)}#tab-warehouse .wh-side{grid-column:1/-1}}
+@media(max-width:760px){#tab-warehouse .wh-layout{grid-template-columns:1fr}#tab-warehouse .wh-side{grid-column:auto}#tab-warehouse .wh-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wh-hero{padding:15px}.wh-modal{padding:8px}.wh-modal-body{max-height:94dvh!important;border-radius:18px!important}#wh-modal-content{padding:14px}.wh-modal-head{padding:12px 14px}}
+@media print{.wh-workflow,.wh-more-tools{display:none!important}}
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -723,14 +765,14 @@
     <!-- NEW WAREHOUSE DASHBOARD -->
 <section id="tab-warehouse" class="hidden no-print">
  <div id="wh-consumable-alert-banner" style="display:none;margin-bottom:12px;padding:13px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px"></div>
- <div class="wh-row" style="flex-wrap:wrap;margin-bottom:14px"><div><h2 style="font-size:27px;font-weight:800">📦 คลังสินค้าและงานผลิต</h2><p class="wh-sub">เลือกงาน → ตรวจวัสดุ → จัดซื้อ (ถ้าขาด) → เบิกของ → ยืนยันเริ่มผลิต</p></div><button class="wh-btn primary" onclick="whOpenMaterial()">＋ เพิ่มวัสดุในคลัง</button></div>
+ <div class="wh-hero"><div><h2>📦 คลังสินค้าและงานผลิต</h2><p>เลือกงาน แล้วทำตามขั้นตอนที่ระบบแนะนำ · จัดการทะเบียนวัสดุและของประจำช่างได้ในเมนูเพิ่มเติม</p></div><button class="wh-btn primary" onclick="whOpenMaterial()">＋ เพิ่มวัสดุใหม่</button></div>
  <div id="wh-load-diagnostic" role="status" style="display:none;padding:11px;margin:0 0 12px;border:1px solid #bfdbfe;border-radius:12px;font-size:12px"></div>
   <div class="wh-kpis"><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('all')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('all')" style="cursor:pointer">📦 วัสดุในทะเบียน<strong id="wh-kpi-items">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('low')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('low')" style="cursor:pointer">⚠️ วัสดุใกล้หมด<strong id="wh-kpi-low">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('out')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('out')" style="cursor:pointer">❌ วัสดุหมด<strong id="wh-kpi-out">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('ordered')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('ordered')" style="cursor:pointer">🛒 งานที่รอซื้อ<strong id="wh-kpi-pending">0</strong>งาน</div></div>
  <div class="wh-steps"><span class="wh-step on"><b>1</b>เลือกงาน</span><span class="wh-step"><b>2</b>ตรวจวัสดุ</span><span class="wh-step"><b>3</b>จัดซื้อ</span><span class="wh-step"><b>4</b>เบิกจากคลัง</span><span class="wh-step"><b>5</b>เริ่มผลิต</span></div>
  <div class="wh-layout"><div class="wh-panel"><div class="wh-heading">เลือกงานที่ต้องการทำ</div><p class="wh-sub">รายการอ้างอิงเอกสารจริงในระบบ</p><input id="wh-job-search" class="wh-input" placeholder="ค้นหาเลขเอกสาร / ลูกค้า" oninput="whRender()" style="margin-top:12px"><div id="wh-jobs" style="margin-top:9px"></div></div>
- <div class="wh-panel"><div class="wh-row"><div><div class="wh-heading">วัสดุที่ต้องใช้ <span id="wh-selected-no" style="color:#0076ce"></span></div><p class="wh-sub" id="wh-customer">เลือกงานจากด้านซ้าย</p></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="wh-btn primary" onclick="whOpenRecipes()">🧮 สูตรงานผลิต</button><button class="wh-btn" onclick="whOpenComponents()">🧩 ส่วนประกอบ</button><button class="wh-btn" onclick="whOpenWorkRules()">⚙️ กฎจัดการงาน</button><button class="wh-btn" onclick="whOpenProcurement()">🛒 ตรวจวัสดุและจัดซื้อ</button><button class="wh-btn" onclick="whOpenPlan()">✎ กำหนดวัสดุของงาน</button></div></div><div id="wh-auto-job-preview" style="margin-top:12px"></div><div id="wh-outsourced-work" style="margin-top:12px"></div><div style="overflow:auto;margin-top:13px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="wh-plan-rows"><tr><td colspan="4">กรุณาเลือกงาน</td></tr></tbody></table></div><p id="wh-job-dimensions" class="wh-sub" style="margin-top:10px"></p><div id="wh-alert" class="wh-notice" style="display:none"></div><div class="wh-row" style="margin-top:12px;flex-wrap:wrap"><button class="wh-btn" onclick="whShowStock()">📦 ดูสต็อกวัสดุ</button><button class="wh-btn" onclick="whShowHistory()">◷ ประวัติการเคลื่อนไหว</button><button class="wh-btn" onclick="whOpenSharedBoxes()">📦 วัสดุประจำช่าง / แจ้งหมด</button></div></div>
- <div class="wh-panel wh-side"><div class="wh-heading">สรุปสถานะวัสดุ</div><p class="wh-sub" id="wh-summary">ยังไม่ได้เลือกงาน</p><div id="wh-ring" style="width:140px;height:140px;border-radius:50%;background:conic-gradient(#dce7f0 0 100%);margin:19px auto;display:grid;place-items:center"><div id="wh-ring-label" style="background:white;width:93px;height:93px;border-radius:50%;display:grid;place-items:center;font-weight:800">—</div></div><div id="wh-status" style="font-size:12px;color:#5d748c"></div><div class="wh-heading" style="color:#0076ce;font-size:16px;margin-top:19px">การดำเนินการต่อไป</div><div style="display:grid;gap:7px;margin-top:12px"><button class="wh-btn primary" onclick="whPrintSheet('materials')">🖨️ พิมพ์ใบรายการวัสดุของงาน</button><button class="wh-btn" onclick="whPrintSheet('shortage')">🖨️ พิมพ์ใบวัสดุที่ขาด / ขอจัดซื้อ</button><button class="wh-btn" onclick="whPrintSheet('production')">🖨️ พิมพ์ใบสั่งผลิต</button><button class="wh-btn" onclick="whOpenProductionProgress()">🛠️ ติดตามขั้นตอนการผลิต</button></div><div style="display:grid;gap:7px;margin:12px 0"><button class="wh-btn" onclick="whOpenProductionDashboard()">📊 ภาพรวมงานทั้งร้าน</button><button class="wh-btn primary" onclick="whDownloadSheetPdf('materials')">⬇️ ดาวน์โหลด PDF ใบรายการวัสดุ</button><button class="wh-btn" onclick="whDownloadSheetPdf('shortage')">⬇️ ดาวน์โหลด PDF ใบขอจัดซื้อ</button><button class="wh-btn" onclick="whDownloadSheetPdf('production')">⬇️ ดาวน์โหลด PDF ใบสั่งผลิต</button></div><div class="wh-actions"><button class="wh-btn primary" onclick="whOrder()">🛒 บันทึกสั่งซื้อของที่ขาด</button><button class="wh-btn" onclick="whReceive()">📥 รับของเข้าคลัง</button><button class="wh-btn" onclick="whIssue()">📦 เบิกของสำหรับงานนี้</button><button class="wh-btn" onclick="whStartProduction()">▶ ยืนยันเริ่มผลิต</button></div><p class="wh-sub" style="margin-top:12px">การเบิกต้องมีวัสดุครบและมีแผนวัสดุของงานก่อน</p></div></div>
- <div id="wh-modal" class="wh-modal" style="display:none"><div class="wh-modal-body"><div class="wh-row"><h3 class="wh-heading" id="wh-modal-title"></h3><button class="wh-btn" onclick="whClose()">✕ ปิด</button></div><div id="wh-modal-content" style="margin-top:14px"></div></div></div>
+ <div class="wh-panel"><div class="wh-row"><div><div class="wh-heading">วัสดุที่ต้องใช้ <span id="wh-selected-no" style="color:#0076ce"></span></div><p class="wh-sub" id="wh-customer">เลือกงานจากด้านซ้าย</p></div><details class="wh-more-tools"><summary>⚙️ เครื่องมือจัดการสูตรและแผนวัสดุ</summary><div class="wh-more-tools-content"><button class="wh-btn primary" onclick="whOpenRecipes()">🧮 สูตรงานผลิต</button><button class="wh-btn" onclick="whOpenComponents()">🧩 ส่วนประกอบ</button><button class="wh-btn" onclick="whOpenWorkRules()">⚙️ กฎจัดการงาน</button><button class="wh-btn" onclick="whOpenProcurement()">🛒 ตรวจวัสดุและจัดซื้อ</button><button class="wh-btn" onclick="whOpenPlan()">✎ กำหนดวัสดุของงาน</button></div></details></div><div id="wh-auto-job-preview" style="margin-top:12px"></div><div id="wh-outsourced-work" style="margin-top:12px"></div><div style="overflow:auto;margin-top:13px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="wh-plan-rows"><tr><td colspan="4">กรุณาเลือกงาน</td></tr></tbody></table></div><p id="wh-job-dimensions" class="wh-sub" style="margin-top:10px"></p><div id="wh-alert" class="wh-notice" style="display:none"></div><details class="wh-more-tools"><summary>📂 ทะเบียนวัสดุ · ประวัติ · ของประจำช่าง</summary><div class="wh-more-tools-content"><button class="wh-btn" onclick="whShowStock()">📦 ดูสต็อกวัสดุ</button><button class="wh-btn" onclick="whShowHistory()">◷ ประวัติการเคลื่อนไหว</button><button class="wh-btn" onclick="whOpenSharedBoxes()">👷 วัสดุประจำช่าง / แจ้งหมด</button></div></details></div>
+ <div class="wh-panel wh-side"><div class="wh-heading">สรุปสถานะวัสดุ</div><p class="wh-sub" id="wh-summary">ยังไม่ได้เลือกงาน</p><div id="wh-ring" style="width:140px;height:140px;border-radius:50%;background:conic-gradient(#dce7f0 0 100%);margin:19px auto;display:grid;place-items:center"><div id="wh-ring-label" style="background:white;width:93px;height:93px;border-radius:50%;display:grid;place-items:center;font-weight:800">—</div></div><div id="wh-status" style="font-size:12px;color:#5d748c"></div><div class="wh-workflow" aria-live="polite"><div class="wh-workflow-kicker">ขั้นตอนถัดไปของงานนี้</div><div id="wh-next-title" class="wh-workflow-title">เลือกงานจากรายการ</div><div id="wh-next-desc" class="wh-workflow-description">ระบบจะแนะนำว่าต้องทำอะไรต่อ ตามข้อมูลวัสดุและสถานะจริง</div><button id="wh-next-action" class="wh-workflow-cta" type="button" onclick="whNextAction()" disabled>เลือกงานเพื่อเริ่มต้น →</button></div><details class="wh-more-tools"><summary>🖨️ พิมพ์เอกสารและเครื่องมือเพิ่มเติม</summary><div class="wh-more-tools-content"><div class="wh-heading" style="color:#0076ce;font-size:16px;margin-top:19px">การดำเนินการต่อไป</div><div style="display:grid;gap:7px;margin-top:12px"><button class="wh-btn primary" onclick="whPrintSheet('materials')">🖨️ พิมพ์ใบรายการวัสดุของงาน</button><button class="wh-btn" onclick="whPrintSheet('shortage')">🖨️ พิมพ์ใบวัสดุที่ขาด / ขอจัดซื้อ</button><button class="wh-btn" onclick="whPrintSheet('production')">🖨️ พิมพ์ใบสั่งผลิต</button><button class="wh-btn" onclick="whOpenProductionProgress()">🛠️ ติดตามขั้นตอนการผลิต</button></div><div style="display:grid;gap:7px;margin:12px 0"><button class="wh-btn" onclick="whOpenProductionDashboard()">📊 ภาพรวมงานทั้งร้าน</button><button class="wh-btn primary" onclick="whDownloadSheetPdf('materials')">⬇️ ดาวน์โหลด PDF ใบรายการวัสดุ</button><button class="wh-btn" onclick="whDownloadSheetPdf('shortage')">⬇️ ดาวน์โหลด PDF ใบขอจัดซื้อ</button><button class="wh-btn" onclick="whDownloadSheetPdf('production')">⬇️ ดาวน์โหลด PDF ใบสั่งผลิต</button></div></div></details><div class="wh-actions"><button class="wh-btn primary" onclick="whOrder()">🛒 บันทึกสั่งซื้อของที่ขาด</button><button class="wh-btn" onclick="whReceive()">📥 รับของเข้าคลัง</button><button class="wh-btn" onclick="whIssue()">📦 เบิกของสำหรับงานนี้</button><button class="wh-btn" onclick="whStartProduction()">▶ ยืนยันเริ่มผลิต</button></div><p class="wh-sub" style="margin-top:12px">การเบิกต้องมีวัสดุครบและมีแผนวัสดุของงานก่อน</p></div></div>
+ <div id="wh-modal" class="wh-modal" style="display:none"><div class="wh-modal-body" role="dialog" aria-modal="true" aria-labelledby="wh-modal-title"><div class="wh-row wh-modal-head"><h3 class="wh-heading" id="wh-modal-title"></h3><button type="button" class="wh-btn wh-close" onclick="whClose()" aria-label="ปิดหน้าต่าง">✕</button></div><div id="wh-modal-content"></div></div></div>
 </section>
 <!-- TAB 1: EDITOR -->
     <div id="tab-editor" class="hidden space-y-6">
@@ -4197,7 +4239,26 @@
       const alert=document.getElementById('wh-alert');alert.style.display=bad&&!alreadyIssued?'block':'none';alert.textContent=bad?`⚠️ วัสดุไม่เพียงพอ ${bad} รายการ · ดูตัวเลขสีแดงและจำนวนที่ขาดในตาราง · ต้องรับของเข้าคลังให้ครบก่อนเบิก`:'';
       const buttons=document.querySelectorAll('#tab-warehouse .wh-actions button');buttons[0].disabled=!plan||!bad||['issued','producing'].includes(plan.status);buttons[1].disabled=!whItems.length;buttons[2].disabled=!total||!!bad||['issued','producing','completed'].includes(plan?.status)||(job&&whGlassNeeds(job).length>0&&plan?.glassCutPlan?.signature!==whGlassSignature(job));buttons[3].disabled=plan?.status!=='issued';
       document.querySelectorAll('#tab-warehouse .wh-step').forEach((el,i)=>el.classList.toggle('on',i===(plan?.status==='producing'?4:plan?.status==='issued'?4:bad&&plan?.status==='ordered'?2:bad?1:total?3:0)));
+      whUpdateNextAction({job,plan,total,bad,alreadyIssued});
     }
+    // V11.20: presentation-only next-step guidance. Existing write functions are reused.
+    let whNextStepAction=null;
+    function whUpdateNextAction({job,plan,total,bad,alreadyIssued}){
+      const title=document.getElementById('wh-next-title'),desc=document.getElementById('wh-next-desc'),btn=document.getElementById('wh-next-action');
+      if(!title||!desc||!btn)return;
+      let t='เลือกงานจากรายการ',d='ค้นหาเลขที่เอกสารหรือลูกค้าด้านซ้าย เพื่อเริ่มตรวจวัสดุ',label='เลือกงานเพื่อเริ่มต้น',action=null;
+      if(job){
+        if(plan?.status==='completed'){t='งานนี้เสร็จสิ้นแล้ว';d='ดูประวัติและหลักฐานการทำงานได้จากเมนูงานผลิต';label='ดูความคืบหน้างาน';action=()=>whOpenProductionProgress();}
+        else if(plan?.status==='producing'){t='กำลังดำเนินการผลิต';d='ติดตามความคืบหน้าและงานที่ช่างรับผิดชอบ';label='ติดตามงานผลิต';action=()=>whOpenProductionProgress();}
+        else if(plan?.status==='issued'){t='เบิกวัสดุแล้ว · พร้อมเริ่มผลิต';d='วัสดุถูกหักจากคลังแล้ว ขั้นต่อไปคือยืนยันเริ่มผลิต';label='▶ ยืนยันเริ่มผลิต';action=()=>{const b=document.querySelectorAll('#tab-warehouse .wh-actions button')[3];if(b&&!b.disabled)b.click();};}
+        else if(!total){t='ยังไม่มีแผนวัสดุของงาน';d='ตรวจรายละเอียดบิลและกำหนดรายการวัสดุที่ต้องใช้ก่อน';label='กำหนดวัสดุของงาน';action=()=>whOpenPlan();}
+        else if(bad){t='วัสดุยังไม่ครบ '+bad+' รายการ';d='ตรวจยอดขาดและจัดซื้อหรือรับวัสดุเข้าคลัง ก่อนเบิกใช้งานจริง';label='ตรวจวัสดุและจัดซื้อ';action=()=>whOpenProcurement('selected');}
+        else {t='วัสดุครบ · พร้อมเบิกจากคลัง';d='ตรวจสอบจำนวนที่ใช้จริง แล้วกดยืนยันเพื่อหักสต็อก';label='📦 เบิกวัสดุสำหรับงานนี้';action=()=>{const b=document.querySelectorAll('#tab-warehouse .wh-actions button')[2];if(b&&!b.disabled)b.click();else showToast('ตรวจสอบแผนตัดกระจกและเงื่อนไขการเบิกก่อน');};}
+      }
+      title.textContent=t;desc.textContent=d;btn.textContent=label+' →';btn.disabled=!action;whNextStepAction=action;
+    }
+    function whNextAction(){if(typeof whNextStepAction==='function')whNextStepAction();}
+    window.whNextAction=whNextAction;
     // V11.6: read-only procurement workbench. Only saved, unissued plans are counted.
     function whProcurementReport(scope='all'){
       const active=whPlans.filter(p=>!['issued','producing','completed','cancelled'].includes(p.status)&&Array.isArray(p.lines)&&p.lines.length&&(scope==='all'||p.docNo===whSelected));
