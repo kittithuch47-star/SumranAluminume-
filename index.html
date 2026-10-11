@@ -4651,7 +4651,7 @@
       const btn=document.activeElement;if(btn?.tagName==='BUTTON')btn.disabled=true;
       try{
         whEvidenceStatus('กำลังอัปโหลดรูปเข้า Google Drive...');const id=whId(),kind=document.getElementById('wh-photo-kind')?.value||'other';
-        const result=await whDriveRequest({action:'upload',jobId:p.id,kind:'photo',contentType:file.type,data:await whBlobBase64(file)});
+        const result=await whDriveRequest({action:'upload',jobId:p.id,kind:'photo',photoCategory:kind,contentType:file.type,data:await whBlobBase64(file)});
         const fresh=await getDoc(cloudPath('warehouseJobPlans',p.id));const existing=fresh.data()?.evidence||{};
         const photos=[...(Array.isArray(existing.photos)?existing.photos:[]),{id,provider:'drive',fileId:result.fileId,kind,uploadedAt:new Date().toISOString(),uploadedBy:userId}];
         await updateDoc(cloudPath('warehouseJobPlans',p.id),{'evidence.photos':photos});showToast('บันทึกรูปลง Google Drive สำเร็จ');whOpenEvidence(no);
