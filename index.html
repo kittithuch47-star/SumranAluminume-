@@ -1276,7 +1276,7 @@
   </main>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, reauthenticateWithPopup, linkWithPopup, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
     import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -1691,33 +1691,10 @@
     }
 
     async function deleteCurrentDocument() {
-      if(!requireOwner('การลบเอกสาร')) return;
-      const id = state.currentHistoryId;
-      if(!id) return showToast('เอกสารนี้ยังไม่ได้บันทึก');
-      const h = state.history.find(x => x.id === id);
-      if(!h) return showToast('ไม่พบเอกสารที่กำลังแก้ไข');
-      if(!confirm(`ลบเอกสาร ${h.docNo || ''} ใช่หรือไม่?\nการลบครั้งนี้จะลบเอกสารนี้ออกจากประวัติและ Cloud ด้วย`)) return;
-
-      clearTimeout(state.liveSyncTimer);
-      state.history = state.history.filter(x => x.id !== id);
-      persist();
-      renderHistory();
-
-      if(userId && db) {
-        try {
-          await deleteDoc(cloudPath('history', id));
-          showToast('ลบเอกสารออกจาก Cloud แล้ว');
-        } catch(e) {
-          cloudError('Delete current document', e);
-          return;
-        }
-      } else {
-        showToast('ลบเอกสารแล้ว (ในเครื่อง)');
-      }
-
-      createNewDocument();
+      if(!state.currentHistoryId)return showToast('เอกสารนี้ยังไม่ได้บันทึก');
+      await delHistory(state.currentHistoryId);
     }
-    
+
     function thaiBahtConversion(num) {
       if (isNaN(num) || num === 0) return 'ศูนย์บาทถ้วน';
       const tNum = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
@@ -2821,6 +2798,7 @@
       if(state.docType==='taxreceipt' && !vatIsRegistered()) return showToast('ยังไม่จดทะเบียน VAT ไม่สามารถบันทึกใบกำกับภาษีได้');
       if(state.docType==='taxreceipt' && (!/^\d{13}$/.test(state.shop.vatTaxId||'') || !state.shop.address?.trim())) return showToast('กรุณาตรวจสอบเลขผู้เสียภาษี 13 หลักและที่อยู่ร้านก่อนออกใบกำกับภาษี');
       const existingBeforeSave = state.currentHistoryId ? state.history.find(h=>h.id===state.currentHistoryId) : null;
+      if(existingBeforeSave?.status==='cancelled')return showToast('เอกสารยกเลิกแล้ว กรุณาสร้างเอกสารใหม่');
       if(existingBeforeSave && !canEditHistoryItem(existingBeforeSave)) return showToast('พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองเป็นผู้จัดทำ');
       calculateTotals(true);
       state.customer = {
@@ -2859,7 +2837,7 @@
       state.prevPaid = state.docType==='receipt' && Number(state.receiptJobTotal)>0 ? Number(state.receiptPriorPaid||0)+getTotalPaid() : getTotalPaid();
       state.remainingAmt = Math.max(0, +(Number(state.grandTotal||0) - state.prevPaid).toFixed(2));
 
-      const existing = state.history.find(h => h.docNo === state.docNo);
+      const existing = existingBeforeSave || null;
       let status = existing?.status || getInitialStatus(state.docType);
       if(state.docType === 'invoice') status = state.remainingAmt <= 0 ? 'paid' : state.prevPaid > 0 ? 'partial' : 'pending';
       if(['receipt','cashbill'].includes(state.docType) && state.remainingAmt > 0) status = 'partial';
@@ -2874,7 +2852,7 @@
       state.jobId = jobId; payload.jobId = jobId;
       const rec = {
         jobId,
-        id: existing?.id || ('doc-' + Date.now()),
+        id: existing?.id || ('doc-' + Date.now() + '-' + Math.random().toString(36).slice(2,10)),
         docNo: state.docNo, docType: state.docType, refNo: state.refNo,
         rootDocNo: getRootDocNo({docNo: state.docNo, refNo: state.refNo}, state.history),
         customerName: state.customer.name || 'ไม่ระบุ', project: state.customer.project || '-',
@@ -3297,6 +3275,7 @@
     }
     function historyDocStatusOptions(h) {
       const options = ({quotation:[['quoting','รอพิจารณา'],['accepted','อนุมัติทำ'],['rejected','ไม่อนุมัติ']],invoice:[['pending','รอชำระเงิน'],['partial','ชำระบางส่วน'],['paid','ครบแล้ว']],receipt:[['paid','รับเงินแล้ว'],['cancelled','ยกเลิก']],cashbill:[['paid','รับเงินแล้ว'],['cancelled','ยกเลิก']],delivery:[['pending_delivery','รอส่งมอบ'],['delivered','ส่งมอบแล้ว']]})[h.docType] || [];
+      if(!options.some(([v])=>v==='cancelled'))options.push(['cancelled','ยกเลิกเอกสาร']);
       return options.map(([v,l])=>`<option value="${v}" ${h.status===v?'selected':''}>${l}</option>`).join('');
     }
     function renderHistoryCenter(filtered, txMap) {
@@ -3322,7 +3301,7 @@
           <span class="hc-item-top"><span class="hc-doc-icon ${tone(h.docType)}"><i data-lucide="${h.docType==='receipt'?'receipt-text':h.docType==='invoice'?'file-clock':'file-text'}"></i></span><span class="hc-item-identity"><strong>${escapeHtml(h.docNo||'')}</strong><small>${historyDocLabel(h.docType)}</small></span><i data-lucide="chevron-right" class="hc-chevron"></i></span>
           <span class="hc-customer">${escapeHtml(h.customerName||'ไม่ระบุลูกค้า')}</span><span class="hc-project">${escapeHtml(h.project||'ไม่มีชื่อโครงการ')}</span>
           <span class="hc-item-meta"><span><i data-lucide="calendar-days"></i> ${escapeHtml(formatDateThai(h.date)||'-')}</span><strong>${amount(h.grandTotal)}</strong></span>
-          <span class="hc-item-bottom"><span class="hc-pill ${remaining>0?'orange':'green'}">${remaining>0?'ค้างชำระ':'ชำระครบ'}</span><span class="hc-remaining">${remaining>0?'ค้าง '+amount(remaining):'ไม่มียอดค้าง'}</span></span>
+          <span class="hc-item-bottom"><span class="hc-pill ${remaining>0?'orange':'green'}">${h.status==='cancelled'?'ยกเลิกเอกสาร':remaining>0?'ค้างชำระ':'ชำระครบ'}</span><span class="hc-remaining">${remaining>0?'ค้าง '+amount(remaining):'ไม่มียอดค้าง'}</span></span>
           </button>
           <div class="hc-card-quick">
             <div class="hc-card-status"><label for="hc-card-status-${h.id}">สถานะเอกสาร</label><select id="hc-card-status-${h.id}" ${owner?'':'disabled title="เฉพาะเจ้าของร้าน"'} onchange="updateDocStatus('${h.id}',this.value)" aria-label="สถานะเอกสาร ${escapeHtml(h.docNo||'')}">${historyDocStatusOptions(h)}</select></div>
@@ -3341,7 +3320,7 @@
         <label class="hc-status-label" for="hc-status">สถานะเอกสาร</label><select id="hc-status" ${owner?'':'disabled title="เฉพาะเจ้าของร้าน"'} onchange="updateDocStatus('${h.id}',this.value)" class="hc-status">${historyDocStatusOptions(h)}</select>
         <div class="hc-actions"><button type="button" class="hc-action blue" onclick="loadHistory('${h.id}')"><i data-lucide="${canEdit?'file-pen':'eye'}"></i> ${canEdit?'ดู / แก้ไข':'ดูเอกสาร'}</button><button type="button" class="hc-action green" onclick="prepareJobReceipt('${h.id}')"><i data-lucide="wallet"></i> รับเงิน</button></div>
         <button type="button" class="hc-more" onclick="toggleHistoryDetail()"><i data-lucide="settings-2"></i> จัดการเพิ่มเติม <i data-lucide="chevron-${historyDetailExpanded?'up':'down'}"></i></button>
-        ${historyDetailExpanded?`<div class="hc-extra"><div class="hc-extra-info"><div>ยอดเอกสารนี้ <strong>${amount(h.grandTotal)}</strong></div><div>อ้างอิง <strong>${escapeHtml(h.refNo||'-')}</strong></div><div>เอกสารในงานเดียวกัน <strong>${tx?.docs.length||1} ฉบับ</strong></div>${h.requiredDeposit>0?`<div>มัดจำที่กำหนด <strong>${amount(h.requiredDeposit)}</strong></div>`:''}</div><label class="hc-flow-label">ต่อยอดเอกสาร</label><select ${canEdit?'':'disabled'} onchange="if(this.value){generateFlowDoc('${h.id}',this.value);this.value=''}"><option value="">เลือกประเภทเอกสาร...</option><option value="invoice">ใบแจ้งหนี้</option><option value="receipt">ใบเสร็จรับเงิน</option><option value="delivery">ใบส่งของ</option></select>${owner?`<button type="button" class="hc-extra-btn" onclick="editHistoryCost('${h.id}')"><i data-lucide="calculator"></i> ${h.totalCost==null?'กรอกต้นทุน':'แก้ไขต้นทุน '+amount(h.totalCost)}</button><button type="button" class="hc-extra-btn danger" onclick="delHistory('${h.id}')"><i data-lucide="trash-2"></i> ลบเอกสาร</button>`:''}</div>`:''}
+        ${historyDetailExpanded?`<div class="hc-extra"><div class="hc-extra-info"><div>ยอดเอกสารนี้ <strong>${amount(h.grandTotal)}</strong></div><div>อ้างอิง <strong>${escapeHtml(h.refNo||'-')}</strong></div><div>เอกสารในงานเดียวกัน <strong>${tx?.docs.length||1} ฉบับ</strong></div>${h.requiredDeposit>0?`<div>มัดจำที่กำหนด <strong>${amount(h.requiredDeposit)}</strong></div>`:''}</div><label class="hc-flow-label">ต่อยอดเอกสาร</label><select ${canEdit?'':'disabled'} onchange="if(this.value){generateFlowDoc('${h.id}',this.value);this.value=''}"><option value="">เลือกประเภทเอกสาร...</option><option value="invoice">ใบแจ้งหนี้</option><option value="receipt">ใบเสร็จรับเงิน</option><option value="delivery">ใบส่งของ</option></select>${owner?`<button type="button" class="hc-extra-btn" onclick="editHistoryCost('${h.id}')"><i data-lucide="calculator"></i> ${h.totalCost==null?'กรอกต้นทุน':'แก้ไขต้นทุน '+amount(h.totalCost)}</button><button type="button" class="hc-extra-btn" onclick="cancelHistoryDocument('${h.id}')"><i data-lucide="file-x"></i> ยกเลิกเอกสาร</button><button type="button" class="hc-extra-btn danger" onclick="delHistory('${h.id}')"><i data-lucide="trash-2"></i> ลบเอกสาร</button>`:''}</div>`:''}
         </div>`;
       if(window.lucide) window.lucide.createIcons();
     }
@@ -3371,7 +3350,7 @@
 
     function updateDocStatus(id, stat) {
       if(!requireOwner('การเปลี่ยนสถานะเอกสาร')) return;
-      const h = state.history.find(x => x.id === id); if(h) h.status = stat; persist(); renderHistory();
+      const h = state.history.find(x => x.id === id); if(h?.status==='cancelled'&&stat!=='cancelled')return showToast('เอกสารยกเลิกแล้วไม่สามารถเปลี่ยนกลับได้'); if(stat==='cancelled'){cancelHistoryDocument(id);return;} if(h) h.status = stat; persist(); renderHistory();
       if(userId && db) updateDoc(cloudPath('history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
     }
 
@@ -3408,6 +3387,7 @@
     function prepareJobReceipt(id) {
       if(!companyAccessReady || !userId) return showToast('กรุณาเข้าสู่ระบบก่อนรับเงิน');
       const h=state.history.find(x=>x.id===id);if(!h)return;
+      if(h.status==='cancelled')return showToast('เอกสารยกเลิกแล้ว ไม่สามารถรับเงินเพิ่มได้');
       const tx=getTransactionMap(state.history).get(jobKey(h,state.history));
       if(!tx || tx.remaining<=0) return showToast('งานนี้ไม่มีหนี้ค้างชำระ');
       const raw=prompt(`รับเงินจริงสำหรับงาน ${h.docNo}\nยอดค้าง ฿${tx.remaining.toLocaleString('th-TH',{minimumFractionDigits:2})}\nกรอกยอดที่ได้รับจริง (บาท)`,'');
@@ -3533,15 +3513,48 @@
       showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล — พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองจัดทำ' : 'โหลดเอกสารแล้ว โดยคงยอดที่บันทึกไว้เดิม');
     }
 
-    function delHistory(id) {
-      if(!requireOwner('การลบเอกสาร')) return;
-      if(!confirm('ยืนยันลบเอกสารนี้หรือไม่?')) return;
-      if(state.currentHistoryId === id) {
-        state.currentHistoryId = null;
-        setCurrentDocUiState(false);
+    async function cancelHistoryDocument(id) {
+      if(!requireOwner('การยกเลิกเอกสาร'))return;
+      const h=state.history.find(x=>x.id===id);if(!h)return;
+      if(h.status==='cancelled')return showToast('เอกสารนี้ยกเลิกแล้ว');
+      const reason=prompt('เหตุผลยกเลิกเอกสาร '+h.docNo+' (ต้องระบุ)','');
+      if(reason===null)return;
+      if(!reason.trim())return showToast('กรุณาระบุเหตุผล');
+      try {
+        const changes={status:'cancelled',cancelReason:reason.trim(),cancelledAt:new Date().toISOString(),cancelledByUid:userId};
+        await updateDoc(cloudPath('history',id),changes);
+        Object.assign(h,changes);persist();renderHistory();whRender();
+        showToast('ยกเลิกเอกสารแล้ว · ไม่ลบประวัติสต็อก');
+      }catch(e){cloudError('Cancel document',e)}
+    }
+    async function confirmOwnerAgain(){
+      if(!isOwner()||!auth.currentUser||!companyAccessReady)throw Error('เฉพาะบัญชีเจ้าของร้าน');
+      await reauthenticateWithPopup(auth.currentUser,new GoogleAuthProvider());
+      if(!isOwner())throw Error('บัญชีนี้ไม่ใช่เจ้าของร้าน');
+    }
+    async function delHistory(id) {
+      if(!requireOwner('การลบถาวร'))return;
+      const h=state.history.find(x=>x.id===id);if(!h)return;
+      if(!db||!userId)return showToast('ต้องเชื่อมต่อ Firebase ก่อนลบถาวร');
+      const docNo=String(h.docNo||'');
+      const linkedMoves=whMoves.filter(m=>m.docNo===docNo||(m.linkedDocNos||[]).includes(docNo));
+      const linkedPlans=whPlans.filter(p=>p.docNo===docNo||p.id===encodeURIComponent(docNo));
+      const sharedNo=state.history.filter(x=>x.id!==id&&x.docNo===docNo);
+      if(linkedMoves.length||linkedPlans.length||sharedNo.length){
+        alert('ยังลบถาวรไม่ได้อย่างปลอดภัย: '+docNo+'\nประวัติคลัง '+linkedMoves.length+' รายการ\nแผนวัสดุ '+linkedPlans.length+' รายการ\nเอกสารเลขซ้ำ '+sharedNo.length+' ฉบับ\nข้อมูลคลังรุ่นเดิมยังอ้างอิงเลขเอกสาร ให้ใช้ยกเลิกเอกสารก่อน');
+        return;
       }
-      state.history = state.history.filter(x => x.id !== id); persist(); renderHistory();
-      if(userId&&db) deleteDoc(cloudPath('history', id)).then(()=>showToast('ลบเอกสารแล้ว')).catch(e=>cloudError('Delete history',e)); else showToast('ลบเอกสารแล้ว (ในเครื่อง)');
+      if(!confirm('ลบถาวรเอกสาร '+docNo+'?\nไม่สามารถกู้คืนจากแอปได้'))return;
+      if(prompt('พิมพ์ ลบถาวร เพื่อยืนยัน')!=='ลบถาวร')return;
+      try{
+        await confirmOwnerAgain();
+        const snap=await getDoc(cloudPath('history',id));
+        if(!snap.exists()||snap.data().docNo!==docNo)throw Error('เอกสารมีการเปลี่ยนแปลง กรุณาโหลดใหม่');
+        await deleteDoc(cloudPath('history',id));
+        state.history=state.history.filter(x=>x.id!==id);
+        if(state.currentHistoryId===id){state.currentHistoryId=null;setCurrentDocUiState(false);}
+        persist();renderHistory();whRender();showToast('ลบเอกสารถาวรสำเร็จ');
+      }catch(e){cloudError('Permanent document deletion',e)}
     }
 
     function createNewDocument() {
@@ -3832,8 +3845,8 @@
     const whId=()=>crypto.randomUUID?.()||('w'+Date.now()+Math.random().toString(36).slice(2));
     // V11.21: all documents linked to the same real job share one warehouse identity.
     const whJobKey=h=>h?String(jobKey(h,state.history)||h.docNo||''):'';
-    const whGroupDocs=h=>h?state.history.filter(x=>x.docNo&&whJobKey(x)===whJobKey(h)):[];
-    const whDoc=()=>state.history.find(x=>x.docNo===whSelected);
+    const whGroupDocs=h=>h?state.history.filter(x=>x.docNo&&x.status!=='cancelled'&&whJobKey(x)===whJobKey(h)):[];
+    const whDoc=()=>state.history.find(x=>x.docNo===whSelected&&x.status!=='cancelled');
     const whGroupPlans=()=>{const h=whDoc();if(!h)return [];const names=new Set(whGroupDocs(h).map(x=>x.docNo));return whPlans.filter(p=>names.has(p.docNo||decodeURIComponent(p.id||''))||(p.jobId&&p.jobId===whJobKey(h)));};
     const whPlan=()=>{const group=whGroupPlans();return group.find(p=>['completed','producing','issued'].includes(p.status))||group[0]||null;};
     const whIssuedStatuses=['issued','producing','completed'];
@@ -4226,7 +4239,7 @@
     function whRender(){
       if(!document.getElementById('wh-jobs'))return;
       const grouped=new Map();
-      for(const h of state.history.filter(h=>h.docNo)){
+      for(const h of state.history.filter(h=>h.docNo&&h.status!=='cancelled')){
         const key=whJobKey(h);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(h);
       }
       const jobs=[...grouped.values()].map(docs=>{
@@ -5126,7 +5139,7 @@
     window.whOpenEvidence=whOpenEvidence;window.whOpenDriveImage=whOpenDriveImage;window.whUploadEvidencePhoto=whUploadEvidencePhoto;window.whSaveSignature=whSaveSignature;window.whClearSignature=whClearSignature;window.whDeleteEvidencePhoto=whDeleteEvidencePhoto;window.whPrintSheet=whPrintSheet;window.whDownloadSheetPdf=whDownloadSheetPdf;window.whOpenProductionDashboard=whOpenProductionDashboard;window.whOpenJobDetails=whOpenJobDetails;window.whOpenJobMaterials=whOpenJobMaterials;window.whSaveDelivery=whSaveDelivery;window.whDownloadHandoverPdf=whDownloadHandoverPdf;window.whPrintHandover=whPrintHandover;window.whOpenProductionProgress=whOpenProductionProgress;window.whSaveProductionProgress=whSaveProductionProgress;
     window.whOpenGlassCutPlan=whOpenGlassCutPlan;window.whGlassRecalculate=whGlassRecalculate;window.whSaveGlassCutPlan=whSaveGlassCutPlan;window.whRegisterGlassFromBill=whRegisterGlassFromBill;window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenStockAdjust=whOpenStockAdjust;window.whSaveStockAdjust=whSaveStockAdjust;window.whPreviewStockAdjust=whPreviewStockAdjust;window.whArchiveMaterial=whArchiveMaterial;window.whRestoreMaterial=whRestoreMaterial;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceiveSearch=whReceiveSearch;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
 
-    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.cancelHistoryDocument = cancelHistoryDocument; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
   <script>
     // PWA registration only. Never cache application HTML, Firebase or PDF requests.
@@ -5140,3 +5153,4 @@
   </script>
 </body>
 </html>
+
