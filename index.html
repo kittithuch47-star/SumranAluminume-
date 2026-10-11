@@ -1230,6 +1230,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, linkWithPopup, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
     import { getFirestore, doc, setDoc, deleteDoc, updateDoc, onSnapshot, collection, getDoc, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // Firebase config ของโปรเจกต์จริง: sumranaluminum
@@ -1249,7 +1250,7 @@
     const appId = 'sumran-aluminum-billing';
     const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    let db, auth, userId, firebaseReady = false;
+    let db, auth, storage, userId, firebaseReady = false;
     if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
         const app = initializeApp(firebaseConfig);
         // Same-origin Firebase OAuth helper for iOS standalone PWA (requires Vercel rewrite).
@@ -1259,6 +1260,7 @@
         }
         auth = getAuth(app);
         db = getFirestore(app);
+        storage = getStorage(app);
         firebaseReady = true;
     }
 
@@ -4505,6 +4507,7 @@
       }).join('');
       const details=`<div class="details"><div><b>เลขที่งาน:</b> ${e(no)}</div><div><b>ลูกค้า:</b> ${e(job.customerName||job.payload?.customer?.name||p.customerName||p.customer||'—')}</div><div><b>รูปแบบส่งมอบ:</b> ${e(mode)}</div><div><b>ผู้ส่งมอบ / ช่าง:</b> ${e(d.team||p.productionWorker||'—')}</div><div><b>วันนัดหมาย:</b> ${e(d.scheduledDate||'—')}</div><div><b>วันส่งมอบจริง:</b> ${e(fmt(d.deliveredAt))}</div><div><b>สถานที่:</b> ${e(d.location||'—')}</div><div><b>ผู้รับงาน:</b> ${e(recipient)}</div></div>`;
       const goods=`<h3>รายการสินค้าหรืองานที่ส่งมอบ (อ้างอิงจากบิลขาย)</h3><table><thead><tr><th style="width:8%">ที่</th><th>รายการสินค้า / รายละเอียดงาน</th><th style="width:13%">จำนวน</th><th style="width:13%">หน่วย</th></tr></thead><tbody>${goodsRows||'<tr><td colspan="4">ไม่พบรายการสินค้าในเอกสารขายที่เชื่อมกับงานนี้ กรุณาแนบใบส่งของเดิมเพื่อระบุรายการสินค้า ไม่ใช้รายการวัสดุเบิกคลังแทน</td></tr>'}</tbody></table>`;
+      const signatureImage=digitalSignature=>digitalSignature?.url?`<div style="text-align:center;margin:5mm 0;break-inside:avoid"><img src="${e(digitalSignature.url)}" alt="ลายเซ็นดิจิทัล" style="max-height:23mm;max-width:65mm;object-fit:contain"><div style="font-size:9pt">ลงนามโดย ${e(digitalSignature.name||'')} · ${e(fmt(digitalSignature.signedAt))}</div></div>`:'';
       const sign=(left,right)=>`<div class="sign"><div>ลงชื่อ ..............................................<br>(${e(left)})<br>ผู้ส่งมอบ / ผู้แทนร้าน<br>วันที่ ........../........../..........</div><div>ลงชื่อ ..............................................<br>(${e(right)})<br>ลูกค้า / ผู้รับมอบ<br>วันที่ ........../........../..........</div></div>`;
       let section;
       if(isAcceptance){
@@ -4513,8 +4516,11 @@
       }else{
         section=`${goods}<div class="notes"><b>หมายเหตุการส่งมอบ:</b> ${e(d.note||'—')}</div><div class="checks"><div>☐ ตรวจสอบจำนวนและสภาพสินค้าแล้ว</div><div>☐ รับสินค้าหรือรับมอบงานติดตั้งเรียบร้อย</div><div>☐ มีรายการค้างส่งหรือข้อแก้ไขตามหมายเหตุ</div></div>${sign(d.team||p.productionWorker||'ผู้ส่งมอบ',recipient)}`;
       }
-      const body=`<div class="wh-handover"><div class="head"><h1>${e(title)}</h1><p>Sumran Aluminum · เลขที่งาน <b>${e(no)}</b></p><p>เอกสารประกอบใบส่งของเดิม ไม่ใช่ใบกำกับภาษีหรือใบเสร็จรับเงิน</p></div>${details}${section}<div class="foot">พิมพ์เมื่อ ${e(new Date().toLocaleString('th-TH'))} · เอกสารนี้ไม่ใช่ใบเบิกวัสดุภายในร้าน</div></div>`;
-      const styles=`@page{size:A4 portrait;margin:13mm}*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#182b40;font:11pt Sarabun,'Noto Sans Thai',Tahoma,sans-serif}.wh-handover{width:100%;margin:0}.head{border-bottom:2px solid #075985;padding-bottom:4mm;break-inside:avoid}.head h1{font-size:19pt;margin:0 0 2mm}.head p{margin:1mm 0;font-size:10pt}.details{display:grid;grid-template-columns:1fr 1fr;gap:2mm 5mm;margin:6mm 0;font-size:10pt}.details div{overflow-wrap:anywhere}.wh-handover h3{font-size:12pt;margin:5mm 0 2mm}.wh-handover table{width:100%;border-collapse:collapse;font-size:9.5pt;table-layout:fixed}.wh-handover thead{display:table-header-group}.wh-handover tr{break-inside:avoid}.wh-handover th,.wh-handover td{border:1px solid #94a3b8;padding:2mm;vertical-align:top;overflow-wrap:anywhere}.wh-handover th{background:#eaf2fa}.notes{margin:5mm 0;white-space:pre-wrap;overflow-wrap:anywhere}.checks{display:grid;grid-template-columns:1fr 1fr;gap:2mm;font-size:10pt;break-inside:avoid}.sign{display:flex;gap:10mm;justify-content:space-between;margin-top:14mm;break-inside:avoid}.sign div{width:48%;text-align:center;line-height:2}.foot{border-top:1px solid #cbd5e1;margin-top:8mm;padding-top:2mm;font-size:8pt;color:#475569}@media screen{body{padding:12px}.wh-handover{max-width:184mm;margin:auto}}`;
+      const evidenceSignature=signatureImage(p.evidence?.signature);
+      const evidencePhotos=(Array.isArray(p.evidence?.photos)?p.evidence.photos:[]).filter(x=>x.url).slice(0,6);
+      const photoAppendix=evidencePhotos.length?`<div class="photo-appendix"><h3>ภาพหลักฐานประกอบงาน</h3><div class="photo-grid">${evidencePhotos.map(x=>`<div><img src="${e(x.url)}" alt="ภาพหลักฐาน"><div>${e({before:'ก่อนงาน',during:'ระหว่างงาน',after:'หลังงาน',other:'อื่น ๆ'}[x.kind]||'ภาพงาน')}</div></div>`).join('')}</div></div>`:'';
+      const body=`<div class="wh-handover"><div class="head"><h1>${e(title)}</h1><p>Sumran Aluminum · เลขที่งาน <b>${e(no)}</b></p><p>เอกสารประกอบใบส่งของเดิม ไม่ใช่ใบกำกับภาษีหรือใบเสร็จรับเงิน</p></div>${details}${section}${evidenceSignature}${photoAppendix}<div class="foot">พิมพ์เมื่อ ${e(new Date().toLocaleString('th-TH'))} · เอกสารนี้ไม่ใช่ใบเบิกวัสดุภายในร้าน</div></div>`;
+      const styles=`@page{size:A4 portrait;margin:13mm}*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#182b40;font:11pt Sarabun,'Noto Sans Thai',Tahoma,sans-serif}.wh-handover{width:100%;margin:0}.head{border-bottom:2px solid #075985;padding-bottom:4mm;break-inside:avoid}.head h1{font-size:19pt;margin:0 0 2mm}.head p{margin:1mm 0;font-size:10pt}.details{display:grid;grid-template-columns:1fr 1fr;gap:2mm 5mm;margin:6mm 0;font-size:10pt}.details div{overflow-wrap:anywhere}.wh-handover h3{font-size:12pt;margin:5mm 0 2mm}.wh-handover table{width:100%;border-collapse:collapse;font-size:9.5pt;table-layout:fixed}.wh-handover thead{display:table-header-group}.wh-handover tr{break-inside:avoid}.wh-handover th,.wh-handover td{border:1px solid #94a3b8;padding:2mm;vertical-align:top;overflow-wrap:anywhere}.wh-handover th{background:#eaf2fa}.notes{margin:5mm 0;white-space:pre-wrap;overflow-wrap:anywhere}.checks{display:grid;grid-template-columns:1fr 1fr;gap:2mm;font-size:10pt;break-inside:avoid}.sign{display:flex;gap:10mm;justify-content:space-between;margin-top:14mm;break-inside:avoid}.sign div{width:48%;text-align:center;line-height:2}.photo-appendix{break-before:page}.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:5mm}.photo-grid>div{break-inside:avoid;font-size:9pt}.photo-grid img{width:100%;height:65mm;object-fit:contain;border:1px solid #cbd5e1}.foot{border-top:1px solid #cbd5e1;margin-top:8mm;padding-top:2mm;font-size:8pt;color:#475569}@media screen{body{padding:12px}.wh-handover{max-width:184mm;margin:auto}}`;
       return {title,body,styles,filename:String(no+'-'+kind).replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'};
     }
     async function whDownloadHandoverPdf(no,kind='handover'){
@@ -4573,8 +4579,83 @@
        ${state==='delivered'?'<p class="wh-enough-summary">✓ ส่งมอบสำเร็จแล้ว ข้อมูลการส่งมอบถูกเก็บในแผนงาน</p>':''}`}
        </div>
        <div style="border-top:1px solid #dbeafe;padding-top:12px"><b>📄 เอกสารตรวจรับและส่งมอบ (ใช้คู่กับใบส่งของเดิม)</b><p class="wh-sub">พิมพ์เอกสารให้ลูกค้าลงชื่อได้ โดยไม่เปลี่ยนสถานะงานและไม่หักสต็อก</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px"><button class="wh-btn primary" onclick="whDownloadHandoverPdf('${esc(p.docNo)}','handover')">⬇️ PDF ใบส่งมอบ</button><button class="wh-btn" onclick="whDownloadHandoverPdf('${esc(p.docNo)}','acceptance')">⬇️ PDF ใบตรวจรับ</button><button class="wh-btn" onclick="whPrintHandover('${esc(p.docNo)}','handover')">🖨️ พิมพ์ใบส่งมอบ</button><button class="wh-btn" onclick="whPrintHandover('${esc(p.docNo)}','acceptance')">🖨️ พิมพ์ใบตรวจรับ</button></div></div>
+       <div style="border-top:1px solid #dbeafe;padding-top:12px"><b>📸 รูปหลักฐานและลายเซ็นดิจิทัล</b><p class="wh-sub">ถ่ายรูปหน้างานหรือเลือกจากเครื่อง แล้วบันทึกลง Firebase Storage · เซ็นผ่านหน้าจอได้ (บันทึกหลักฐานแยกจากการยืนยันส่งมอบ)</p>
+       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="wh-btn primary" onclick="whOpenEvidence('${esc(p.docNo)}')">📷 จัดการรูปและลายเซ็น</button><span class="wh-sub">รูป ${Array.isArray(p.evidence?.photos)?p.evidence.photos.length:0} รูป · ลายเซ็น ${p.evidence?.signature?.url?'มีแล้ว':'ยังไม่มี'}</span></div></div>
        <button class="wh-btn" onclick="whOpenJobMaterials('${esc(p.docNo)}')">📋 ดูวัสดุที่ใช้ในงานนี้</button>
       </div>`);
+    }
+    // V11.18: evidence is stored separately from inventory and delivery status.
+    let whSignatureDrawing=false;
+    function whOpenEvidence(no){
+      const p=whPlans.find(x=>x.docNo===no);if(!p){showToast('ไม่พบงาน');return;}
+      const e=whEsc,ev=p.evidence||{},photos=Array.isArray(ev.photos)?ev.photos:[];
+      whOpen('📸 หลักฐานงาน · '+e(no),`<div style="display:grid;gap:13px;font-size:13px">
+        <p class="wh-sub">งาน ${e(no)} · ภาพและลายเซ็นเก็บใน Firebase Storage และบันทึกลิงก์ในแผนงาน · ไม่มีการตัดสต็อก</p>
+        <label>ประเภทภาพ<select class="wh-input" id="wh-photo-kind"><option value="before">ก่อนติดตั้ง / ก่อนเริ่มงาน</option><option value="during">ระหว่างทำงาน</option><option value="after">หลังเสร็จงาน</option><option value="other">อื่น ๆ</option></select></label>
+        <label>เลือกรูปหรือถ่ายภาพ<input id="wh-photo-file" type="file" accept="image/*" capture="environment" class="wh-input" style="height:auto"></label>
+        <button class="wh-btn primary" onclick="whUploadEvidencePhoto('${e(no)}')" ${!whCanWrite()?'disabled':''}>⬆️ บันทึกรูปเข้า Firebase</button>
+        <div id="wh-evidence-status" role="status" class="wh-sub"></div>
+        <b>รูปที่บันทึกไว้ (${photos.length})</b><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">${photos.map(x=>`<div style="border:1px solid #e2e8f0;border-radius:12px;padding:8px"><a href="${e(x.url)}" target="_blank" rel="noopener noreferrer"><img src="${e(x.url)}" loading="lazy" style="width:100%;height:115px;object-fit:cover;border-radius:8px" alt="ภาพหลักฐานงาน"></a><div class="wh-sub">${e({before:'ก่อนงาน',during:'ระหว่างงาน',after:'หลังงาน',other:'อื่น ๆ'}[x.kind]||'รูปงาน')}</div>${whCanWrite()?`<button class="wh-btn red" onclick="whDeleteEvidencePhoto('${e(no)}','${e(x.id)}')">ลบรูป</button>`:''}</div>`).join('')||'<p class="wh-sub">ยังไม่มีรูปหลักฐาน</p>'}</div>
+        <div style="border-top:1px solid #dbeafe;padding-top:12px"><b>✍️ ลายเซ็นผู้รับงาน</b><p class="wh-sub">ให้ลูกค้าเซ็นด้วยนิ้วหรือปากกาบนช่องด้านล่าง</p>
+          <label>ชื่อผู้ลงนาม<input id="wh-sign-name" class="wh-input" maxlength="120" value="${e(ev.signature?.name||p.delivery?.recipient||'')}"></label>
+          <canvas id="wh-sign-canvas" width="680" height="240" style="display:block;width:100%;height:160px;border:1px solid #94a3b8;border-radius:10px;background:white;touch-action:none;margin-top:8px"></canvas>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px"><button class="wh-btn" onclick="whClearSignature()">ล้างลายเซ็น</button><button class="wh-btn primary" onclick="whSaveSignature('${e(no)}')" ${!whCanWrite()?'disabled':''}>💾 บันทึกลายเซ็น</button></div>
+          ${ev.signature?.url?`<p class="wh-sub" style="margin-top:10px">ลายเซ็นที่บันทึกแล้ว (${e(ev.signature.name||'')})</p><img src="${e(ev.signature.url)}" alt="ลายเซ็นที่บันทึก" style="width:250px;max-width:100%;border:1px solid #e2e8f0;background:white">`:''}
+        </div><button class="wh-btn" onclick="whOpenJobDetails('${e(no)}')">← กลับรายละเอียดงาน</button></div>`);
+      whInitSignatureCanvas();
+    }
+    function whInitSignatureCanvas(){
+      const c=document.getElementById('wh-sign-canvas');if(!c)return;
+      const ctx=c.getContext('2d');ctx.strokeStyle='#142d45';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';
+      whSignatureDrawing=false;c.dataset.drawn='';
+      const point=ev=>{const r=c.getBoundingClientRect();return {x:(ev.clientX-r.left)*c.width/r.width,y:(ev.clientY-r.top)*c.height/r.height};};
+      c.addEventListener('pointerdown',ev=>{ev.preventDefault();c.setPointerCapture(ev.pointerId);const q=point(ev);ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(q.x+.1,q.y+.1);ctx.stroke();whSignatureDrawing=true;c.dataset.drawn='yes';});
+      c.addEventListener('pointermove',ev=>{if(!whSignatureDrawing)return;ev.preventDefault();const q=point(ev);ctx.lineTo(q.x,q.y);ctx.stroke();});
+      const stop=()=>{whSignatureDrawing=false;};c.addEventListener('pointerup',stop);c.addEventListener('pointercancel',stop);
+    }
+    function whClearSignature(){const c=document.getElementById('wh-sign-canvas');if(c){c.getContext('2d').clearRect(0,0,c.width,c.height);c.dataset.drawn='';}}
+    function whEvidenceStatus(t){const el=document.getElementById('wh-evidence-status');if(el)el.textContent=t;}
+    async function whUploadEvidencePhoto(no){
+      const p=whPlans.find(x=>x.docNo===no),file=document.getElementById('wh-photo-file')?.files?.[0];
+      if(!p||!whCanWrite())return showToast('ไม่มีสิทธิ์บันทึก');
+      if(!file||!file.type.startsWith('image/'))return showToast('กรุณาเลือกรูปภาพ');
+      if(file.size>10*1024*1024)return showToast('รูปต้องไม่เกิน 10 MB');
+      const btn=document.activeElement;if(btn?.tagName==='BUTTON')btn.disabled=true;
+      try{
+        whEvidenceStatus('กำลังอัปโหลดรูป...');const id=whId(),kind=document.getElementById('wh-photo-kind')?.value||'other';
+        const path=`jobEvidence/${encodeURIComponent(p.id)}/photos/${id}`;
+        const obj=storageRef(storage,path);await uploadBytes(obj,file,{contentType:file.type});const url=await getDownloadURL(obj);
+        const fresh=await getDoc(cloudPath('warehouseJobPlans',p.id));const existing=fresh.data()?.evidence||{};
+        const photos=[...(Array.isArray(existing.photos)?existing.photos:[]),{id,path,url,kind,uploadedAt:new Date().toISOString(),uploadedBy:userId}];
+        await updateDoc(cloudPath('warehouseJobPlans',p.id),{'evidence.photos':photos});whEvidenceStatus('บันทึกรูปแล้ว');showToast('อัปโหลดรูปสำเร็จ');
+        setTimeout(()=>whOpenEvidence(no),400);
+      }catch(err){console.error(err);whEvidenceStatus('อัปโหลดไม่สำเร็จ: '+err.message);alert('อัปโหลดรูปไม่สำเร็จ: '+err.message+'\nตรวจ Firebase Storage และ Rules');}
+      finally{if(btn?.tagName==='BUTTON')btn.disabled=false;}
+    }
+    async function whSaveSignature(no){
+      const p=whPlans.find(x=>x.docNo===no),c=document.getElementById('wh-sign-canvas');
+      if(!p||!whCanWrite())return showToast('ไม่มีสิทธิ์บันทึก');
+      if(!c||c.dataset.drawn!=='yes')return showToast('กรุณาเซ็นชื่อก่อน');
+      const name=String(document.getElementById('wh-sign-name')?.value||'').trim();if(!name)return showToast('กรุณากรอกชื่อผู้ลงนาม');
+      if(!confirm('ยืนยันบันทึกลายเซ็นของ '+name+' สำหรับงาน '+no+'?'))return;
+      const btn=document.activeElement;if(btn?.tagName==='BUTTON')btn.disabled=true;
+      try{
+        const blob=await new Promise((resolve,reject)=>c.toBlob(x=>x?resolve(x):reject(Error('ไม่สามารถสร้างภาพลายเซ็น')),'image/png'));
+        const path=`jobEvidence/${encodeURIComponent(p.id)}/signatures/${whId()}.png`;
+        const obj=storageRef(storage,path);await uploadBytes(obj,blob,{contentType:'image/png'});const url=await getDownloadURL(obj);
+        await updateDoc(cloudPath('warehouseJobPlans',p.id),{'evidence.signature':{url,path,name,signedAt:new Date().toISOString(),signedBy:userId}});
+        showToast('บันทึกลายเซ็นสำเร็จ');whOpenEvidence(no);
+      }catch(err){console.error(err);alert('บันทึกลายเซ็นไม่สำเร็จ: '+err.message+'\nตรวจ Firebase Storage และ Rules');}
+      finally{if(btn?.tagName==='BUTTON')btn.disabled=false;}
+    }
+    async function whDeleteEvidencePhoto(no,id){
+      const p=whPlans.find(x=>x.docNo===no);if(!p||!whCanWrite())return;
+      const photo=(p.evidence?.photos||[]).find(x=>x.id===id);if(!photo||!confirm('ลบรูปหลักฐานนี้จริงหรือไม่?'))return;
+      try{const fresh=await getDoc(cloudPath('warehouseJobPlans',p.id));const photos=(fresh.data()?.evidence?.photos||[]).filter(x=>x.id!==id);
+        await updateDoc(cloudPath('warehouseJobPlans',p.id),{'evidence.photos':photos});
+        try{await deleteObject(storageRef(storage,photo.path));}catch(e){console.warn('Storage delete',e);}
+        showToast('ลบรายการรูปแล้ว');whOpenEvidence(no);
+      }catch(err){alert('ลบรูปไม่สำเร็จ: '+err.message);}
     }
     // V11.16.2: show the selected job's saved material plan, not the whole inventory.
     // Read-only: never issue, deduct, or modify stock here.
@@ -4799,7 +4880,7 @@
     window.whOpenComponents=whOpenComponents;window.whEditComponent=whEditComponent;window.whSaveComponent=whSaveComponent;
     window.whOpenRecipes=whOpenRecipes;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whRecipeUpdateLine=whRecipeUpdateLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
     window.whSharedIssueUnit=whSharedIssueUnit;window.whToggleSharedMode=whToggleSharedMode;window.whOpenSharedBoxes=whOpenSharedBoxes;window.whOpenSharedIssue=whOpenSharedIssue;window.whSaveSharedIssue=whSaveSharedIssue;window.whReportSharedEmpty=whReportSharedEmpty;window.whAcknowledgeSharedAlert=whAcknowledgeSharedAlert;
-    window.whPrintSheet=whPrintSheet;window.whDownloadSheetPdf=whDownloadSheetPdf;window.whOpenProductionDashboard=whOpenProductionDashboard;window.whOpenJobDetails=whOpenJobDetails;window.whOpenJobMaterials=whOpenJobMaterials;window.whSaveDelivery=whSaveDelivery;window.whDownloadHandoverPdf=whDownloadHandoverPdf;window.whPrintHandover=whPrintHandover;window.whOpenProductionProgress=whOpenProductionProgress;window.whSaveProductionProgress=whSaveProductionProgress;
+    window.whOpenEvidence=whOpenEvidence;window.whUploadEvidencePhoto=whUploadEvidencePhoto;window.whSaveSignature=whSaveSignature;window.whClearSignature=whClearSignature;window.whDeleteEvidencePhoto=whDeleteEvidencePhoto;window.whPrintSheet=whPrintSheet;window.whDownloadSheetPdf=whDownloadSheetPdf;window.whOpenProductionDashboard=whOpenProductionDashboard;window.whOpenJobDetails=whOpenJobDetails;window.whOpenJobMaterials=whOpenJobMaterials;window.whSaveDelivery=whSaveDelivery;window.whDownloadHandoverPdf=whDownloadHandoverPdf;window.whPrintHandover=whPrintHandover;window.whOpenProductionProgress=whOpenProductionProgress;window.whSaveProductionProgress=whSaveProductionProgress;
     window.whOpenGlassCutPlan=whOpenGlassCutPlan;window.whGlassRecalculate=whGlassRecalculate;window.whSaveGlassCutPlan=whSaveGlassCutPlan;window.whRegisterGlassFromBill=whRegisterGlassFromBill;window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceiveSearch=whReceiveSearch;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
 
     window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
