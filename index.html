@@ -4018,7 +4018,7 @@
         for(const l of m.recipe.lines||[]){
           if((l.materialCategory||whItems.find(i=>i.id===l.itemId)?.category)!=='GL')continue;
           const g=whGlassPieces(l,m.w,m.h,m.sets);
-          needs.push({index:m.index,spec:whBillGlass(m.it),recipeId:m.recipe.id||'',glass:g,role:l.materialRole||'กระจก'});
+          needs.push({index:m.index,jobName:m.name||'ไม่ระบุชื่องาน',jobWidthCm:m.w,jobHeightCm:m.h,jobSets:m.sets,spec:whBillGlass(m.it),recipeId:m.recipe.id||'',glass:g,role:l.materialRole||'กระจก'});
         }
       }
       return needs;
@@ -4052,7 +4052,7 @@
         const options=whItems.filter(i=>whGlassStockMatches(i,n.spec)&&Number(i.sheetWidthCm)>0&&Number(i.sheetHeightCm)>0);
         const prev=saved?.entries?.find(x=>x.index===n.index&&x.spec===n.spec);
         return `<div class="wh-glass-cut-entry" data-index="${n.index}" style="border:1px solid #bfdbfe;border-radius:12px;padding:12px;margin:12px 0;background:#f8fbff">
-          <b>${k+1}. ${whEsc(n.spec||'ไม่ระบุชนิดกระจก')}</b><div class="wh-sub">จากรายการบิลลำดับ ${n.index+1} · สูตรคำนวณทดลอง: ${g.error?whEsc(g.error):`${whQtyText(g.widthCm)} × ${whQtyText(g.heightCm)} ซม. · ${g.count} ชิ้น`}</div>
+          <div style="font-size:14px;font-weight:800;color:#123052">รายการที่ ${n.index+1}: ${whEsc(n.jobName)}</div><div class="wh-sub">ขนาดหน้างาน ${whQtyText(n.jobWidthCm)} × ${whQtyText(n.jobHeightCm)} ซม. · ${whQtyText(n.jobSets)} ชุด · รายการบิลลำดับ ${n.index+1}</div><b style="display:block;margin-top:7px">${k+1}. ${whEsc(n.spec||'ไม่ระบุชนิดกระจก')}</b><div class="wh-sub">สูตรคำนวณทดลอง: ${g.error?whEsc(g.error):`${whQtyText(g.widthCm)} × ${whQtyText(g.heightCm)} ซม. · ${g.count} ชิ้น`}</div>
           ${g.error?'<p style="color:#b91c1c">ต้องแก้สูตรกระจกก่อนยืนยัน</p>':''}
           <div class="wh-form-grid" style="margin-top:9px">
             <label>กว้างชิ้นตัดจริง (ซม.)<input class="wh-input wh-g-width" type="number" min="0.01" step="any" value="${whEsc(prev?.widthCm??(g.error?'':g.widthCm))}"></label>
@@ -5045,7 +5045,7 @@
       row.querySelector('.wh-r-results').style.display='none';
     }
     function whOpenRecipes(){
-      const cards=whProductionRecipes().map(r=>`<div class="wh-stockitem"><div><b>${whEsc(r.name)}</b><div class="wh-sub">${(r.lines||[]).length} รายการ · ${whEsc(r.description||'สูตรที่ผู้ใช้กำหนด')}</div></div><div style="display:flex;gap:5px"><button class="wh-btn" onclick="whTryRecipe('${whEsc(r.id)}')">ทดลอง</button><button class="wh-btn" onclick="whEditRecipe('${whEsc(r.id)}')">แก้ไข</button><button class="wh-btn red" onclick="whDeleteRecipe('${whEsc(r.id)}')">ลบ</button></div></div>`).join('');
+      const cards=whProductionRecipes().map(r=>`<div class="wh-stockitem"><div><b>${whEsc(r.name)}</b><div class="wh-sub">${(r.lines||[]).length} รายการ · ${whEsc(r.description||'สูตรที่ผู้ใช้กำหนด')}</div></div><div style="display:flex;gap:5px"><button class="wh-btn" onclick="whTryRecipe('${whEsc(r.id)}')">ทดลอง</button><button class="wh-btn" onclick="whEditRecipe('${whEsc(r.id)}')">แก้ไข</button><button class="wh-btn" onclick="whCopyRecipe('${whEsc(r.id)}')">⧉ คัดลอกสูตร</button><button class="wh-btn red" onclick="whDeleteRecipe('${whEsc(r.id)}')">ลบ</button></div></div>`).join('');
       whOpen('🧮 สูตรงานผลิตและประเภทงาน',`<p class="wh-sub">เพิ่มประเภทงานได้เอง ไม่จำกัดบานเลื่อน/บานเปิด/บานฟิกซ์ · สูตรจะไม่ตัดสต็อกจนกว่าจะบันทึกแผนและเบิกจริง</p><button class="wh-btn primary" style="margin:12px 0" onclick="whEditRecipe()">＋ สร้างสูตรใหม่</button><div class="wh-stocklist">${cards||'<p class="wh-sub">ยังไม่มีสูตร กดสร้างสูตรใหม่เพื่อเริ่มต้น</p>'}</div>`);
     }
     // V9: template cut rules. Every profile has its own cutting plan.
@@ -5081,10 +5081,18 @@
       if(hint&&legacy)hint.style.color='#b91c1c';else if(hint)hint.style.color='#0f5482';
     }
     function whRecipeAddLine(){document.getElementById('wh-recipe-lines').insertAdjacentHTML('beforeend',whRecipeLineHtml());whRecipeUpdateLine(document.querySelector('#wh-recipe-lines .wh-recipe-line:last-child .wh-r-mode'));}
-    function whEditRecipe(id=''){
+    function whCopyRecipe(id){
+      if(!whCanWrite())return;
+      const original=whProductionRecipes().find(x=>x.id===id);
+      if(!original){showToast('ไม่พบสูตรต้นฉบับ');return;}
+      // Open a new recipe draft; saving creates a NEW Firestore document, never overwrites the source.
+      whEditRecipe('',id);
+    }
+    function whEditRecipe(id='',copyFromId=''){
       if(!whItems.length){showToast('กรุณาเพิ่มวัสดุในทะเบียนก่อน');return;}
-      const r=whRecipes.find(x=>x.id===id);
-      whOpen(r?'แก้ไขสูตรวัสดุ':'สร้างสูตรวัสดุใหม่',`<form onsubmit="whSaveRecipe(event)"><input type="hidden" name="recipeId" value="${whEsc(id)}"><div class="wh-form-grid"><label>ชื่อประเภทงาน / ชื่อสูตร<input class="wh-input" name="name" required value="${whEsc(r?.name||'')}" placeholder="เช่น บานเลื่อนสลับ 2 บาน"></label><label>รายละเอียด<input class="wh-input" name="description" value="${whEsc(r?.description||'')}" placeholder="รายละเอียดสูตร"></label></div><p class="wh-sub" style="margin:12px 0">V11.3 · สูตรตามหน้าที่วัสดุ ไม่ล็อกสี/ยี่ห้อ · เพิ่มกระจกและระยะหักในสูตรเดียวกัน · สูตรแม่แบบไม่ผูกกับขนาดลูกค้า ช่างกำหนดวัสดุ จำนวนชิ้น และวิธีตัดตามกว้าง/สูง พร้อมระยะหักจริง · ทดลองด้วยขนาด 120 × 120 ซม. ได้ภายหลัง · อะลูมิเนียมแต่ละรหัสแยกคำนวณเส้น</p><div id="wh-recipe-lines">${(r?.lines||[]).map(whRecipeLineHtml).join('')}</div><button type="button" class="wh-btn" onclick="whRecipeAddLine()">＋ เพิ่มวัสดุในสูตร</button><button class="wh-btn primary" style="margin-left:8px" type="submit">บันทึกสูตร</button></form>`);
+      const r=whRecipes.find(x=>x.id===(copyFromId||id));
+      const copying=Boolean(copyFromId);
+      whOpen(copying?'คัดลอกสูตรงานผลิต':r?'แก้ไขสูตรวัสดุ':'สร้างสูตรวัสดุใหม่',`<form onsubmit="whSaveRecipe(event)"><input type="hidden" name="recipeId" value="${whEsc(id)}"><div class="wh-form-grid"><label>ชื่อประเภทงาน / ชื่อสูตร<input class="wh-input" name="name" required value="${whEsc(copying?(r?.name||'')+' (สำเนา)':r?.name||'')}" placeholder="เช่น บานเลื่อนสลับ 2 บาน"></label><label>รายละเอียด<input class="wh-input" name="description" value="${whEsc(r?.description||'')}" placeholder="รายละเอียดสูตร"></label></div>${copying?'<p class="wh-sub" style="margin:10px 0;padding:10px;border-radius:10px;background:#eff6ff;color:#075985">คัดลอกค่าทุกรายการจากสูตรเดิมแล้ว · กรุณาเปลี่ยนชื่อและตรวจสูตรก่อนบันทึก · สูตรต้นฉบับไม่ถูกแก้ไข</p>':''}<p class="wh-sub" style="margin:12px 0">V11.3 · สูตรตามหน้าที่วัสดุ ไม่ล็อกสี/ยี่ห้อ · เพิ่มกระจกและระยะหักในสูตรเดียวกัน · สูตรแม่แบบไม่ผูกกับขนาดลูกค้า ช่างกำหนดวัสดุ จำนวนชิ้น และวิธีตัดตามกว้าง/สูง พร้อมระยะหักจริง · ทดลองด้วยขนาด 120 × 120 ซม. ได้ภายหลัง · อะลูมิเนียมแต่ละรหัสแยกคำนวณเส้น</p><div id="wh-recipe-lines">${(r?.lines||[]).map(whRecipeLineHtml).join('')}</div><button type="button" class="wh-btn" onclick="whRecipeAddLine()">＋ เพิ่มวัสดุในสูตร</button><button class="wh-btn primary" style="margin-left:8px" type="submit">บันทึกสูตร</button></form>`);
       document.querySelectorAll('#wh-recipe-lines .wh-r-mode').forEach(whRecipeUpdateLine);
     }
     async function whSaveRecipe(e){
@@ -5181,7 +5189,7 @@
     window.whOpenWorkRules=whOpenWorkRules;window.whEditWorkRule=whEditWorkRule;window.whSaveWorkRule=whSaveWorkRule;window.whToggleWorkRule=whToggleWorkRule;window.whDeleteWorkRule=whDeleteWorkRule;
     window.whRouteBulk=whRouteBulk;window.whRouteCheckAll=whRouteCheckAll;window.whOpenWorkRouting=whOpenWorkRouting;window.whRouteToggle=whRouteToggle;window.whRoutePartChanged=whRoutePartChanged;window.whSaveWorkRouting=whSaveWorkRouting;
     window.whOpenComponents=whOpenComponents;window.whEditComponent=whEditComponent;window.whSaveComponent=whSaveComponent;
-    window.whOpenRecipes=whOpenRecipes;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whRecipeUpdateLine=whRecipeUpdateLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
+    window.whOpenRecipes=whOpenRecipes;window.whCopyRecipe=whCopyRecipe;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whRecipeUpdateLine=whRecipeUpdateLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
     window.whSharedIssueUnit=whSharedIssueUnit;window.whToggleSharedMode=whToggleSharedMode;window.whOpenSharedBoxes=whOpenSharedBoxes;window.whOpenSharedIssue=whOpenSharedIssue;window.whSaveSharedIssue=whSaveSharedIssue;window.whReportSharedEmpty=whReportSharedEmpty;window.whAcknowledgeSharedAlert=whAcknowledgeSharedAlert;
     window.whOpenEvidence=whOpenEvidence;window.whOpenDriveImage=whOpenDriveImage;window.whUploadEvidencePhoto=whUploadEvidencePhoto;window.whSaveSignature=whSaveSignature;window.whClearSignature=whClearSignature;window.whDeleteEvidencePhoto=whDeleteEvidencePhoto;window.whPrintSheet=whPrintSheet;window.whDownloadSheetPdf=whDownloadSheetPdf;window.whOpenProductionDashboard=whOpenProductionDashboard;window.whOpenJobDetails=whOpenJobDetails;window.whOpenJobMaterials=whOpenJobMaterials;window.whSaveDelivery=whSaveDelivery;window.whDownloadHandoverPdf=whDownloadHandoverPdf;window.whPrintHandover=whPrintHandover;window.whOpenProductionProgress=whOpenProductionProgress;window.whSaveProductionProgress=whSaveProductionProgress;
     window.whOpenGlassCutPlan=whOpenGlassCutPlan;window.whGlassRecalculate=whGlassRecalculate;window.whSaveGlassCutPlan=whSaveGlassCutPlan;window.whRegisterGlassFromBill=whRegisterGlassFromBill;window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenStockAdjust=whOpenStockAdjust;window.whSaveStockAdjust=whSaveStockAdjust;window.whPreviewStockAdjust=whPreviewStockAdjust;window.whArchiveMaterial=whArchiveMaterial;window.whRestoreMaterial=whRestoreMaterial;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceiveSearch=whReceiveSearch;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;window.whOpenMaintenance=whOpenMaintenance;window.whExportWarehouseBackup=whExportWarehouseBackup;window.whResetWarehouse=whResetWarehouse;
