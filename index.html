@@ -775,7 +775,7 @@
   <div class="wh-kpis"><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('all')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('all')" style="cursor:pointer">📦 วัสดุในทะเบียน<strong id="wh-kpi-items">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('low')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('low')" style="cursor:pointer">⚠️ วัสดุใกล้หมด<strong id="wh-kpi-low">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('out')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('out')" style="cursor:pointer">❌ วัสดุหมด<strong id="wh-kpi-out">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('ordered')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('ordered')" style="cursor:pointer">🛒 งานที่รอซื้อ<strong id="wh-kpi-pending">0</strong>งาน</div></div>
  <div class="wh-steps"><span class="wh-step on"><b>1</b>เลือกงาน</span><span class="wh-step"><b>2</b>ตรวจวัสดุ</span><span class="wh-step"><b>3</b>จัดซื้อ</span><span class="wh-step"><b>4</b>เบิกจากคลัง</span><span class="wh-step"><b>5</b>เริ่มผลิต</span></div>
  <div class="wh-layout"><div class="wh-panel"><div class="wh-heading">เลือกงานที่ต้องการทำ</div><p class="wh-sub">รายการอ้างอิงเอกสารจริงในระบบ</p><input id="wh-job-search" class="wh-input" placeholder="ค้นหาเลขเอกสาร / ลูกค้า" oninput="whRender()" style="margin-top:12px"><div id="wh-jobs" style="margin-top:9px"></div></div>
- <div class="wh-panel"><div class="wh-row"><div><div class="wh-heading">วัสดุที่ต้องใช้ <span id="wh-selected-no" style="color:#0076ce"></span></div><p class="wh-sub" id="wh-customer">เลือกงานจากด้านซ้าย</p></div><details class="wh-more-tools"><summary>⚙️ เครื่องมือจัดการสูตรและแผนวัสดุ</summary><div class="wh-more-tools-content"><button class="wh-btn primary" onclick="whOpenRecipes()">🧮 สูตรงานผลิต</button><button class="wh-btn" onclick="whOpenComponents()">🧩 ส่วนประกอบ</button><button class="wh-btn" onclick="whOpenWorkRules()">⚙️ กฎจัดการงาน</button><button class="wh-btn" onclick="whOpenProcurement()">🛒 ตรวจวัสดุและจัดซื้อ</button><button class="wh-btn" onclick="whOpenPlan()">✎ กำหนดวัสดุของงาน</button></div></details></div><div id="wh-auto-job-preview" style="margin-top:12px"></div><div id="wh-outsourced-work" style="margin-top:12px"></div><div style="overflow:auto;margin-top:13px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="wh-plan-rows"><tr><td colspan="4">กรุณาเลือกงาน</td></tr></tbody></table></div><p id="wh-job-dimensions" class="wh-sub" style="margin-top:10px"></p><div id="wh-alert" class="wh-notice" style="display:none"></div><details class="wh-more-tools"><summary>📂 ทะเบียนวัสดุ · ประวัติ · ของประจำช่าง</summary><div class="wh-more-tools-content"><button class="wh-btn" onclick="whShowStock()">📦 ดูสต็อกวัสดุ</button><button class="wh-btn" onclick="whShowHistory()">◷ ประวัติการเคลื่อนไหว</button><button class="wh-btn" onclick="whOpenSharedBoxes()">👷 วัสดุประจำช่าง / แจ้งหมด</button></div></details></div>
+ <div class="wh-panel"><div class="wh-row"><div><div class="wh-heading">วัสดุที่ต้องใช้ <span id="wh-selected-no" style="color:#0076ce"></span></div><p class="wh-sub" id="wh-customer">เลือกงานจากด้านซ้าย</p></div><details class="wh-more-tools"><summary>⚙️ เครื่องมือจัดการสูตรและแผนวัสดุ</summary><div class="wh-more-tools-content"><button class="wh-btn primary" onclick="whOpenRecipes()">🧮 สูตรงานผลิต</button><button class="wh-btn" onclick="whOpenComponents()">🧩 ส่วนประกอบ</button><button class="wh-btn" onclick="whOpenWorkRules()">⚙️ กฎจัดการงาน</button><button class="wh-btn" onclick="whOpenProcurement()">🛒 ตรวจวัสดุและจัดซื้อ</button><button class="wh-btn" onclick="whOpenPlan()">✎ กำหนดวัสดุของงาน</button></div></details></div><div id="wh-auto-job-preview" style="margin-top:12px"></div><div id="wh-outsourced-work" style="margin-top:12px"></div><div style="overflow:auto;margin-top:13px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>ต้องใช้</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="wh-plan-rows"><tr><td colspan="4">กรุณาเลือกงาน</td></tr></tbody></table></div><p id="wh-job-dimensions" class="wh-sub" style="margin-top:10px"></p><div id="wh-alert" class="wh-notice" style="display:none"></div><details class="wh-more-tools"><summary>📂 ทะเบียนวัสดุ · ประวัติ · ของประจำช่าง</summary><div class="wh-more-tools-content"><button class="wh-btn" onclick="whShowStock()">📦 ดูสต็อกวัสดุ</button><button class="wh-btn" onclick="whShowHistory()">◷ ประวัติการเคลื่อนไหว</button><button class="wh-btn" onclick="whOpenMaintenance()">⚙️ จัดการข้อมูลคลัง (เจ้าของร้าน)</button><button class="wh-btn" onclick="whOpenSharedBoxes()">👷 วัสดุประจำช่าง / แจ้งหมด</button></div></details></div>
  <div class="wh-panel wh-side"><div class="wh-heading">สรุปสถานะวัสดุ</div><p class="wh-sub" id="wh-summary">ยังไม่ได้เลือกงาน</p><div id="wh-ring" style="width:140px;height:140px;border-radius:50%;background:conic-gradient(#dce7f0 0 100%);margin:19px auto;display:grid;place-items:center"><div id="wh-ring-label" style="background:white;width:93px;height:93px;border-radius:50%;display:grid;place-items:center;font-weight:800">—</div></div><div id="wh-status" style="font-size:12px;color:#5d748c"></div><div class="wh-workflow" aria-live="polite"><div class="wh-workflow-kicker">ขั้นตอนถัดไปของงานนี้</div><div id="wh-next-title" class="wh-workflow-title">เลือกงานจากรายการ</div><div id="wh-next-desc" class="wh-workflow-description">ระบบจะแนะนำว่าต้องทำอะไรต่อ ตามข้อมูลวัสดุและสถานะจริง</div><button id="wh-next-action" class="wh-workflow-cta" type="button" onclick="whNextAction()" disabled>เลือกงานเพื่อเริ่มต้น →</button></div><details class="wh-more-tools"><summary>🖨️ พิมพ์เอกสารและเครื่องมือเพิ่มเติม</summary><div class="wh-more-tools-content"><div class="wh-heading" style="color:#0076ce;font-size:16px;margin-top:19px">การดำเนินการต่อไป</div><div style="display:grid;gap:7px;margin-top:12px"><button class="wh-btn primary" onclick="whPrintSheet('materials')">🖨️ พิมพ์ใบรายการวัสดุของงาน</button><button class="wh-btn" onclick="whPrintSheet('shortage')">🖨️ พิมพ์ใบวัสดุที่ขาด / ขอจัดซื้อ</button><button class="wh-btn" onclick="whPrintSheet('production')">🖨️ พิมพ์ใบสั่งผลิต</button><button class="wh-btn" onclick="whOpenProductionProgress()">🛠️ ติดตามขั้นตอนการผลิต</button></div><div style="display:grid;gap:7px;margin:12px 0"><button class="wh-btn" onclick="whOpenProductionDashboard()">📊 ภาพรวมงานทั้งร้าน</button><button class="wh-btn primary" onclick="whDownloadSheetPdf('materials')">⬇️ ดาวน์โหลด PDF ใบรายการวัสดุ</button><button class="wh-btn" onclick="whDownloadSheetPdf('shortage')">⬇️ ดาวน์โหลด PDF ใบขอจัดซื้อ</button><button class="wh-btn" onclick="whDownloadSheetPdf('production')">⬇️ ดาวน์โหลด PDF ใบสั่งผลิต</button></div></div></details><div class="wh-actions"><button class="wh-btn primary" onclick="whOrder()">🛒 บันทึกสั่งซื้อของที่ขาด</button><button class="wh-btn" onclick="whReceive()">📥 รับของเข้าคลัง</button><button class="wh-btn" onclick="whIssue()">📦 เบิกของสำหรับงานนี้</button><button class="wh-btn" onclick="whStartProduction()">▶ ยืนยันเริ่มผลิต</button></div><p class="wh-sub" style="margin-top:12px">การเบิกต้องมีวัสดุครบและมีแผนวัสดุของงานก่อน</p></div></div>
  <div id="wh-modal" class="wh-modal" style="display:none"><div class="wh-modal-body" role="dialog" aria-modal="true" aria-labelledby="wh-modal-title"><div class="wh-row wh-modal-head"><h3 class="wh-heading" id="wh-modal-title"></h3><button type="button" class="wh-btn wh-close" onclick="whClose()" aria-label="ปิดหน้าต่าง">✕</button></div><div id="wh-modal-content"></div></div></div>
 </section>
@@ -1691,10 +1691,33 @@
     }
 
     async function deleteCurrentDocument() {
-      if(!state.currentHistoryId)return showToast('เอกสารนี้ยังไม่ได้บันทึก');
-      await delHistory(state.currentHistoryId);
-    }
+      if(!requireOwner('การลบเอกสาร')) return;
+      const id = state.currentHistoryId;
+      if(!id) return showToast('เอกสารนี้ยังไม่ได้บันทึก');
+      const h = state.history.find(x => x.id === id);
+      if(!h) return showToast('ไม่พบเอกสารที่กำลังแก้ไข');
+      if(!confirm(`ลบเอกสาร ${h.docNo || ''} ใช่หรือไม่?\nการลบครั้งนี้จะลบเอกสารนี้ออกจากประวัติและ Cloud ด้วย`)) return;
 
+      clearTimeout(state.liveSyncTimer);
+      state.history = state.history.filter(x => x.id !== id);
+      persist();
+      renderHistory();
+
+      if(userId && db) {
+        try {
+          await deleteDoc(cloudPath('history', id));
+          showToast('ลบเอกสารออกจาก Cloud แล้ว');
+        } catch(e) {
+          cloudError('Delete current document', e);
+          return;
+        }
+      } else {
+        showToast('ลบเอกสารแล้ว (ในเครื่อง)');
+      }
+
+      createNewDocument();
+    }
+    
     function thaiBahtConversion(num) {
       if (isNaN(num) || num === 0) return 'ศูนย์บาทถ้วน';
       const tNum = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
@@ -2798,7 +2821,6 @@
       if(state.docType==='taxreceipt' && !vatIsRegistered()) return showToast('ยังไม่จดทะเบียน VAT ไม่สามารถบันทึกใบกำกับภาษีได้');
       if(state.docType==='taxreceipt' && (!/^\d{13}$/.test(state.shop.vatTaxId||'') || !state.shop.address?.trim())) return showToast('กรุณาตรวจสอบเลขผู้เสียภาษี 13 หลักและที่อยู่ร้านก่อนออกใบกำกับภาษี');
       const existingBeforeSave = state.currentHistoryId ? state.history.find(h=>h.id===state.currentHistoryId) : null;
-      if(existingBeforeSave?.status==='cancelled')return showToast('เอกสารยกเลิกแล้ว กรุณาสร้างเอกสารใหม่');
       if(existingBeforeSave && !canEditHistoryItem(existingBeforeSave)) return showToast('พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองเป็นผู้จัดทำ');
       calculateTotals(true);
       state.customer = {
@@ -2837,7 +2859,7 @@
       state.prevPaid = state.docType==='receipt' && Number(state.receiptJobTotal)>0 ? Number(state.receiptPriorPaid||0)+getTotalPaid() : getTotalPaid();
       state.remainingAmt = Math.max(0, +(Number(state.grandTotal||0) - state.prevPaid).toFixed(2));
 
-      const existing = existingBeforeSave || null;
+      const existing = state.history.find(h => h.docNo === state.docNo);
       let status = existing?.status || getInitialStatus(state.docType);
       if(state.docType === 'invoice') status = state.remainingAmt <= 0 ? 'paid' : state.prevPaid > 0 ? 'partial' : 'pending';
       if(['receipt','cashbill'].includes(state.docType) && state.remainingAmt > 0) status = 'partial';
@@ -2852,7 +2874,7 @@
       state.jobId = jobId; payload.jobId = jobId;
       const rec = {
         jobId,
-        id: existing?.id || ('doc-' + Date.now() + '-' + Math.random().toString(36).slice(2,10)),
+        id: existing?.id || ('doc-' + Date.now()),
         docNo: state.docNo, docType: state.docType, refNo: state.refNo,
         rootDocNo: getRootDocNo({docNo: state.docNo, refNo: state.refNo}, state.history),
         customerName: state.customer.name || 'ไม่ระบุ', project: state.customer.project || '-',
@@ -3275,7 +3297,6 @@
     }
     function historyDocStatusOptions(h) {
       const options = ({quotation:[['quoting','รอพิจารณา'],['accepted','อนุมัติทำ'],['rejected','ไม่อนุมัติ']],invoice:[['pending','รอชำระเงิน'],['partial','ชำระบางส่วน'],['paid','ครบแล้ว']],receipt:[['paid','รับเงินแล้ว'],['cancelled','ยกเลิก']],cashbill:[['paid','รับเงินแล้ว'],['cancelled','ยกเลิก']],delivery:[['pending_delivery','รอส่งมอบ'],['delivered','ส่งมอบแล้ว']]})[h.docType] || [];
-      if(!options.some(([v])=>v==='cancelled'))options.push(['cancelled','ยกเลิกเอกสาร']);
       return options.map(([v,l])=>`<option value="${v}" ${h.status===v?'selected':''}>${l}</option>`).join('');
     }
     function renderHistoryCenter(filtered, txMap) {
@@ -3301,7 +3322,7 @@
           <span class="hc-item-top"><span class="hc-doc-icon ${tone(h.docType)}"><i data-lucide="${h.docType==='receipt'?'receipt-text':h.docType==='invoice'?'file-clock':'file-text'}"></i></span><span class="hc-item-identity"><strong>${escapeHtml(h.docNo||'')}</strong><small>${historyDocLabel(h.docType)}</small></span><i data-lucide="chevron-right" class="hc-chevron"></i></span>
           <span class="hc-customer">${escapeHtml(h.customerName||'ไม่ระบุลูกค้า')}</span><span class="hc-project">${escapeHtml(h.project||'ไม่มีชื่อโครงการ')}</span>
           <span class="hc-item-meta"><span><i data-lucide="calendar-days"></i> ${escapeHtml(formatDateThai(h.date)||'-')}</span><strong>${amount(h.grandTotal)}</strong></span>
-          <span class="hc-item-bottom"><span class="hc-pill ${remaining>0?'orange':'green'}">${h.status==='cancelled'?'ยกเลิกเอกสาร':remaining>0?'ค้างชำระ':'ชำระครบ'}</span><span class="hc-remaining">${remaining>0?'ค้าง '+amount(remaining):'ไม่มียอดค้าง'}</span></span>
+          <span class="hc-item-bottom"><span class="hc-pill ${remaining>0?'orange':'green'}">${remaining>0?'ค้างชำระ':'ชำระครบ'}</span><span class="hc-remaining">${remaining>0?'ค้าง '+amount(remaining):'ไม่มียอดค้าง'}</span></span>
           </button>
           <div class="hc-card-quick">
             <div class="hc-card-status"><label for="hc-card-status-${h.id}">สถานะเอกสาร</label><select id="hc-card-status-${h.id}" ${owner?'':'disabled title="เฉพาะเจ้าของร้าน"'} onchange="updateDocStatus('${h.id}',this.value)" aria-label="สถานะเอกสาร ${escapeHtml(h.docNo||'')}">${historyDocStatusOptions(h)}</select></div>
@@ -3320,7 +3341,7 @@
         <label class="hc-status-label" for="hc-status">สถานะเอกสาร</label><select id="hc-status" ${owner?'':'disabled title="เฉพาะเจ้าของร้าน"'} onchange="updateDocStatus('${h.id}',this.value)" class="hc-status">${historyDocStatusOptions(h)}</select>
         <div class="hc-actions"><button type="button" class="hc-action blue" onclick="loadHistory('${h.id}')"><i data-lucide="${canEdit?'file-pen':'eye'}"></i> ${canEdit?'ดู / แก้ไข':'ดูเอกสาร'}</button><button type="button" class="hc-action green" onclick="prepareJobReceipt('${h.id}')"><i data-lucide="wallet"></i> รับเงิน</button></div>
         <button type="button" class="hc-more" onclick="toggleHistoryDetail()"><i data-lucide="settings-2"></i> จัดการเพิ่มเติม <i data-lucide="chevron-${historyDetailExpanded?'up':'down'}"></i></button>
-        ${historyDetailExpanded?`<div class="hc-extra"><div class="hc-extra-info"><div>ยอดเอกสารนี้ <strong>${amount(h.grandTotal)}</strong></div><div>อ้างอิง <strong>${escapeHtml(h.refNo||'-')}</strong></div><div>เอกสารในงานเดียวกัน <strong>${tx?.docs.length||1} ฉบับ</strong></div>${h.requiredDeposit>0?`<div>มัดจำที่กำหนด <strong>${amount(h.requiredDeposit)}</strong></div>`:''}</div><label class="hc-flow-label">ต่อยอดเอกสาร</label><select ${canEdit?'':'disabled'} onchange="if(this.value){generateFlowDoc('${h.id}',this.value);this.value=''}"><option value="">เลือกประเภทเอกสาร...</option><option value="invoice">ใบแจ้งหนี้</option><option value="receipt">ใบเสร็จรับเงิน</option><option value="delivery">ใบส่งของ</option></select>${owner?`<button type="button" class="hc-extra-btn" onclick="editHistoryCost('${h.id}')"><i data-lucide="calculator"></i> ${h.totalCost==null?'กรอกต้นทุน':'แก้ไขต้นทุน '+amount(h.totalCost)}</button><button type="button" class="hc-extra-btn" onclick="cancelHistoryDocument('${h.id}')"><i data-lucide="file-x"></i> ยกเลิกเอกสาร</button><button type="button" class="hc-extra-btn danger" onclick="delHistory('${h.id}')"><i data-lucide="trash-2"></i> ลบเอกสาร</button>`:''}</div>`:''}
+        ${historyDetailExpanded?`<div class="hc-extra"><div class="hc-extra-info"><div>ยอดเอกสารนี้ <strong>${amount(h.grandTotal)}</strong></div><div>อ้างอิง <strong>${escapeHtml(h.refNo||'-')}</strong></div><div>เอกสารในงานเดียวกัน <strong>${tx?.docs.length||1} ฉบับ</strong></div>${h.requiredDeposit>0?`<div>มัดจำที่กำหนด <strong>${amount(h.requiredDeposit)}</strong></div>`:''}</div><label class="hc-flow-label">ต่อยอดเอกสาร</label><select ${canEdit?'':'disabled'} onchange="if(this.value){generateFlowDoc('${h.id}',this.value);this.value=''}"><option value="">เลือกประเภทเอกสาร...</option><option value="invoice">ใบแจ้งหนี้</option><option value="receipt">ใบเสร็จรับเงิน</option><option value="delivery">ใบส่งของ</option></select>${owner?`<button type="button" class="hc-extra-btn" onclick="editHistoryCost('${h.id}')"><i data-lucide="calculator"></i> ${h.totalCost==null?'กรอกต้นทุน':'แก้ไขต้นทุน '+amount(h.totalCost)}</button><button type="button" class="hc-extra-btn danger" onclick="delHistory('${h.id}')"><i data-lucide="trash-2"></i> ลบเอกสาร</button>`:''}</div>`:''}
         </div>`;
       if(window.lucide) window.lucide.createIcons();
     }
@@ -3350,7 +3371,7 @@
 
     function updateDocStatus(id, stat) {
       if(!requireOwner('การเปลี่ยนสถานะเอกสาร')) return;
-      const h = state.history.find(x => x.id === id); if(h?.status==='cancelled'&&stat!=='cancelled')return showToast('เอกสารยกเลิกแล้วไม่สามารถเปลี่ยนกลับได้'); if(stat==='cancelled'){cancelHistoryDocument(id);return;} if(h) h.status = stat; persist(); renderHistory();
+      const h = state.history.find(x => x.id === id); if(h) h.status = stat; persist(); renderHistory();
       if(userId && db) updateDoc(cloudPath('history', id), { status: stat }).then(() => showToast('อัปเดตสถานะแล้ว')).catch(e=>cloudError('Update status',e)); else showToast('อัปเดตสถานะแล้ว (ในเครื่อง)');
     }
 
@@ -3387,7 +3408,6 @@
     function prepareJobReceipt(id) {
       if(!companyAccessReady || !userId) return showToast('กรุณาเข้าสู่ระบบก่อนรับเงิน');
       const h=state.history.find(x=>x.id===id);if(!h)return;
-      if(h.status==='cancelled')return showToast('เอกสารยกเลิกแล้ว ไม่สามารถรับเงินเพิ่มได้');
       const tx=getTransactionMap(state.history).get(jobKey(h,state.history));
       if(!tx || tx.remaining<=0) return showToast('งานนี้ไม่มีหนี้ค้างชำระ');
       const raw=prompt(`รับเงินจริงสำหรับงาน ${h.docNo}\nยอดค้าง ฿${tx.remaining.toLocaleString('th-TH',{minimumFractionDigits:2})}\nกรอกยอดที่ได้รับจริง (บาท)`,'');
@@ -3513,48 +3533,15 @@
       showToast(state.isReadOnlyDocument ? 'เปิดเอกสารเพื่อดูข้อมูล — พนักงานแก้ไขได้เฉพาะเอกสารที่ตัวเองจัดทำ' : 'โหลดเอกสารแล้ว โดยคงยอดที่บันทึกไว้เดิม');
     }
 
-    async function cancelHistoryDocument(id) {
-      if(!requireOwner('การยกเลิกเอกสาร'))return;
-      const h=state.history.find(x=>x.id===id);if(!h)return;
-      if(h.status==='cancelled')return showToast('เอกสารนี้ยกเลิกแล้ว');
-      const reason=prompt('เหตุผลยกเลิกเอกสาร '+h.docNo+' (ต้องระบุ)','');
-      if(reason===null)return;
-      if(!reason.trim())return showToast('กรุณาระบุเหตุผล');
-      try {
-        const changes={status:'cancelled',cancelReason:reason.trim(),cancelledAt:new Date().toISOString(),cancelledByUid:userId};
-        await updateDoc(cloudPath('history',id),changes);
-        Object.assign(h,changes);persist();renderHistory();whRender();
-        showToast('ยกเลิกเอกสารแล้ว · ไม่ลบประวัติสต็อก');
-      }catch(e){cloudError('Cancel document',e)}
-    }
-    async function confirmOwnerAgain(){
-      if(!isOwner()||!auth.currentUser||!companyAccessReady)throw Error('เฉพาะบัญชีเจ้าของร้าน');
-      await reauthenticateWithPopup(auth.currentUser,new GoogleAuthProvider());
-      if(!isOwner())throw Error('บัญชีนี้ไม่ใช่เจ้าของร้าน');
-    }
-    async function delHistory(id) {
-      if(!requireOwner('การลบถาวร'))return;
-      const h=state.history.find(x=>x.id===id);if(!h)return;
-      if(!db||!userId)return showToast('ต้องเชื่อมต่อ Firebase ก่อนลบถาวร');
-      const docNo=String(h.docNo||'');
-      const linkedMoves=whMoves.filter(m=>m.docNo===docNo||(m.linkedDocNos||[]).includes(docNo));
-      const linkedPlans=whPlans.filter(p=>p.docNo===docNo||p.id===encodeURIComponent(docNo));
-      const sharedNo=state.history.filter(x=>x.id!==id&&x.docNo===docNo);
-      if(linkedMoves.length||linkedPlans.length||sharedNo.length){
-        alert('ยังลบถาวรไม่ได้อย่างปลอดภัย: '+docNo+'\nประวัติคลัง '+linkedMoves.length+' รายการ\nแผนวัสดุ '+linkedPlans.length+' รายการ\nเอกสารเลขซ้ำ '+sharedNo.length+' ฉบับ\nข้อมูลคลังรุ่นเดิมยังอ้างอิงเลขเอกสาร ให้ใช้ยกเลิกเอกสารก่อน');
-        return;
+    function delHistory(id) {
+      if(!requireOwner('การลบเอกสาร')) return;
+      if(!confirm('ยืนยันลบเอกสารนี้หรือไม่?')) return;
+      if(state.currentHistoryId === id) {
+        state.currentHistoryId = null;
+        setCurrentDocUiState(false);
       }
-      if(!confirm('ลบถาวรเอกสาร '+docNo+'?\nไม่สามารถกู้คืนจากแอปได้'))return;
-      if(prompt('พิมพ์ ลบถาวร เพื่อยืนยัน')!=='ลบถาวร')return;
-      try{
-        await confirmOwnerAgain();
-        const snap=await getDoc(cloudPath('history',id));
-        if(!snap.exists()||snap.data().docNo!==docNo)throw Error('เอกสารมีการเปลี่ยนแปลง กรุณาโหลดใหม่');
-        await deleteDoc(cloudPath('history',id));
-        state.history=state.history.filter(x=>x.id!==id);
-        if(state.currentHistoryId===id){state.currentHistoryId=null;setCurrentDocUiState(false);}
-        persist();renderHistory();whRender();showToast('ลบเอกสารถาวรสำเร็จ');
-      }catch(e){cloudError('Permanent document deletion',e)}
+      state.history = state.history.filter(x => x.id !== id); persist(); renderHistory();
+      if(userId&&db) deleteDoc(cloudPath('history', id)).then(()=>showToast('ลบเอกสารแล้ว')).catch(e=>cloudError('Delete history',e)); else showToast('ลบเอกสารแล้ว (ในเครื่อง)');
     }
 
     function createNewDocument() {
@@ -3845,8 +3832,8 @@
     const whId=()=>crypto.randomUUID?.()||('w'+Date.now()+Math.random().toString(36).slice(2));
     // V11.21: all documents linked to the same real job share one warehouse identity.
     const whJobKey=h=>h?String(jobKey(h,state.history)||h.docNo||''):'';
-    const whGroupDocs=h=>h?state.history.filter(x=>x.docNo&&x.status!=='cancelled'&&whJobKey(x)===whJobKey(h)):[];
-    const whDoc=()=>state.history.find(x=>x.docNo===whSelected&&x.status!=='cancelled');
+    const whGroupDocs=h=>h?state.history.filter(x=>x.docNo&&whJobKey(x)===whJobKey(h)):[];
+    const whDoc=()=>state.history.find(x=>x.docNo===whSelected);
     const whGroupPlans=()=>{const h=whDoc();if(!h)return [];const names=new Set(whGroupDocs(h).map(x=>x.docNo));return whPlans.filter(p=>names.has(p.docNo||decodeURIComponent(p.id||''))||(p.jobId&&p.jobId===whJobKey(h)));};
     const whPlan=()=>{const group=whGroupPlans();return group.find(p=>['completed','producing','issued'].includes(p.status))||group[0]||null;};
     const whIssuedStatuses=['issued','producing','completed'];
@@ -4239,7 +4226,7 @@
     function whRender(){
       if(!document.getElementById('wh-jobs'))return;
       const grouped=new Map();
-      for(const h of state.history.filter(h=>h.docNo&&h.status!=='cancelled')){
+      for(const h of state.history.filter(h=>h.docNo)){
         const key=whJobKey(h);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(h);
       }
       const jobs=[...grouped.values()].map(docs=>{
@@ -4979,7 +4966,66 @@
       const list=whItems.filter(i=>[i.registerNo,i.name,i.sku,i.color,i.system,whCategoryName(i.category)].join(' ').toLocaleLowerCase().includes(q));
       target.innerHTML=`<p class="wh-sub">พบ ${list.length} รายการ · ${list.filter(i=>i.archived).length} รายการที่นำออกจากทะเบียน</p><div class="wh-stocklist">${list.map(i=>`<div class="wh-stockitem" style="flex-wrap:wrap;${i.archived?'opacity:.65;':''}"><div style="flex:1;min-width:180px"><b>${whEsc(i.registerNo||'—')} · ${whEsc(i.name)}</b><div class="wh-sub">${whEsc(whCategoryName(i.category||'OT'))} · ${whEsc(i.system||'')} ${whEsc(i.color||'')} · คงเหลือ <b>${whQtyText(whNum(i.qty))} ${whEsc(i.unit||'')}</b>${i.archived?' · นำออกจากทะเบียนแล้ว':''}</div></div><div style="display:flex;gap:5px;flex-wrap:wrap"><button class="wh-btn" onclick="whOpenMaterial('${whEsc(i.id)}')">รายละเอียด</button>${whCanAdjustStock()?i.archived?`<button class="wh-btn" onclick="whRestoreMaterial('${whEsc(i.id)}')">กู้คืน</button>`:`<button class="wh-btn primary" onclick="whOpenStockAdjust('${whEsc(i.id)}')">ปรับยอด</button><button class="wh-btn red" onclick="whArchiveMaterial('${whEsc(i.id)}')" ${whNum(i.qty)!==0?'disabled title="ต้องเคลียร์ยอดเป็น 0 ก่อน"':''}>นำออกจากทะเบียน</button>`:''}</div></div>`).join('')||'<p class="wh-sub">ไม่พบวัสดุ</p>'}</div>`;
     }
-    function whShowHistory(){const ordered=[...whMoves].filter(m=>m.type!=='purchase_order').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));whOpen('ประวัติรับเข้าและเบิกวัสดุ',`<div class="wh-stocklist">${ordered.slice(0,100).map(m=>{const isIssue=m.type==='issue';const details=isIssue?(m.lines||[]).map(l=>{const item=whItems.find(i=>i.id===l.itemId);const snap=(m.stockSnapshots||[]).find(x=>x.itemId===l.itemId);return `<tr><td>${whEsc(item?whFullMaterialName(item):l.name||l.itemId)}</td><td>${whQtyText(whNum(l.qty))} ${whEsc(item?.unit||l.unit||'')}</td><td>${snap?whQtyText(snap.before):'—'}</td><td>${snap?whQtyText(snap.after):'—'}</td></tr>`}).join(''):'';return `<details class="wh-stockitem" style="display:block"><summary style="cursor:pointer"><b>${m.type==='stock_adjustment'?'⚖️ ปรับยอดสต็อก':m.type==='material_archived'?'🗃️ นำออกจากทะเบียน':m.type==='receive'?'📥 รับเข้า':m.type==='shared_empty'?'🔔 แจ้งหมด':'📦 เบิกออก'} · ${whEsc(m.docNo||'ไม่ระบุงาน')}</b> — ${isIssue?(m.lines||[]).length+' รายการ':whNum(m.qty)+' '+whEsc(m.unit||whItems.find(i=>i.id===m.itemId)?.unit||'')}<div class="wh-sub">${whEsc(m.createdAt?.slice(0,16)||'')} · ${whEsc(m.note||'')}${m.type==='stock_adjustment'?' · '+whQtyText(m.before)+' → '+whQtyText(m.after)+' '+whEsc(m.unit||'')+' · ผู้อนุมัติ '+whEsc(m.approvedBy||''):''}</div></summary>${isIssue?`<div style="overflow:auto;margin-top:10px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>เบิก</th><th>ก่อนเบิก</th><th>หลังเบิก</th></tr></thead><tbody>${details}</tbody></table>${!m.stockSnapshots?' <p class="wh-sub">รายการเก่าก่อนอัปเดตไม่มีภาพยอดก่อนและหลังเบิก</p>':''}</div>`:''}</details>`}).join('')||'<p class="wh-sub">ยังไม่มีประวัติ</p>'}</div>`)}
+    // V11.26 Warehouse-only maintenance. Never touches legacy sales/history.
+    const whResetCollections=[
+      'warehouseMovements','warehouseJobPlans','warehouseMaterials','warehouseRecipes',
+      'warehouseColors','warehouseConsumableBoxes','warehouseConsumableAlerts',
+      'warehouseSubcontracts','warehouseWorkRules'
+    ];
+    async function whOpenMaintenance(){
+      if(!isOwner())return showToast('เฉพาะเจ้าของร้าน');
+      whOpen('จัดการข้อมูลคลังสินค้า',`<div class="wh-notice" style="padding:15px">
+        <b>เฉพาะระบบคลังสินค้า</b><p>ล้างข้อมูลทดลองของคลังเท่านั้น ไม่ลบใบเสนอราคา ใบเสร็จ การรับเงิน ลูกค้า พนักงาน หรือข้อมูลร้าน</p>
+        <p style="color:#b91c1c">การล้างคลังจะลบทะเบียนวัสดุ ยอดคงเหลือ แผนงาน สูตร ประวัติรับเข้า/เบิกออก และข้อมูลคลังอื่น ๆ แบบถาวร</p>
+        <button class="wh-btn" onclick="whExportWarehouseBackup()">⬇️ สำรองข้อมูลคลังเป็น JSON</button>
+        <button class="wh-btn" style="background:#b91c1c;color:white" onclick="whResetWarehouse()">🗑️ ล้างข้อมูลคลังทั้งหมด</button>
+      </div>`);
+    }
+    async function whWarehouseSnapshot(){
+      const result={exportedAt:new Date().toISOString(),scope:'warehouse-only',collections:{}};
+      for(const c of whResetCollections){
+        const snapshot=await getDocs(cloudCollection(c));
+        result.collections[c]=snapshot.docs.map(d=>({id:d.id,data:d.data()}));
+      }
+      return result;
+    }
+    async function whExportWarehouseBackup(){
+      if(!isOwner())return showToast('เฉพาะเจ้าของร้าน');
+      try{
+        const backup=await whWarehouseSnapshot();
+        const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download='Sumran_Warehouse_Backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),10000);
+        showToast('ดาวน์โหลดไฟล์สำรองคลังแล้ว');
+      }catch(e){cloudError('Warehouse backup',e)}
+    }
+    async function whResetWarehouse(){
+      if(!isOwner()||!companyAccessReady||!db||whBusy)return showToast('เฉพาะเจ้าของร้านที่เชื่อมต่อ Firebase');
+      if(!confirm('ล้างเฉพาะระบบคลังทั้งหมด? ระบบบิลและข้อมูลร้านจะไม่ถูกลบ'))return;
+      if(prompt('พิมพ์ ล้างคลังทั้งหมด เพื่อยืนยัน')!=='ล้างคลังทั้งหมด')return;
+      whBusy=true;
+      try{
+        await reauthenticateWithPopup(auth.currentUser,new GoogleAuthProvider());
+        if(!isOwner())throw Error('ต้องใช้บัญชีเจ้าของร้าน');
+        const snapshot=await whWarehouseSnapshot();
+        const total=Object.values(snapshot.collections).reduce((n,docs)=>n+docs.length,0);
+        if(!confirm('พบข้อมูลคลัง '+total+' รายการใน '+whResetCollections.length+' หมวด\nยืนยันลบถาวร? โปรดสำรองข้อมูลก่อน'))return;
+        // A warehouse reset may exceed Firestore batch limits. Delete in small
+        // batches; partial failure is reported, never presented as success.
+        let removed=0;
+        for(const c of whResetCollections){
+          for(const row of snapshot.collections[c]){
+            await deleteDoc(cloudPath(c,row.id));
+            removed++;
+          }
+        }
+        whSelected='';whClose();whRender();
+        showToast('ล้างคลังเรียบร้อย '+removed+' รายการ · ไม่แตะข้อมูลบิล');
+      }catch(e){cloudError('Warehouse reset (may be partial)',e);alert('การล้างคลังอาจเสร็จเพียงบางส่วน กรุณาตรวจสอบก่อนทำซ้ำ\n'+(e.message||e));}
+      finally{whBusy=false}
+    }
+    function whShowHistory(){const ordered=[...whMoves].filter(m=>m.type!=='purchase_order').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));whOpen('ประวัติรับเข้าและเบิกวัสดุ',`<div class="wh-stocklist">${ordered.slice(0,100).map(m=>{const isIssue=m.type==='issue';const linked=state.history.filter(h=>h.docNo===m.docNo);const moveStatus=!m.docNo?'รับเข้าอิสระ':!linked.length?'ไม่พบเอกสาร':linked.some(h=>h.status==='cancelled')&&linked.some(h=>h.status!=='cancelled')?'เลขซ้ำ / ต้องตรวจสอบ':linked.every(h=>h.status==='cancelled')?'งานยกเลิก':'งานปกติ';const details=isIssue?(m.lines||[]).map(l=>{const item=whItems.find(i=>i.id===l.itemId);const snap=(m.stockSnapshots||[]).find(x=>x.itemId===l.itemId);return `<tr><td>${whEsc(item?whFullMaterialName(item):l.name||l.itemId)}</td><td>${whQtyText(whNum(l.qty))} ${whEsc(item?.unit||l.unit||'')}</td><td>${snap?whQtyText(snap.before):'—'}</td><td>${snap?whQtyText(snap.after):'—'}</td></tr>`}).join(''):'';return `<details class="wh-stockitem" style="display:block"><summary style="cursor:pointer"><b>${m.type==='stock_adjustment'?'⚖️ ปรับยอดสต็อก':m.type==='material_archived'?'🗃️ นำออกจากทะเบียน':m.type==='receive'?'📥 รับเข้า':m.type==='shared_empty'?'🔔 แจ้งหมด':'📦 เบิกออก'} · ${whEsc(m.docNo||'ไม่ระบุงาน')}</b> <span style="font-size:11px;color:#b45309">[${whEsc(moveStatus)}]</span> — ${isIssue?(m.lines||[]).length+' รายการ':whNum(m.qty)+' '+whEsc(m.unit||whItems.find(i=>i.id===m.itemId)?.unit||'')}<div class="wh-sub">${whEsc(m.createdAt?.slice(0,16)||'')} · ${whEsc(m.note||'')}${m.type==='stock_adjustment'?' · '+whQtyText(m.before)+' → '+whQtyText(m.after)+' '+whEsc(m.unit||'')+' · ผู้อนุมัติ '+whEsc(m.approvedBy||''):''}</div></summary>${isIssue?`<div style="overflow:auto;margin-top:10px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>เบิก</th><th>ก่อนเบิก</th><th>หลังเบิก</th></tr></thead><tbody>${details}</tbody></table>${!m.stockSnapshots?' <p class="wh-sub">รายการเก่าก่อนอัปเดตไม่มีภาพยอดก่อนและหลังเบิก</p>':''}</div>`:''}</details>`}).join('')||'<p class="wh-sub">ยังไม่มีประวัติ</p>'}</div>`)}
     // RECIPE STUDIO V2: flexible work types; coefficients must be approved by a technician.
     const whRecipeOptions=()=>whMaterialOptions();
     function whSearchRecipeMaterial(input){
@@ -5137,9 +5183,9 @@
     window.whOpenRecipes=whOpenRecipes;window.whEditRecipe=whEditRecipe;window.whRecipeAddLine=whRecipeAddLine;window.whRecipeUpdateLine=whRecipeUpdateLine;window.whSaveRecipe=whSaveRecipe;window.whTryRecipe=whTryRecipe;window.whPreviewRecipe=whPreviewRecipe;window.whApplyRecipe=whApplyRecipe;window.whDeleteRecipe=whDeleteRecipe;
     window.whSharedIssueUnit=whSharedIssueUnit;window.whToggleSharedMode=whToggleSharedMode;window.whOpenSharedBoxes=whOpenSharedBoxes;window.whOpenSharedIssue=whOpenSharedIssue;window.whSaveSharedIssue=whSaveSharedIssue;window.whReportSharedEmpty=whReportSharedEmpty;window.whAcknowledgeSharedAlert=whAcknowledgeSharedAlert;
     window.whOpenEvidence=whOpenEvidence;window.whOpenDriveImage=whOpenDriveImage;window.whUploadEvidencePhoto=whUploadEvidencePhoto;window.whSaveSignature=whSaveSignature;window.whClearSignature=whClearSignature;window.whDeleteEvidencePhoto=whDeleteEvidencePhoto;window.whPrintSheet=whPrintSheet;window.whDownloadSheetPdf=whDownloadSheetPdf;window.whOpenProductionDashboard=whOpenProductionDashboard;window.whOpenJobDetails=whOpenJobDetails;window.whOpenJobMaterials=whOpenJobMaterials;window.whSaveDelivery=whSaveDelivery;window.whDownloadHandoverPdf=whDownloadHandoverPdf;window.whPrintHandover=whPrintHandover;window.whOpenProductionProgress=whOpenProductionProgress;window.whSaveProductionProgress=whSaveProductionProgress;
-    window.whOpenGlassCutPlan=whOpenGlassCutPlan;window.whGlassRecalculate=whGlassRecalculate;window.whSaveGlassCutPlan=whSaveGlassCutPlan;window.whRegisterGlassFromBill=whRegisterGlassFromBill;window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenStockAdjust=whOpenStockAdjust;window.whSaveStockAdjust=whSaveStockAdjust;window.whPreviewStockAdjust=whPreviewStockAdjust;window.whArchiveMaterial=whArchiveMaterial;window.whRestoreMaterial=whRestoreMaterial;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceiveSearch=whReceiveSearch;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;
+    window.whOpenGlassCutPlan=whOpenGlassCutPlan;window.whGlassRecalculate=whGlassRecalculate;window.whSaveGlassCutPlan=whSaveGlassCutPlan;window.whRegisterGlassFromBill=whRegisterGlassFromBill;window.whCreatePurchaseOrder=whCreatePurchaseOrder;window.whSavePurchaseOrder=whSavePurchaseOrder;window.whOpenPurchaseOrders=whOpenPurchaseOrders;window.whOpenPurchaseReceipt=whOpenPurchaseReceipt;window.whSavePurchaseReceipt=whSavePurchaseReceipt;window.whOpenProcurement=whOpenProcurement;window.whCopyProcurement=whCopyProcurement;window.whShowInventoryCategory=whShowInventoryCategory;window.whRenderInventoryCategory=whRenderInventoryCategory;window.whPickRecipeMaterial=whPickRecipeMaterial;window.whAddSharedColor=whAddSharedColor;window.whRender=whRender;window.whSelect=whSelect;window.whSaveAutoJobPlan=whSaveAutoJobPlan;window.whOpenStockAdjust=whOpenStockAdjust;window.whSaveStockAdjust=whSaveStockAdjust;window.whPreviewStockAdjust=whPreviewStockAdjust;window.whArchiveMaterial=whArchiveMaterial;window.whRestoreMaterial=whRestoreMaterial;window.whOpenMaterial=whOpenMaterial;window.whDeleteMaterial=whDeleteMaterial;window.whFilterStock=whFilterStock;window.whSearchRecipeMaterial=whSearchRecipeMaterial;window.whClose=whClose;window.whSaveMaterial=whSaveMaterial;window.whOpenPlan=whOpenPlan;window.whAddLine=whAddLine;window.whSavePlan=whSavePlan;window.whOrder=whOrder;window.whReceiveSearch=whReceiveSearch;window.whReceive=whReceive;window.whSaveReceive=whSaveReceive;window.whIssue=whIssue;window.whStartProduction=whStartProduction;window.whShowStock=whShowStock;window.whShowHistory=whShowHistory;window.whOpenMaintenance=whOpenMaintenance;window.whExportWarehouseBackup=whExportWarehouseBackup;window.whResetWarehouse=whResetWarehouse;
 
-    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.cancelHistoryDocument = cancelHistoryDocument; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
+    window.loginWithGoogle = loginWithGoogle; window.updateDocumentStatus = updateDocumentStatus; window.logoutGoogle = logoutGoogle; window.inviteStaffByEmail = inviteStaffByEmail; window.changeMemberRole = changeMemberRole; window.removeMember = removeMember; window.switchTab = switchTab; window.updateDocType = updateDocType; window.duplicateCurrentAsNew = duplicateCurrentAsNew; window.deleteCurrentDocument = deleteCurrentDocument; window.applyPreset = applyPreset; window.openPresetEditor = openPresetEditor; window.togglePresetFields = togglePresetFields; window.togglePresetPriceLabel = togglePresetPriceLabel; window.handlePresetUnitMode = handlePresetUnitMode; window.addPresetColor = addPresetColor; window.addPresetUnit = addPresetUnit; window.deletePresetColor = deletePresetColor; window.addPresetPriceMethod = addPresetPriceMethod; window.deletePresetPriceMethod = deletePresetPriceMethod; window.handlePresetPriceMethodMode = handlePresetPriceMethodMode; window.setItemAluColor = setItemAluColor; window.toggleItemSpecPanel = toggleItemSpecPanel; window.setItemGlassChoice = setItemGlassChoice; window.setItemGlassThickness = setItemGlassThickness; window.addItemGlassKind = addItemGlassKind; window.setItemPriceMethod = setItemPriceMethod; window.savePreset = savePreset; window.addNewItem = addNewItem; window.removeItem = removeItem; window.duplicateItem = duplicateItem; window.updateItem = updateItem; window.calculateTotals = calculateTotals; window.saveCurrentDoc = saveCurrentDoc; window.loadHistory = loadHistory; window.delHistory = delHistory; window.createNewDocument = createNewDocument; window.saveStoreSettings = saveStoreSettings; window.handleLogoUpload = handleLogoUpload; window.toggleLumpSum = toggleLumpSum; window.togglePaymentBox = togglePaymentBox; window.toggleDepositBox = toggleDepositBox; window.updateDepositPercent = updateDepositPercent; window.applyDepositToPayment = applyDepositToPayment; window.generateFlowDoc = generateFlowDoc; window.prepareJobReceipt = prepareJobReceipt; window.updateDocStatus = updateDocStatus; window.openGenericModal = openGenericModal; window.closeGenericModal = closeGenericModal; window.deleteData = deleteData; window.saveCustomerInfo = saveCustomerInfo; window.saveSalesInfo = saveSalesInfo; window.autoFillCustomer = autoFillCustomer; window.printDocument = printDocument; window.downloadPdf = downloadPdf; window.reprintArchivedDoc = reprintArchivedDoc; window.deletePrintArchive = deletePrintArchive; window.clearPrintArchive = clearPrintArchive; window.renderPrintArchive = renderPrintArchive;
   </script>
   <script>
     // PWA registration only. Never cache application HTML, Firebase or PDF requests.
@@ -5153,4 +5199,3 @@
   </script>
 </body>
 </html>
-
