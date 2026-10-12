@@ -795,7 +795,7 @@
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-bold tracking-tight flex items-center gap-2">
-            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">V11.46</span>
+            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">V11.47</span>
           </h1>
           <p class="text-xs text-sky-200/80">ระบบจัดการเอกสารและการเงินครบวงจร</p>
         </div>
@@ -4384,7 +4384,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       const grid=(a,b)=>Math.floor((sw+kerf)/(a+kerf))*Math.floor((sh+kerf)/(b+kerf));
       return Math.max(grid(w,h),grid(h,w));
     }
-    // V11.46: current recipes are authoritative for unissued in-house plans.
+    // V11.47: current recipes are authoritative for unissued in-house plans.
     let whGlassReviewSignature='',whAutoPlanTask=null,whAutoPlanFailure='';
     const whAutoLoadKeys=['history','warehouseMaterials','warehouseRecipes','warehouseJobPlans','warehouseSubcontracts','warehouseWorkRules'];
     const whAutoReady=()=>userId&&companyAccessReady&&whAutoLoadKeys.every(k=>whLoadState[k]==='ok');
@@ -4639,6 +4639,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     function whRender(){
       wh3dScheduleSync();
       queueMicrotask(wh3dRefresh);
+      queueMicrotask(whRefreshProcurement);
       if(!document.getElementById('wh-jobs'))return;
       const grouped=new Map();
       for(const h of state.history.filter(h=>h.docNo)){
@@ -4664,7 +4665,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       document.getElementById('wh-selected-no').textContent=whSelected||'';
       document.getElementById('wh-customer').textContent=job?.custName||job?.customerName||'เลือกงานจากด้านซ้าย';
       const autoSummary=job&&!plan?whAutoSummary(job):null;
-      const latest=whAutoReady()?whCurrentRecipePlan(job,plan):null;
+      const latest=whEffectiveMaterialPlan(job,plan);
       queueMicrotask(whScheduleAutoPlan);
       const preview=document.getElementById('wh-auto-job-preview');if(preview)preview.innerHTML=whAutoJobHtml(job,plan);const subcontractBox=document.getElementById('wh-outsourced-work');if(subcontractBox)subcontractBox.innerHTML=whSubcontractPanel(job);
       const lines=latest?.lines||plan?.lines||(autoSummary&&!autoSummary.blocked.length?autoSummary.lines:[])||[];const alreadyIssued=['issued','producing','completed'].includes(plan?.status);let good=0,bad=0;
@@ -4706,8 +4707,42 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     function whNextAction(){if(typeof whNextStepAction==='function')whNextStepAction();}
     window.whNextAction=whNextAction;
     // V11.6: read-only procurement workbench. Only saved, unissued plans are counted.
+    // V11.47: stock inspection and procurement share the same current recipe projection.
+    function whEffectiveMaterialPlan(job,plan){
+      const current=whAutoReady()?whCurrentRecipePlan(job,plan):null;
+      return current?{...(plan||{docNo:job.docNo,status:'planned'}),...whAutoPlanFields(current)}:plan;
+    }
+    function whProcurementPlans(scope){
+      const selectedJob=whDoc(),selectedKey=whJobKey(selectedJob),groups=new Map();
+      for(const p of whPlans){
+        if(String(p.id||'').startsWith('_issue_lock_'))continue;
+        const job=state.history.find(j=>j.docNo===p.docNo);
+        const key=whJobKey(job)||p.jobId||p.docNo||p.id;
+        if(scope!=='all'&&key!==selectedKey)continue;
+        if(!groups.has(key))groups.set(key,{job,plans:[]});
+        groups.get(key).plans.push(p);
+      }
+      // A selected job may have a current calculation before its automatic save finishes.
+      if(selectedJob&&!groups.has(selectedKey))groups.set(selectedKey,{job:selectedJob,plans:[]});
+      const result=[];
+      for(const [key,g] of groups){
+        if(g.plans.some(p=>['issued','producing','completed'].includes(p.status)))continue;
+        const plan=g.plans.find(p=>p.status!=='cancelled')||g.plans[0]||null;
+        if(plan?.status==='cancelled')continue;
+        const job=key===selectedKey?selectedJob:g.job;
+        const effective=whEffectiveMaterialPlan(job,plan);
+        if(effective?.lines?.length)result.push(effective);
+      }
+      return result;
+    }
+    function whRefreshProcurement(){
+      const marker=document.getElementById('wh-procurement-live'),modal=document.getElementById('wh-modal');
+      if(!marker||!modal||modal.style.display==='none')return;
+      const content=document.getElementById('wh-modal-content'),scroll=content.scrollTop;
+      whOpenProcurement(marker.dataset.scope);content.scrollTop=scroll;
+    }
     function whProcurementReport(scope='all'){
-      const active=whPlans.filter(p=>!['issued','producing','completed','cancelled'].includes(p.status)&&Array.isArray(p.lines)&&p.lines.length&&(scope==='all'||p.docNo===whSelected));
+      const active=whProcurementPlans(scope);
       const demand=new Map(),sources=new Map();
       for(const p of active){
         const perPlan=new Map();
@@ -4722,9 +4757,9 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       if(scope==='selected'&&!whSelected){showToast('กรุณาเลือกบิลก่อน');return;}
       const report=whProcurementReport(scope);
       const controls=`<div class="wh-row" style="justify-content:flex-start;flex-wrap:wrap;margin:10px 0"><button class="wh-btn ${scope==='all'?'primary':''}" onclick="whOpenProcurement('all')">ทุกงานที่มีแผน</button><button class="wh-btn ${scope==='selected'?'primary':''}" onclick="whOpenProcurement('selected')" ${whSelected?'':'disabled'}>บิลที่เลือก</button><button class="wh-btn" onclick="whCopyProcurement('${scope}')">📋 คัดลอกรายการที่ขาด</button><button class="wh-btn primary" onclick="whCreatePurchaseOrder('${scope}')">＋ สร้างใบจัดซื้อจากยอดขาด</button><button class="wh-btn" onclick="whOpenPurchaseOrders()">📦 ติดตามใบจัดซื้อ</button></div>`;
-      const info=`<p class="wh-sub">อ่านจากแผนวัสดุที่บันทึกแล้ว ${report.active.length} งาน · รวมความต้องการของทุกงานก่อนเทียบกับสต๊อกจริง · ไม่รวมงานที่เบิกแล้ว · ไม่มีการหักหรือเพิ่มสต๊อก</p>`;
+      const info=`<p class="wh-sub">คำนวณจากสูตรล่าสุดและแผนวัสดุ ${report.active.length} งาน · รวมความต้องการของทุกงานก่อนเทียบกับสต๊อกจริง · ไม่รวมงานที่เบิกแล้ว · ไม่มีการหักหรือเพิ่มสต๊อก</p>`;
       const rows=report.rows.map(r=>{const unit=whEsc(r.item?.unit||'หน่วย'),name=whEsc(r.item?whFullMaterialName(r.item):'ไม่พบวัสดุในทะเบียน'),refs=whEsc(r.sources.map(x=>x.docNo).filter(Boolean).join(', '));return `<tr><td><b>${name}</b><div class="wh-sub">${whEsc(r.item?.registerNo||r.id)} · ${refs}</div></td><td>${whQtyText(r.required)} ${unit}</td><td>${whQtyText(r.available)} ${unit}</td><td><span class="wh-tag ${r.shortage?'bad':''}">${r.shortage?'ขาด '+whQtyText(r.shortage):'เพียงพอ'} ${unit}</span></td></tr>`;}).join('');
-      whOpen('ตรวจสต๊อกและเตรียมจัดซื้อ · V11.6',info+controls+`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><span class="wh-tag">วัสดุ ${report.rows.length} รายการ</span><span class="wh-tag ${report.shortages.length?'bad':''}">ต้องซื้อ ${report.shortages.length} รายการ</span></div><div style="overflow:auto"><table class="wh-table"><thead><tr><th>วัสดุ / งานที่ใช้</th><th>ต้องใช้รวม</th><th>คงเหลือ</th><th>ผลตรวจ</th></tr></thead><tbody>${rows||'<tr><td colspan="4">ยังไม่มีแผนวัสดุที่บันทึกไว้ กรุณายืนยันสูตรหรือกำหนดวัสดุของงานก่อน</td></tr>'}</tbody></table></div><p class="wh-sub" style="margin-top:12px">จำนวนขาดเป็นยอด ณ ขณะที่เปิดหน้านี้ อาจเปลี่ยนเมื่อมีการรับเข้า/เบิกจากอุปกรณ์อื่น · โปรดตรวจซ้ำก่อนสั่งซื้อจริง · งานจ้างภายนอกที่ช่างจัดหาวัสดุเองไม่ควรอยู่ในแผนวัสดุของร้าน</p>`);
+      whOpen('ตรวจสต๊อกและเตรียมจัดซื้อ · V11.47',`<div id="wh-procurement-live" data-scope="${scope}"></div>`+info+controls+`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><span class="wh-tag">วัสดุ ${report.rows.length} รายการ</span><span class="wh-tag ${report.shortages.length?'bad':''}">ต้องซื้อ ${report.shortages.length} รายการ</span></div><div style="overflow:auto"><table class="wh-table"><thead><tr><th>วัสดุ / งานที่ใช้</th><th>ต้องใช้รวม</th><th>คงเหลือ</th><th>ผลตรวจ</th></tr></thead><tbody>${rows||'<tr><td colspan="4">ยังไม่มีรายการวัสดุที่คำนวณได้ กรุณาตรวจสูตรและประเภทงาน</td></tr>'}</tbody></table></div><p class="wh-sub" style="margin-top:12px">ยอดขาดอัปเดตตามสูตรและสต๊อกที่ระบบได้รับล่าสุด · โปรดตรวจจำนวนก่อนสั่งซื้อจริง · งานจ้างภายนอกที่ช่างจัดหาวัสดุเองไม่ควรอยู่ในแผนวัสดุของร้าน</p>`);
     }
     async function whCopyProcurement(scope='all'){
       const r=whProcurementReport(scope),txt=['รายการวัสดุที่ต้องจัดซื้อ · '+(scope==='selected'?whSelected:'ทุกงาน'),'ตรวจสอบสต๊อกก่อนสั่งซื้อจริง',...r.shortages.map((x,i)=>`${i+1}. ${(x.item?whFullMaterialName(x.item):'ไม่พบทะเบียน '+x.id)} — ขาด ${whQtyText(x.shortage)} ${x.item?.unit||'หน่วย'} (ต้องใช้ ${whQtyText(x.required)}, มี ${whQtyText(x.available)})`) ].join('\n');
@@ -4736,7 +4771,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     function whCreatePurchaseOrder(scope='all'){
       if(!whCanWrite())return;
       const report=whProcurementReport(scope);
-      if(!report.shortages.length){showToast('ไม่มีรายการขาดจากแผนวัสดุที่บันทึกแล้ว');return;}
+      if(!report.shortages.length){showToast('ไม่มีรายการขาดจากยอดวัสดุล่าสุด');return;}
       const html=report.shortages.map(r=>`<div class="wh-stockitem"><label style="flex:1"><b>${whEsc(r.item?.name||'ไม่พบทะเบียนวัสดุ')}</b><div class="wh-sub">${whEsc(r.item?.registerNo||r.id)} · ขาด ${whQtyText(r.shortage)} ${whEsc(r.item?.unit||'หน่วย')}</div><input class="wh-input wh-po-qty" data-item="${whEsc(r.id)}" type="number" min="0" step="any" value="${whQtyText(r.shortage)}" aria-label="จำนวนสั่งซื้อ"></label></div>`).join('');
       whOpen('สร้างใบจัดซื้อ · V11.7',`<p class="wh-sub">ตรวจยอดก่อนบันทึก · การสร้างใบจัดซื้อไม่หักหรือเพิ่มสต๊อก · ไม่สั่งซื้อกับร้านค้าอัตโนมัติ</p><form onsubmit="whSavePurchaseOrder(event)"><input type="hidden" name="scope" value="${scope}"><div class="wh-form-grid"><label>ผู้ขาย / ร้านค้า<input class="wh-input" name="supplier" maxlength="120" placeholder="ระบุภายหลังได้"></label><label>เลขอ้างอิง<input class="wh-input" name="reference" maxlength="100" placeholder="เช่น PO-001"></label></div><div class="wh-stocklist" style="margin:12px 0">${html}</div><label>หมายเหตุ<input class="wh-input" name="note" maxlength="500"></label><button class="wh-btn primary" type="submit" style="margin-top:12px">บันทึกใบจัดซื้อ (ยังไม่รับของ)</button></form>`);
     }
@@ -5547,7 +5582,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     function whShowHistory(){const ordered=[...whMoves].filter(m=>m.type!=='purchase_order').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));whOpen('ประวัติรับเข้าและเบิกวัสดุ',`<div class="wh-stocklist">${ordered.slice(0,100).map(m=>{const isIssue=m.type==='issue';const linked=state.history.filter(h=>h.docNo===m.docNo);const moveStatus=!m.docNo?'รับเข้าอิสระ':!linked.length?'ไม่พบเอกสาร':linked.some(h=>h.status==='cancelled')&&linked.some(h=>h.status!=='cancelled')?'เลขซ้ำ / ต้องตรวจสอบ':linked.every(h=>h.status==='cancelled')?'งานยกเลิก':'งานปกติ';const details=isIssue?(m.lines||[]).map(l=>{const item=whItems.find(i=>i.id===l.itemId);const snap=(m.stockSnapshots||[]).find(x=>x.itemId===l.itemId);return `<tr><td>${whEsc(item?whFullMaterialName(item):l.name||l.itemId)}</td><td>${whQtyText(whNum(l.qty))} ${whEsc(item?.unit||l.unit||'')}</td><td>${snap?whQtyText(snap.before):'—'}</td><td>${snap?whQtyText(snap.after):'—'}</td></tr>`}).join(''):'';return `<details class="wh-stockitem" style="display:block"><summary style="cursor:pointer"><b>${m.type==='stock_adjustment'?'⚖️ ปรับยอดสต็อก':m.type==='material_archived'?'🗃️ นำออกจากทะเบียน':m.type==='receive'?'📥 รับเข้า':m.type==='shared_empty'?'🔔 แจ้งหมด':m.type==='shared_return'?'↩ คืนจากช่าง':m.type==='shared_issue'?'👷 เบิกให้ช่าง':'📦 เบิกออก'} · ${whEsc(m.docNo||'ไม่ระบุงาน')}</b> <span style="font-size:11px;color:#b45309">[${whEsc(moveStatus)}]</span> — ${isIssue?(m.lines||[]).length+' รายการ':whNum(m.qty)+' '+whEsc(m.unit||whItems.find(i=>i.id===m.itemId)?.unit||'')}<div class="wh-sub">${whEsc(m.createdAt?.slice(0,16)||'')} · ${whEsc(m.note||'')}${m.type==='stock_adjustment'?' · '+whQtyText(m.before)+' → '+whQtyText(m.after)+' '+whEsc(m.unit||'')+' · ผู้อนุมัติ '+whEsc(m.approvedBy||''):''}</div></summary>${isIssue?`<div style="overflow:auto;margin-top:10px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>เบิก</th><th>ก่อนเบิก</th><th>หลังเบิก</th></tr></thead><tbody>${details}</tbody></table>${!m.stockSnapshots?' <p class="wh-sub">รายการเก่าก่อนอัปเดตไม่มีภาพยอดก่อนและหลังเบิก</p>':''}</div>`:''}</details>`}).join('')||'<p class="wh-sub">ยังไม่มีประวัติ</p>'}</div>`)}
     // RECIPE STUDIO V2: flexible work types; coefficients must be approved by a technician.
     const whRecipeOptions=()=>whMaterialOptions();
-    // V11.46: recipe category describes calculation; search spans every material category.
+    // V11.47: recipe category describes calculation; search spans every material category.
     function whRecipeSearchKey(value){
       return String(value??'').normalize('NFKC').toLocaleLowerCase('th-TH').replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[\s·•_\-–—/]+/g,'');
     }
