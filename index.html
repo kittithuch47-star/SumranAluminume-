@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sumran Aluminum - ระบบจัดการเอกสาร</title>
-  <meta name="theme-color" content="#075985">
+  <meta name="theme-color" content="#a47e43">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Sumran Aluminum">
@@ -741,6 +741,52 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
+<style id="sumran-v1142-atelier">
+/* V11.42 Atelier — screen styles only; original print rules stay authoritative. */
+@media screen {
+ :root{--atelier-paper:#fbf9f5;--atelier-line:#e8dfce;--atelier-gold:#ad8447;--atelier-ink:#342e24;--su-border:#e8dfce;--su-shadow:0 8px 28px #4f39120a}
+ body{background:radial-gradient(ellipse at 80% 0,#f2e6cf80,transparent 45%),#fbf9f5!important;color:#342e24}
+ body>header{background:#fffefaF5!important;color:#342e24!important;border-top:3px solid #c6a363;border-bottom:1px solid #e8dfce;box-shadow:0 5px 24px #45321909!important;backdrop-filter:blur(14px)}
+ body>header>div{max-width:1540px!important;padding-top:17px!important;padding-bottom:17px!important}
+ body>header h1{color:#342e24!important;letter-spacing:-.6px}body>header p{color:#8a795b!important}
+ body>header h1 span{background:#f0e4cd!important;border-color:#e2d1ad!important;color:#896732!important}
+ body>header .w-10.h-10{background:#f7efdf!important;border:1px solid #e3d1ac!important;border-radius:14px!important;color:#a27c40!important}
+ body>header [class*="text-sky-"]{color:#92703a!important}
+ body>header button[id^="tab-btn-"]{background:transparent!important;color:#6f614b!important;border-radius:999px!important;padding:11px 15px!important;font-size:12px!important;box-shadow:none!important}
+ body>header button[id^="tab-btn-"].bg-sky-500{background:#efe3cb!important;color:#735422!important;box-shadow:inset 0 0 0 1px #e7d7b7!important}
+ body>header button[id^="tab-btn-"]:hover{background:#f7f0e2!important}
+ #auth-user-box{background:#f7f2e8!important;border-color:#e7ddca!important;color:#69583f!important}#auth-user-name{color:#342e24!important}#auth-user-email{color:#8a795b!important}#auth-user-box button{background:#eee4d2!important;color:#71562d!important;border-color:#e3d2b6!important}
+ #auth-gate>div>div:first-child{background:linear-gradient(120deg,#57462f,#28251e)!important}#auth-gate [class*="text-sky-"]{color:#e4cfa6!important}
+ main.max-w-7xl{max-width:1540px!important;padding-top:27px!important}
+ main .bg-white.rounded-2xl,.wh-panel,.history-center,.app-home-tile{border-color:#e8dfce!important;box-shadow:0 8px 28px #4f39120a!important;background:#fffefa!important;border-radius:22px!important}
+ .app-home-hero{background:linear-gradient(115deg,#685335,#2d281f 70%)!important;border-color:#79664b!important;box-shadow:0 18px 40px #3c2d231a!important;border-radius:26px!important;padding:38px!important}
+ .app-home-title{color:#fff5df!important;font-size:clamp(27px,3.2vw,42px)!important;letter-spacing:-.7px}.app-home-kicker{color:#d9b878!important;letter-spacing:2px;font-size:11px}.app-home-subtitle{color:#e3d8c5!important}.app-home-cta{background:#dec38e!important;color:#3d301c!important;box-shadow:none!important;border-radius:12px!important}
+ .app-home-icon{background:#f5eddd!important;color:#ad8447!important;border-radius:15px!important}.app-home-tile strong{color:#342e24!important}.app-home-tile small,.app-home-tip{color:#85745b!important}.app-home-tile:hover{border-color:#c5a267!important;box-shadow:0 12px 30px #4f391214!important}.app-home-section h2{color:#342e24!important}.app-home-tip{border-color:#e9ddc6!important;background:#f7f1e6!important}
+ #tab-warehouse{--wh-blue:#a47e43;--wh-ink:#342e24;--wh-border:#e8dfce}
+ #tab-warehouse .wh-hero{background:linear-gradient(115deg,#655239,#2e281f)!important;border-color:#756044!important;padding:24px 28px!important;border-radius:24px!important;margin-bottom:20px;box-shadow:0 12px 32px #36261412}
+ #tab-warehouse .wh-hero h2{color:#f3e4c3!important}#tab-warehouse .wh-hero p{color:#dccfb9!important;line-height:1.9}#tab-warehouse .wh-hero .wh-btn.primary{background:#d9bb80!important;color:#3e2e19!important;border-color:#d9bb80!important}
+ #tab-warehouse .wh-panel{border:1px solid #e8dfce!important;background:#fffefa!important}.wh-heading,.wh-heading h3{color:#493e2c!important}.wh-muted{color:#88795f!important}
+ #tab-warehouse .wh-kpis{gap:16px!important;margin:22px 0!important}#tab-warehouse .wh-kpi{background:#fffefa!important;border:1px solid #e8dfce!important;border-radius:22px!important;padding:23px!important;box-shadow:0 7px 25px #4b351108!important}#tab-warehouse .wh-kpi strong{color:#3c3325!important;font-size:32px!important}#tab-warehouse .wh-kpi:first-child{background:linear-gradient(135deg,#d6b778,#bd9657)!important;border-color:#d1af73!important}#tab-warehouse .wh-kpi:first-child strong,#tab-warehouse .wh-kpi:first-child div,#tab-warehouse .wh-kpi:first-child span{color:#352918!important}
+ .wh-btn{background:#fbf7ee!important;border-color:#e3d6bb!important;color:#816438!important;border-radius:11px!important}.wh-btn.primary,.wh-workflow-cta{background:#9a743a!important;color:white!important;border-color:#9a743a!important}.wh-btn.danger,.wh-btn.red{background:#fff0f0!important;color:#b42336!important;border-color:#efbcc4!important}.wh-btn:disabled,.wh-workflow-cta:disabled{opacity:.5!important}
+ #tab-warehouse .wh-step.on{color:#977038!important}#tab-warehouse .wh-step.on b{background:#b18a4b!important;color:white!important;box-shadow:0 0 0 4px #f1e5ce!important}.wh-job.active,.wh-job.selected,.wh-job.on{background:#f7efdf!important;border-color:#bc9657!important}.wh-job:hover{background:#fbf7ee!important;border-color:#cab17f!important}.wh-workflow{background:#f8f2e7!important;border-color:#e7d8ba!important}.wh-workflow-kicker,.wh-workflow-title{color:#826234!important}.wh-workflow-description{color:#80715a!important}.wh-more-tools>summary{color:#806640!important}.wh-table th{background:#f7f1e6!important;color:#77613d!important}.wh-table td{border-color:#eee7da!important}.wh-search,.wh-input,.wh-select{border-color:#e4d9c6!important;background:#fffefa!important;color:#4b4132!important}
+ #sumran-3d-card{padding:23px!important;background:#fffefa!important;border:1px solid #e8dfce!important;border-radius:26px!important;box-shadow:0 8px 32px #3d2c0c08!important}
+ .s3d-head{margin-bottom:15px!important}.s3d-head strong{color:#3d3425!important;font-size:21px!important}.s3d-head small{color:#8c7b60!important}.s3d-controls button{background:#f6eedf!important;border-color:#e4d5b8!important;color:#8d6c37!important}
+ .s3d-layout{grid-template-columns:minmax(0,1fr) 280px!important;gap:20px!important;align-items:stretch}.s3d-scene{height:570px;min-height:570px!important;border-radius:19px!important;background:#efece5!important;border:1px solid #e5dccb!important}.s3d-scene iframe{height:100%!important;min-height:100%!important;width:100%;border:0}.s3d-info{background:#fbf8f1!important;border:1px solid #e8ddc7!important;border-radius:18px!important;padding:19px!important}.s3d-info h3{color:#4a3b26!important;line-height:1.7}.s3d-info p{color:#827056!important;font-size:12px!important}.s3d-steps{gap:8px!important}.s3d-step{background:#fffefa!important;color:#8b7f6e!important;border:1px solid #e9e0ce!important;padding:10px 12px!important;line-height:1.6}.s3d-step.active{background:#ecdfc2!important;border-color:#c6a567!important;color:#71521f!important;box-shadow:inset 3px 0 #ab8443!important}.s3d-step.done{background:#edf3e9!important;color:#557a4e!important;border-color:#dce7d6!important}.s3d-note{color:#887b65!important;line-height:1.8;font-size:10px!important;margin-top:13px!important}
+ .hc-logo,.hc-filters,.hc-money{background:#f7f0e3!important;color:#a27c40!important;border-color:#e8dcc5!important}.hc-new,.hc-action.blue{background:#a47e43!important}.hc-item.selected{border-color:#b69155!important;background:#fcf7ed!important}.hc-filters button.active{color:#926d32!important}.hc-detail,.hc-item{border-color:#e8dfce!important}.hc-search input{background:#fcfaf6!important;border-color:#e7dbc7!important}
+ :is(#tab-editor,#tab-settings,#tab-history,#tab-home) :is(.text-sky-600,.text-sky-700,.text-sky-800,.text-blue-600,.text-blue-700){color:#926b32!important}
+ :is(#tab-editor,#tab-settings) :is(.bg-sky-50,.bg-blue-50){background:#faf3e5!important}
+ :is(#tab-editor,#tab-settings) :is(.border-sky-100,.border-blue-100,.border-sky-200){border-color:#e5d5b5!important}
+ :is(#tab-editor,#tab-settings) :is(button.bg-sky-600,button.bg-blue-600,button.bg-sky-500){background:#a47e43!important;color:white!important}
+ :is(#tab-editor,#tab-settings) :is(input,select,textarea){border-color:#ded5c4;accent-color:#a27c40}
+ :is(#tab-editor,#tab-settings) input:focus,:is(#tab-editor,#tab-settings) select:focus{border-color:#b48c4d!important}
+ .mobile-only-nav{background:#fffefaF5!important;border-color:#e4d8c1!important}.mobile-nav-item{color:#88795e!important}.mobile-nav-item.is-active{background:#f5ebd8!important;color:#977038!important}.mobile-nav-add{background:linear-gradient(140deg,#c9a364,#a0783b)!important;box-shadow:0 5px 15px #a0783b40!important}
+ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #c7a05e!important;outline-offset:3px}
+}
+@media screen and (max-width:1100px){.s3d-layout{grid-template-columns:minmax(0,1fr)!important}.s3d-scene{height:520px;min-height:520px!important}.s3d-steps{grid-template-columns:repeat(4,minmax(0,1fr))!important}.s3d-info{padding:15px!important}}
+@media screen and (max-width:760px){main.max-w-7xl{padding:12px!important;padding-bottom:90px!important}body>header>div{padding:10px 12px!important}.app-home-hero{padding:25px 20px!important}.app-home-title{font-size:27px!important}#tab-warehouse .wh-hero{padding:19px!important}#sumran-3d-card{padding:12px!important}.s3d-head strong{font-size:17px!important}.s3d-head small{font-size:10px!important}.s3d-head{gap:10px}.s3d-layout{gap:12px!important}.s3d-scene{height:340px;min-height:340px!important}.s3d-steps{grid-template-columns:repeat(2,minmax(0,1fr))!important}.s3d-step{font-size:11px!important;padding:9px!important}#tab-warehouse .wh-kpis{gap:10px!important}#tab-warehouse .wh-kpi{padding:16px!important}#tab-warehouse .wh-kpi strong{font-size:27px!important}.hc-search{min-width:0;flex-basis:100%}.hc-filters{max-width:100%;overflow:auto}.wh-table{min-width:520px}.wh-panel{min-width:0}.wh-panel>div:has(>.wh-table){overflow:auto}}
+@media screen and (prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important}.app-home-tile,.wh-kpi{transition:none!important;transform:none!important}}
+
+</style>
   <header class="bg-gradient-to-r from-sky-800 to-slate-900 text-white shadow-md sticky top-0 z-40 no-print">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center gap-3">
@@ -749,7 +795,7 @@
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-bold tracking-tight flex items-center gap-2">
-            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">Pro</span>
+            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">V11.42</span>
           </h1>
           <p class="text-xs text-sky-200/80">ระบบจัดการเอกสารและการเงินครบวงจร</p>
         </div>
@@ -860,211 +906,123 @@
  <div id="wh-consumable-alert-banner" style="display:none;margin-bottom:12px;padding:13px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px"></div>
  <div class="wh-hero"><div><h2>📦 คลังสินค้าและงานผลิต</h2><p>เลือกงาน แล้วทำตามขั้นตอนที่ระบบแนะนำ · จัดการทะเบียนวัสดุและของประจำช่างได้ในเมนูเพิ่มเติม</p></div><button class="wh-btn primary" onclick="whOpenMaterial()">＋ เพิ่มวัสดุใหม่</button></div>
  <section id="sumran-3d-card" aria-label="ร้านจำลอง 3 มิติและสถานะงาน">
- <div class="s3d-head"><div><strong>🏠 ร้านสำราญอะลูมิเนียม 3D · ติดตามงานผลิต</strong><br><small>ร้านเดียว · ช่าง 5 คน · ภาพจำลองตามสถานะงานจริง</small></div><div class="s3d-controls"><button type="button" onclick="sumran3dToggle()" id="s3d-toggle" style="display:none">▶ เปิดฉาก 3D</button><button type="button" onclick="sumran3dRefresh()">↻ อัปเดตสถานะ</button></div></div>
- <div class="s3d-layout"><div class="s3d-scene" id="s3d-scene"><div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center;padding:20px">🏠 กำลังเตรียมฉาก 3D อัตโนมัติ<br><small>โหลดเฉพาะเมื่อเปิด เพื่อให้ระบบร้านไม่ช้า</small></div></div>
- <div class="s3d-info"><h3 id="s3d-job">เลือกบิลจากรายการงานด้านล่าง</h3><p id="s3d-description">เมื่อเลือกบิล ระบบจะแสดงสูตรและสถานะจากแผนวัสดุและการผลิตที่บันทึกไว้</p><div id="s3d-steps" class="s3d-steps"></div><div class="s3d-note">ภาพช่างเป็นแอนิเมชันประกอบสถานะ ไม่ใช่หลักฐานว่าช่างกำลังทำจริง · ไม่มีการหักสต็อกหรือเขียน Firebase จากฉาก 3D</div></div></div>
+ <div class="s3d-head"><div><strong>โรงงานสำราญ · Workshop 3D</strong><br><small>ตรวจแบบ · ตัด · ประกอบ · ตรวจงาน · เตรียมส่ง</small></div><div class="s3d-controls"><button type="button" onclick="sumran3dToggle()" id="s3d-toggle">▶ เปิดฉาก 3D</button><button type="button" onclick="sumran3dRefresh()">↻ อัปเดตสถานะ</button></div></div>
+ <div class="s3d-layout"><div class="s3d-scene" id="s3d-scene"><div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center;padding:20px">🏠 กำลังเตรียมฉาก 3D อัตโนมัติ<br><small>ฉากเริ่มเคลื่อนไหวเมื่อแสดงบนหน้าจอ</small></div></div>
+ <div class="s3d-info"><h3 id="s3d-job">เลือกบิลจากรายการงานด้านล่าง</h3><p id="s3d-description">เมื่อเลือกบิล ระบบจะแสดงสูตรและสถานะจากแผนวัสดุและการผลิตที่บันทึกไว้</p><div id="s3d-steps" class="s3d-steps"></div><div class="s3d-note">ภาพเคลื่อนไหวประกอบขั้นตอนงาน ไม่ใช่ภาพสดของช่าง · สถานะอ้างอิงข้อมูลที่บันทึก</div></div></div>
  <template id="s3d-template"><iframe title="ร้านสำราญอะลูมิเนียม 3D" loading="lazy" referrerpolicy="no-referrer" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;th&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
-&lt;title&gt;SUMRAN | 3D Shop Demo&lt;/title&gt;
+&lt;html lang=&quot;th&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;&lt;title&gt;สำราญ · โรงงาน 3D&lt;/title&gt;&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
 &lt;style&gt;
-*{box-sizing:border-box}body{margin:0;background:#eaf2ff;color:#213556;font-family:system-ui,&quot;Noto Sans Thai&quot;,sans-serif;overflow:hidden}
-#scene{position:fixed;inset:0}#scene canvas{display:block}
-.top{position:absolute;top:18px;left:20px;right:20px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
-.brand,.status,.panel,.stats&gt;div,.hint,.bottom{background:#ffffffed;border:1px solid #dbe5f5;box-shadow:0 9px 32px #526c9824;border-radius:17px}
-.brand{padding:13px 18px;font-weight:850;letter-spacing:.3px}.brand small{display:block;font-weight:500;color:#6c819f;font-size:12px}
-.status{padding:11px 16px;font-size:12px;color:#347f69}.status:before{content:&quot;● &quot;;color:#29b782}
-.stats{position:absolute;top:100px;left:20px;display:flex;gap:9px;flex-wrap:wrap;max-width:65vw;pointer-events:none}
-.stats&gt;div{padding:12px 17px;min-width:120px}.stats b{font-size:25px;display:block;color:#2456a4}.stats span{font-size:12px;color:#687c9c}
-.panel{position:absolute;top:102px;right:20px;width:285px;padding:17px;max-width:calc(100vw - 40px)}
-.panel h3{margin:0 0 6px}.panel p{font-size:13px;line-height:1.7;color:#617592}.panel .pill{display:inline-block;background:#e5f4ee;color:#23876a;padding:5px 9px;border-radius:20px;font-size:11px}
-.panel button,.bottom button{border:0;background:#eaf1ff;color:#315eaa;border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:650}
-.bottom{position:absolute;bottom:20px;left:20px;right:20px;padding:11px 14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
-.bottom b{margin-right:auto}.bottom button.active{background:#2c69d1;color:white}
-.hint{position:absolute;left:20px;bottom:96px;padding:9px 13px;font-size:12px;color:#627999}
-@media(max-width:750px){.top{top:10px;left:10px;right:10px}.brand{padding:9px 12px;font-size:13px}.status{padding:9px;font-size:10px}.stats{top:72px;left:10px;max-width:calc(100% - 20px)}.stats&gt;div{padding:8px 10px;min-width:82px}.stats b{font-size:18px}.stats span{font-size:10px}.panel{top:auto;bottom:93px;right:10px;width:225px;padding:12px}.panel p{font-size:11px}.hint{display:none}.bottom{left:10px;right:10px;bottom:10px}.bottom b{width:100%}}
-#scene{position:fixed;inset:0}.top,.stats,.panel,.bottom,.hint{display:none!important}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;div id=&quot;scene&quot;&gt;&lt;/div&gt;
-&lt;div class=&quot;top&quot;&gt;&lt;div class=&quot;brand&quot;&gt;🏠 SUMRAN ALUMINUM &lt;small&gt;ร้านจำลอง 3D · ตัวอย่างทดลอง&lt;/small&gt;&lt;/div&gt;&lt;div class=&quot;status&quot;&gt;DEMO MODE · ไม่เชื่อม Firebase&lt;/div&gt;&lt;/div&gt;
-&lt;div class=&quot;stats&quot;&gt;&lt;div&gt;&lt;b&gt;08&lt;/b&gt;&lt;span&gt;งานทั้งหมด&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;03&lt;/b&gt;&lt;span&gt;กำลังผลิต&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;05&lt;/b&gt;&lt;span&gt;ช่างในร้าน&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;div class=&quot;panel&quot;&gt;&lt;div class=&quot;pill&quot;&gt;● สถานะจำลอง&lt;/div&gt;&lt;h3 id=&quot;detailTitle&quot;&gt;ร้านสำราญอะลูมิเนียม&lt;/h3&gt;&lt;p id=&quot;detailText&quot;&gt;คลิกโต๊ะทำงาน ชั้นวางวัสดุ หรือช่างในฉาก เพื่อดูรายละเอียด แต่ละโซนอยู่ในร้านเดียวกันทั้งหมด&lt;/p&gt;&lt;button onclick=&quot;resetView()&quot;&gt;⌂ กลับมุมมองหลัก&lt;/button&gt;&lt;/div&gt;
-&lt;div class=&quot;hint&quot;&gt;🖱 ลากเพื่อหมุน · เลื่อนเพื่อซูม · คลิกสิ่งของเพื่อดูสถานะ&lt;/div&gt;
-&lt;div class=&quot;bottom&quot;&gt;&lt;b&gt;🎮 ฉากแยกตาม 8 ขั้นตอน · ช่าง 5 คน&lt;/b&gt;&lt;button class=&quot;active&quot; id=&quot;runBtn&quot; onclick=&quot;toggleMotion()&quot;&gt;⏸ หยุดแอนิเมชัน&lt;/button&gt;&lt;button onclick=&quot;resetView()&quot;&gt;↺ รีเซ็ตกล้อง&lt;/button&gt;&lt;button onclick=&quot;changeShift()&quot;&gt;⇄ สลับงานช่าง&lt;/button&gt;&lt;/div&gt;
-&lt;script type=&quot;importmap&quot;&gt;
-{&quot;imports&quot;:{&quot;three&quot;:&quot;https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js&quot;,&quot;three/addons/&quot;:&quot;https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/&quot;}}
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#efece5;color:#352f25;font:13px Prompt,system-ui,sans-serif}button{font:inherit;cursor:pointer}#scene{position:fixed;inset:0}canvas{display:block;touch-action:none}.badge,.toolbar,.legend,.detail{background:#fffef9f2;border:1px solid #d8c7a5;box-shadow:0 4px 16px #46341d12;border-radius:14px}.badge{position:absolute;left:16px;top:16px;padding:10px 14px;pointer-events:none;max-width:calc(100% - 32px)}.badge small{display:block;color:#877453;font-size:9px;letter-spacing:1.8px;margin-bottom:4px}.badge b{font-size:13px}.badge span{display:inline-block;width:7px;height:7px;border-radius:50%;background:#b98b40;margin-right:7px}.toolbar{position:absolute;right:14px;bottom:14px;display:flex;gap:4px;padding:5px}.toolbar button{border:0;background:transparent;color:#594529;border-radius:9px;padding:9px 11px;min-width:37px;min-height:36px}.toolbar button:hover,.toolbar button:focus-visible{background:#eee4d2;outline:2px solid #c4a263}.legend{position:absolute;left:14px;bottom:14px;padding:9px 12px;color:#716754;font-size:10px;pointer-events:none}.detail{position:absolute;right:16px;top:16px;max-width:225px;padding:11px 14px;font-size:11px;display:none}.detail b{display:block;margin-bottom:4px}.detail button{float:right;margin-left:10px;border:0;background:none}.detail p{margin:0;line-height:1.7;color:#75674f}.loading{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;background:#f7f3eb;line-height:1.9}.loading b{font-size:20px}.loading span{font-size:12px;color:#7f715b}.loading button{border:1px solid #b89353;background:#fff;padding:9px 20px;border-radius:10px;margin-top:12px}.loading[hidden]{display:none}@media(max-width:600px){.badge{left:10px;top:10px;padding:9px 11px}.badge b{font-size:11px}.badge small{font-size:8px}.legend{bottom:65px;left:10px;font-size:9px;padding:6px 9px}.toolbar{right:10px;bottom:10px}.detail{top:73px;right:10px;max-width:200px}}
+&lt;/style&gt;
+&lt;script type=&quot;importmap&quot;&gt;{&quot;imports&quot;:{&quot;three&quot;:&quot;https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js&quot;,&quot;three/addons/&quot;:&quot;https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/&quot;}}&lt;/script&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;div id=&quot;scene&quot;&gt;&lt;/div&gt;&lt;div class=&quot;badge&quot;&gt;&lt;small&gt;SUMRAN / WORKSHOP 3D&lt;/small&gt;&lt;b id=&quot;stage-label&quot;&gt;&lt;span&gt;&lt;/span&gt;ภาพสาธิต · เลือกงานเพื่อดูสถานะ&lt;/b&gt;&lt;/div&gt;
+&lt;div class=&quot;detail&quot; id=&quot;detail&quot;&gt;&lt;button id=&quot;close-detail&quot; aria-label=&quot;ปิดรายละเอียด&quot;&gt;×&lt;/button&gt;&lt;b id=&quot;detail-title&quot;&gt;&lt;/b&gt;&lt;p id=&quot;detail-text&quot;&gt;&lt;/p&gt;&lt;/div&gt;
+&lt;div class=&quot;legend&quot;&gt;ลากเพื่อหมุน · แตะจุดทำงานเพื่อดูรายละเอียด&lt;/div&gt;
+&lt;div class=&quot;toolbar&quot; aria-label=&quot;ควบคุมฉาก&quot;&gt;&lt;button id=&quot;motion&quot; aria-label=&quot;หยุดแอนิเมชัน&quot;&gt;Ⅱ หยุด&lt;/button&gt;&lt;button id=&quot;zoom-in&quot; aria-label=&quot;ขยาย&quot;&gt;＋&lt;/button&gt;&lt;button id=&quot;zoom-out&quot; aria-label=&quot;ย่อ&quot;&gt;−&lt;/button&gt;&lt;button id=&quot;reset&quot; aria-label=&quot;มุมมองเริ่มต้น&quot;&gt;⌂&lt;/button&gt;&lt;/div&gt;
+&lt;div class=&quot;loading&quot; id=&quot;loading&quot; role=&quot;status&quot;&gt;&lt;b&gt;กำลังเปิดโรงงาน 3D&lt;/b&gt;&lt;span&gt;เตรียมฉากและแสงสว่างสักครู่&lt;/span&gt;&lt;/div&gt;
+&lt;script&gt;
+window.scenePending={stage:0,hasJob:false};window.sceneVisible=true;
+window.addEventListener(&#x27;message&#x27;,e=&gt;{if(e.source!==parent||!e.data)return;if(e.data.type===&#x27;sumran3d-stage&#x27;)window.scenePending=e.data;if(e.data.type===&#x27;sumran3d-visibility&#x27;)window.sceneVisible=!!e.data.visible;});
+window.sceneFallback=function(){if(window.sceneReady)return;const el=document.getElementById(&#x27;loading&#x27;);el.hidden=false;el.innerHTML=&#x27;&lt;b&gt;ยังเปิดฉาก 3D ไม่ได้&lt;/b&gt;&lt;span&gt;ตรวจการเชื่อมต่ออินเทอร์เน็ตหรือการรองรับ WebGL&lt;br&gt;เมนูเอกสารและคลังสินค้ายังใช้งานได้ตามปกติ&lt;/span&gt;&lt;button onclick=&quot;location.reload()&quot;&gt;ลองเปิดฉากอีกครั้ง&lt;/button&gt;&#x27;;};
+window.sceneTimeout=setTimeout(window.sceneFallback,25000);
 &lt;/script&gt;
 &lt;script type=&quot;module&quot;&gt;
-import * as THREE from &#x27;three&#x27;;
-import {OrbitControls} from &#x27;three/addons/controls/OrbitControls.js&#x27;;
-const scene=new THREE.Scene();scene.background=new THREE.Color(&#x27;#eaf2ff&#x27;);
-const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,150);camera.position.set(20,21,25);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.querySelector(&#x27;#scene&#x27;).append(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);controls.minDistance=12;controls.maxDistance=48;controls.maxPolarAngle=Math.PI/2.1;
-scene.add(new THREE.HemisphereLight(0xffffff,0xb8cbe9,2.1));const sun=new THREE.DirectionalLight(0xffffff,2.5);sun.position.set(-9,19,13);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-24;sun.shadow.camera.right=24;sun.shadow.camera.top=24;sun.shadow.camera.bottom=-24;scene.add(sun);
-const mat=c=&gt;new THREE.MeshStandardMaterial({color:c,roughness:.75,metalness:.05});
-const C={floor:mat(&#x27;#f8fbff&#x27;),wall:mat(&#x27;#d4e6ff&#x27;),blue:mat(&#x27;#4b8ce9&#x27;),navy:mat(&#x27;#315ea1&#x27;),steel:mat(&#x27;#9db2c9&#x27;),dark:mat(&#x27;#536984&#x27;),wood:mat(&#x27;#dcb890&#x27;),glass:new THREE.MeshStandardMaterial({color:&#x27;#a9eaff&#x27;,transparent:true,opacity:.48,metalness:.25,roughness:.13,side:THREE.DoubleSide}),green:mat(&#x27;#65c8ac&#x27;),orange:mat(&#x27;#f8ae67&#x27;),red:mat(&#x27;#ef8291&#x27;),white:mat(&#x27;#ffffff&#x27;)};
-const pick=[];function box(w,h,d,x,y,z,m,group=scene,name){const a=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);a.position.set(x,y,z);a.castShadow=true;a.receiveShadow=true;group.add(a);if(name){a.userData.info=name;pick.push(a)}return a}
-function cylinder(r,h,x,y,z,m,g=scene){let o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),m);o.position.set(x,y,z);o.castShadow=true;g.add(o);return o}
-function label(s,x,y,z){const c=document.createElement(&#x27;canvas&#x27;);c.width=512;c.height=90;const ctx=c.getContext(&#x27;2d&#x27;);ctx.fillStyle=&#x27;#ffffff&#x27;;ctx.beginPath();ctx.roundRect(0,0,512,90,22);ctx.fill();ctx.fillStyle=&#x27;#315eaa&#x27;;ctx.font=&#x27;bold 36px sans-serif&#x27;;ctx.textAlign=&#x27;center&#x27;;ctx.fillText(s,256,59);const t=new THREE.CanvasTexture(c);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sp.position.set(x,y,z);sp.scale.set(3.4,.6,1);scene.add(sp)}
-box(21,.45,15,0,-.28,0,C.floor);box(21,4,.24,0,1.8,-7.45,C.wall);box(.25,4,15,-10.4,1.8,0,C.wall);
-for(let i=0;i&lt;8;i++)box(.12,3.7,.3,-9+i*2.6,1.8,-7.28,C.blue);
-for(let i=0;i&lt;4;i++)box(2.1,1.7,.07,-7.5+i*4.4,2.25,-7.26,C.glass);
-const spots=[
-{title:&#x27;คลังอะลูมิเนียม&#x27;,text:&#x27;ชั้นวางเส้นอะลูมิเนียม ตรวจจำนวนวัสดุคงเหลือและรายการใกล้หมด (ข้อมูลตัวอย่าง)&#x27;,x:-7,z:-3.8},
-{title:&#x27;คลังกระจก&#x27;,text:&#x27;เก็บแผ่นกระจกตามขนาดและชนิด ก่อนนำไปตัดตามสูตรงาน (ข้อมูลตัวอย่าง)&#x27;,x:-2.3,z:-4.2},
-{title:&#x27;โต๊ะตัดอะลูมิเนียม&#x27;,text:&#x27;งานตัวอย่าง: ตัดวงกบและบานเลื่อน · ช่างสามารถสลับมาทำจุดนี้ได้&#x27;,x:3,z:-3.4},
-{title:&#x27;โต๊ะตัดกระจก&#x27;,text:&#x27;งานตัวอย่าง: ตัดกระจกตามขนาดจริง · แสดงสูตรตัดได้ในอนาคต&#x27;,x:7.5,z:-3.2},
-{title:&#x27;โต๊ะประกอบ&#x27;,text:&#x27;งานตัวอย่าง: ประกอบกรอบบานหน้าต่าง · ช่างหลายคนช่วยกันได้&#x27;,x:-3,z:3.4},
-{title:&#x27;จุดเตรียมติดตั้ง&#x27;,text:&#x27;งานที่ประกอบเสร็จ รอตรวจสอบและนำออกไปติดตั้ง&#x27;,x:5.7,z:3.5}
-];
-function tagMesh(mesh,spot){mesh.userData.info=spot;pick.push(mesh)}
-// Aluminum rack
-for(let row=0;row&lt;3;row++){box(4.2,.12,.8,-7, .45+row*.95,-4.1,C.navy);for(let k=0;k&lt;7;k++)box(3.8,.09,.08,-7,.62+row*.95,-4.35+k*.12,k%2?C.steel:C.white)}
-for(let x of [-9,-5])for(let z of [-4.5,-3.7])box(.12,3.2,.12,x,1.5,z,C.dark);
-tagMesh(box(4,.05,1.1,-7,3.25,-4.1,C.blue),spots[0]);label(&#x27;คลังอะลูมิเนียม&#x27;,-7,4.25,-4);
-// Glass rack
-for(let k=0;k&lt;5;k++){const g=box(1.9,2.5,.045,-2.5+k*.18,1.5,-4.4+k*.16,C.glass);g.rotation.z=-.11}
-tagMesh(box(2.6,.18,1.5,-2.2,.2,-4.1,C.navy),spots[1]);label(&#x27;คลังกระจก&#x27;,-2,4.15,-4);
-// cutting aluminum
-function table(x,z,w=3.5,d=1.9){box(w,.18,d,x,1.3,z,C.wood);for(let a of [-1,1])for(let b of [-1,1])box(.12,1.2,.12,x+a*(w/2-.2),.63,z+b*(d/2-.2),C.dark)}
-table(3,-3.2);box(2,.14,.2,3,1.47,-3.2,C.steel);const saw=cylinder(.58,.11,3.4,1.85,-3.2,C.navy);saw.rotation.x=Math.PI/2;tagMesh(saw,spots[2]);label(&#x27;ตัดอะลูมิเนียม&#x27;,3,3.2,-3.2);
-// glass cut
-table(7.4,-3.1);tagMesh(box(2.6,.045,1.4,7.4,1.44,-3.1,C.glass),spots[3]);label(&#x27;ตัดกระจก&#x27;,7.4,3.2,-3.2);
-// assembly
-table(-3,3.2,4.5,2.8);for(let dx of [-.9,.9])for(let dz of [-.6,.6])box(.13,.11,.13,-3+dx,1.52,3.2+dz,C.navy);
-tagMesh(box(2.2,.1,1.4,-3,1.58,3.2,C.glass),spots[4]);label(&#x27;ประกอบงาน&#x27;,-3,3.35,3.2);
-// ready frames
-for(let i=0;i&lt;3;i++){const g=new THREE.Group();g.position.set(4.7+i*.6,.25,3.5+i*.2);scene.add(g);box(1.8,.1,.1,0,0,0,C.navy,g);box(1.8,.1,.1,0,2.1,0,C.navy,g);box(.1,2.1,.1,-.85,1.05,0,C.navy,g);box(.1,2.1,.1,.85,1.05,0,C.navy,g);box(1.65,1.95,.04,0,1.05,0,C.glass,g)}
-tagMesh(box(3,.08,2,5.8,.1,3.5,C.green),spots[5]);label(&#x27;รอติดตั้ง&#x27;,5.8,4.15,3.4);
-// decorative tools and boxes
-for(let i=0;i&lt;4;i++)box(.6,.55,.6,7+i*.72,.28,6,C.wood);
-const workerColors=[&#x27;#faad74&#x27;,&#x27;#f18aa0&#x27;,&#x27;#83b4ff&#x27;,&#x27;#90cfa6&#x27;,&#x27;#c7a2f4&#x27;];
-const workers=[];let assigned=[2,3,4,4,0];
-function makeWorker(i){const g=new THREE.Group();scene.add(g);cylinder(.27,.62,0,.83,0,mat(workerColors[i]),g);const head=new THREE.Mesh(new THREE.SphereGeometry(.27,14,12),mat(&#x27;#f3c49b&#x27;));head.position.y=1.35;g.add(head);cylinder(.29,.12,0,1.61,0,C.navy,g);for(let x of [-.14,.14])box(.12,.43,.16,x,.27,0,C.dark,g);for(let x of [-.33,.33])box(.12,.48,.13,x,1.04,0,mat(workerColors[i]),g);g.position.set(-8+i*1.1,0,5.8);workers.push({g,i,phase:i*.8});const hit=cylinder(.45,.06,0,.05,0,C.green,g);hit.visible=false;hit.userData.info={title:&#x27;ช่าง &#x27;+(i+1),text:&#x27;ช่างสลับหน้าที่ได้ทุกจุด · ขณะนี้: &#x27;+spots[assigned[i]].title};pick.push(hit);g.userData.hit=hit}
-for(let i=0;i&lt;5;i++)makeWorker(i);
-const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let down;
-renderer.domElement.addEventListener(&#x27;pointerdown&#x27;,e=&gt;down={x:e.clientX,y:e.clientY});
-renderer.domElement.addEventListener(&#x27;pointerup&#x27;,e=&gt;{if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)&gt;7)return;mouse.set(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1);ray.setFromCamera(mouse,camera);let hits=ray.intersectObjects(pick,true);if(hits.length){let info=hits[0].object.userData.info;if(info){document.querySelector(&#x27;#detailTitle&#x27;).textContent=info.title;document.querySelector(&#x27;#detailText&#x27;).textContent=info.text}}});
-window.addEventListener(&#x27;message&#x27;,e=&gt;{if(e.source!==parent||!e.data||e.data.type!==&#x27;sumran3d-stage&#x27;)return;showWorkflow(e.data.stage);});
-
-// V11.34: eight separate mini-scenes, driven ONLY by the existing saved workflow state.
-const workflowNames=[&#x27;เลือกบิล&#x27;,&#x27;สูตรสินค้าและตรวจสต็อก&#x27;,&#x27;จัดซื้อ / รับวัสดุ&#x27;,&#x27;เบิกวัสดุ&#x27;,&#x27;ตัดอะลูมิเนียมและกระจก&#x27;,&#x27;ประกอบและติดกระจก&#x27;,&#x27;ตรวจงาน&#x27;,&#x27;เตรียมส่งมอบ&#x27;];
-const workflowGroups=[], sceneOriginals=[...scene.children].filter(x=&gt;!x.isLight);
-const miniMaterial={paper:mat(&#x27;#fffdfa&#x27;),accent:mat(&#x27;#3279df&#x27;),mint:mat(&#x27;#77d4b5&#x27;),amber:mat(&#x27;#ffc77c&#x27;)};
-function miniBox(g,w,h,d,x,y,z,m){return box(w,h,d,x,y,z,m,g)}
-function miniFrame(g,x,z){miniBox(g,3,.14,.12,x,1.9,z,C.navy);miniBox(g,3,.14,.12,x,.25,z,C.navy);for(const dx of [-1.45,0,1.45])miniBox(g,.12,1.7,.12,x+dx,1.07,z,C.navy);miniBox(g,2.8,1.55,.035,x,1.08,z,C.glass)}
-function miniDesk(g,x,z){miniBox(g,3,.17,1.7,x,1.1,z,C.wood);for(const dx of [-1.3,1.3])for(const dz of [-.65,.65])miniBox(g,.12,1,.12,x+dx,.5,z+dz,C.dark)}
-for(let stage=0;stage&lt;8;stage++){
- const g=new THREE.Group();scene.add(g);workflowGroups.push(g);
- miniBox(g,14,.3,10,0,-.3,0,C.floor);
- miniBox(g,14,2,.12,0,.85,-5,C.wall);
- if(stage===0){miniDesk(g,0,0);miniBox(g,1.7,.12,1.1,0,1.28,0,miniMaterial.paper);miniBox(g,1.1,.05,.7,0,1.37,0,C.blue);miniBox(g,2.1,2.2,.18,-4,1.1,-2,C.navy)}
- if(stage===1){for(let i=0;i&lt;3;i++){miniBox(g,2.4,.22,1,-4+i*4,1,-1,C.navy);for(let j=0;j&lt;4;j++)miniBox(g,2.1,.08,.1,-4+i*4,1.17,-1.3+j*.18,C.steel)}miniDesk(g,0,2);miniBox(g,2,.04,1.2,0,1.24,2,miniMaterial.paper)}
- if(stage===2){for(let i=0;i&lt;4;i++){miniBox(g,1.1,.8,1.1,-3.5+i*2.2,.4,0,C.wood);miniBox(g,1.12,.07,1.12,-3.5+i*2.2,.84,0,miniMaterial.amber)}miniBox(g,3,.12,1.6,0,.05,3,C.navy)}
- if(stage===3){for(let i=0;i&lt;3;i++){miniBox(g,3,.15,.8,-3+i*3, .7,-2,C.navy);miniBox(g,2.5,.09,.12,-3+i*3,.85,-2,C.steel)}miniBox(g,3,.16,1.8,0,.3,2,miniMaterial.mint)}
- if(stage===4){miniDesk(g,-3,0);miniDesk(g,3,0);miniBox(g,2.5,.1,.2,-3,1.25,0,C.steel);miniBox(g,2.5,.05,1.2,3,1.23,0,C.glass);const blade=cylinder(.52,.12,-2.6,1.6,0,C.navy,g);blade.rotation.x=Math.PI/2}
- if(stage===5){miniDesk(g,0,1);miniFrame(g,0,1);miniBox(g,1,.1,.6,-3,.6,-1,C.wood);miniBox(g,1,.1,.6,3,.6,-1,C.wood)}
- if(stage===6){miniFrame(g,0,0);miniDesk(g,-3,2);miniBox(g,2,.08,1,-3,1.25,2,miniMaterial.paper);miniBox(g,1.6,.08,1,3,.5,2,miniMaterial.mint)}
- if(stage===7){for(let i=0;i&lt;3;i++)miniFrame(g,-3+i*3,0);for(let i=0;i&lt;3;i++)miniBox(g,.8,.65,.8,-2.8+i*2.8,.32,3,C.wood);miniBox(g,2.7,.12,1.7,0,.03,-3,miniMaterial.mint)}
- g.visible=false;
+try {
+const THREE=await import(&#x27;three&#x27;);const {OrbitControls}=await import(&#x27;three/addons/controls/OrbitControls.js&#x27;);
+const scene=new THREE.Scene();scene.background=new THREE.Color(&#x27;#efece5&#x27;);
+const camera=new THREE.OrthographicCamera(-15,15,12,-12,.1,100);camera.position.set(23,25,30);
+const compact=matchMedia(&#x27;(max-width:650px)&#x27;).matches;
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:&#x27;low-power&#x27;});renderer.setPixelRatio(Math.min(devicePixelRatio,compact?1.35:1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;document.getElementById(&#x27;scene&#x27;).append(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.4,0);controls.enableDamping=true;controls.dampingFactor=.09;controls.enablePan=false;controls.minZoom=.65;controls.maxZoom=2.5;controls.minPolarAngle=.25;controls.maxPolarAngle=1.2;
+scene.add(new THREE.HemisphereLight(&#x27;#fff9ec&#x27;,&#x27;#969485&#x27;,2.4));const sun=new THREE.DirectionalLight(&#x27;#fff6df&#x27;,3.3);sun.position.set(-9,20,12);sun.castShadow=true;sun.shadow.mapSize.set(compact?1024:2048,compact?1024:2048);Object.assign(sun.shadow.camera,{left:-19,right:19,top:17,bottom:-17,near:1,far:65});sun.shadow.normalBias=.025;sun.shadow.bias=-.00015;scene.add(sun);const fill=new THREE.DirectionalLight(&#x27;#c7dbed&#x27;,1.1);fill.position.set(12,8,-7);scene.add(fill);
+const materials=new Map();function mat(color,metal=0,rough=.7){const key=color+metal+rough;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,metalness:metal,roughness:rough}));return materials.get(key)}
+const C={cream:mat(&#x27;#faf5e9&#x27;),wall:mat(&#x27;#e7e1d5&#x27;),dark:mat(&#x27;#354640&#x27;,.2),gold:mat(&#x27;#c2a36b&#x27;,.45,.38),wood:mat(&#x27;#bfa27d&#x27;),rubber:mat(&#x27;#323934&#x27;),silver:mat(&#x27;#bbc7c9&#x27;,.75,.32),white:mat(&#x27;#f7f7ef&#x27;),paper:mat(&#x27;#fcfaf1&#x27;),ink:mat(&#x27;#455664&#x27;),leaf:mat(&#x27;#627d50&#x27;),skin:mat(&#x27;#e9b68f&#x27;),glass:new THREE.MeshPhysicalMaterial({color:&#x27;#9bcad0&#x27;,transparent:true,opacity:.52,roughness:.15,metalness:.1,side:THREE.DoubleSide})};
+const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,12,10);const pick=[];
+function mesh(geo,m,x,y,z,g=scene){const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o}
+function box(w,h,d,x,y,z,m,g=scene){const o=mesh(boxGeo,m,x,y,z,g);o.scale.set(w,h,d);return o}
+function ball(rx,ry,rz,x,y,z,m,g=scene){const o=mesh(sphereGeo,m,x,y,z,g);o.scale.set(rx,ry,rz);return o}
+function cyl(r,h,x,y,z,m,g=scene){return mesh(new THREE.CylinderGeometry(r,r,h,16),m,x,y,z,g)}
+function group(x=0,y=0,z=0,parent=scene){const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);return g}
+function beam(a,b,r,m,g=scene){const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),delta=bv.clone().sub(av);const o=cyl(r,delta.length(),...(av.clone().add(bv).multiplyScalar(.5).toArray()),m,g);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return o}
+function sign(text,w,h,x,y,z,g=scene,bg=&#x27;#354640&#x27;,fg=&#x27;#f4e5c3&#x27;){const cvs=document.createElement(&#x27;canvas&#x27;);cvs.width=768;cvs.height=Math.round(768*h/w);const ctx=cvs.getContext(&#x27;2d&#x27;);ctx.fillStyle=bg;ctx.fillRect(0,0,cvs.width,cvs.height);ctx.fillStyle=fg;ctx.textAlign=&#x27;center&#x27;;ctx.textBaseline=&#x27;middle&#x27;;ctx.font=&#x27;600 &#x27;+Math.min(cvs.height*.48,70)+&#x27;px sans-serif&#x27;;ctx.fillText(text,cvs.width/2,cvs.height/2,cvs.width*.9);const tex=new THREE.CanvasTexture(cvs);tex.colorSpace=THREE.SRGBColorSpace;const o=mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}),x,y,z,g);o.castShadow=false;return o}
+const zones=[];function zone(id,title,sub,x,z,w,d){const g=group(x,.008,z);const m=mat(&#x27;#e4ddca&#x27;);const pad=box(w,.025,d,0,0,0,m,g);pad.castShadow=false;const edge=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w,.026,d)),new THREE.LineBasicMaterial({color:&#x27;#c8ad79&#x27;}));g.add(edge);const hit=box(w,.08,d,0,.03,0,new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),g);hit.userData.info={title,sub};pick.push(hit);zones[id]={g,pad,title,sub,x,z};return g}
+// Floor top is exactly Y=0; every structural leg terminates there.
+box(24,.42,17,0,-.21,0,C.cream);box(200,.12,200,0,-.49,0,mat(&#x27;#efece5&#x27;));
+box(24,3.8,.22,0,1.9,-8.1,C.wall);box(.22,2.8,16.4,-11.9,1.4,-.1,C.wall);
+box(24,.12,.26,0,3.86,-8.1,C.gold);box(.25,.12,16.3,-11.9,2.85,-.1,C.gold);
+for(let x=-11;x&lt;=11;x+=5.5)box(.16,3.8,.3,x,1.9,-7.95,C.dark);
+for(const x of [-8.4,-2.8,2.8,8.4]){box(3.5,1.25,.08,x,2.6,-7.92,C.glass);box(3.65,.09,.12,x,1.94,-7.85,C.white);box(.055,1.3,.13,x,2.6,-7.82,C.white)}
+// Wall-mounted shop name and fixed station signs, never floating labels.
+sign(&#x27;SUMRAN  /  ALUMINUM&#x27;,7,.68,0,3.15,-7.71);sign(&#x27;WORKSHOP • SINCE EVERYDAY&#x27;,5,.32,0,2.56,-7.7,scene,&#x27;#e7e1d5&#x27;,&#x27;#66593f&#x27;);
+for(let x=-11;x&lt;12;x+=2)box(.022,.008,16,x,.003,0,mat(&#x27;#dfd9ce&#x27;));for(let z=-7;z&lt;9;z+=2)box(23.8,.008,.022,0,.003,z,mat(&#x27;#dfd9ce&#x27;));
+for(const z of [-1.2,1.2])for(let x=-10.5;x&lt;11;x+=1.15)box(.65,.01,.06,x,.012,z,C.gold);
+zone(0,&#x27;01 · ตรวจแบบงาน&#x27;,&#x27;ตรวจแบบและเอกสารก่อนเริ่มงาน&#x27;,-8,-4.3,4.2,4.7);
+zone(1,&#x27;02 · คลังวัสดุ&#x27;,&#x27;เส้นอะลูมิเนียมวางบนชั้นรองรับ&#x27;,-2.8,-5,4.7,4.5);
+zone(2,&#x27;03 · รับวัสดุ&#x27;,&#x27;จัดวางวัสดุบนพาเลทและตรวจรับ&#x27;,8,4.8,5.3,5.3);
+zone(3,&#x27;04 · เบิกวัสดุ&#x27;,&#x27;รถเข็นขนวัสดุตามทางเดินกลางร้าน&#x27;,-.5,0,20,2.1);
+zone(4,&#x27;05 · ตัดวัสดุ&#x27;,&#x27;เครื่องตัดมีฐานยึดบนโต๊ะทำงาน&#x27;,3,-4.5,4.4,4.3);
+zone(5,&#x27;06 · ประกอบ&#x27;,&#x27;ประกอบกรอบและติดกระจกบนโต๊ะ&#x27;,-6.8,4.4,5.5,5.8);
+zone(6,&#x27;07 · ตรวจงาน&#x27;,&#x27;ตรวจกรอบ ขนาด และความเรียบร้อย&#x27;,0,4.4,5.1,5.8);
+zone(7,&#x27;08 · เตรียมส่ง&#x27;,&#x27;ชิ้นงานวางบนแร็กเตรียมจัดส่ง&#x27;,8,4.8,5.3,5.3);zones[7].pad.visible=false;
+function table(x,z,w=3.7,d=1.8){const g=group(x,0,z);box(w,.16,d,0,1.28,0,C.wood,g);for(const a of [-1,1])for(const b of [-1,1]){box(.15,1.2,.15,a*(w/2-.18),.6,b*(d/2-.18),C.dark,g);box(.22,.04,.22,a*(w/2-.18),.02,b*(d/2-.18),C.rubber,g)}box(w-.3,.11,.1,0,.4,0,C.dark,g);return g}
+const desk=table(-8,-4.5,3.2,1.75);box(1.1,.04,.7,-.7,1.38,.25,C.paper,desk);for(let i=0;i&lt;3;i++)box(.7,.007,.018,-.7,1.404,.05+i*.17,C.ink,desk);box(.55,.05,.36,.75,1.385,-.35,C.dark,desk);box(.07,.38,.07,.75,1.58,-.35,C.dark,desk);box(1.08,.67,.1,.75,1.9,-.35,C.dark,desk);box(.94,.53,.02,.75,1.9,-.285,mat(&#x27;#90b2a2&#x27;),desk);box(.65,.035,.23,.75,1.38,.35,C.ink,desk);
+function rack(x,z){const g=group(x,0,z);for(const dx of [-2,2])for(const dz of [-.54,.54])box(.12,2.8,.12,dx,1.4,dz,C.dark,g);for(let k=0;k&lt;3;k++){const top=.42+k*.94;box(4.15,.12,1.2,0,top-.06,0,C.dark,g);for(let j=0;j&lt;7;j++){box(3.88,.075,.095,0,top+.0375,-.48+j*.155,j&lt;2?C.cream:j&lt;4?C.dark:C.silver,g)}}sign(&#x27;ALUMINUM / STOCK&#x27;,3.9,.32,0,2.82,.63,g);return g}rack(-2.8,-5.5);
+function frame(g,x,y,z,w=2,h=2.2){box(w,.1,.1,x,y+.05,z,C.silver,g);box(w,.1,.1,x,y+h-.05,z,C.silver,g);for(const dx of [-w/2+.05,0,w/2-.05])box(.1,h-.2,.1,x+dx,y+h/2,z,C.silver,g);box(w-.2,h-.2,.028,x,y+h/2,z,C.glass,g)}
+// Glass sheets bottom on a solid rack base, with metal braces behind.
+const glassRack=group(8.5,0,-5.2);box(3.1,.2,1.85,0,.1,0,C.dark,glassRack);for(const x of [-1.35,1.35]){beam([x,.2,-.7],[x,2.85,0],.055,C.dark,glassRack);beam([x,.2,.7],[x,2.85,0],.055,C.dark,glassRack)}for(let k=0;k&lt;4;k++){box(2.7,2.2,.045,0,1.3,.28+k*.13,C.glass,glassRack);box(2.8,.07,.07,0,.235,.28+k*.13,C.wood,glassRack)}sign(&#x27;GLASS / กระจก&#x27;,2.8,.33,0,2.95,.3,glassRack);
+const cut=table(3,-4.6,3.7,1.9);box(1.3,.16,.85,.1,1.44,0,C.dark,cut);box(3.3,.1,.12,0,1.56,.28,C.silver,cut);box(.2,.55,.24,.65,1.77,-.3,C.dark,cut);const sawArm=group(.65,1.98,-.3,cut);box(.86,.15,.17,-.35,0,0,C.gold,sawArm);const blade=cyl(.37,.065,-.67,-.12,.15,C.silver,sawArm);blade.rotation.x=Math.PI/2;const teeth=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(.375,.375,.07,24)),new THREE.LineBasicMaterial({color:&#x27;#65736e&#x27;}));blade.add(teeth);box(.28,.16,.23,-.3,.15,0,C.dark,sawArm);
+const assembly=table(-6.8,4.2,4.4,2.4);const flat=group(0,1.415,-.8,assembly);flat.rotation.x=Math.PI/2;frame(flat,0,0,0,2.7,1.65);box(.13,.1,.6,1.75,1.41,.2,C.gold,assembly);box(.28,.13,.15,-1.7,1.425,.4,C.dark,assembly);
+const quality=table(0,4.2,3.7,2.35);const checked=group(0,1.415,-.7,quality);checked.rotation.x=Math.PI/2;frame(checked,0,0,0,2.3,1.45);box(.45,.035,.75,1.4,1.38,.25,C.paper,quality);
+function stand(x,z,w=3){const g=group(x,0,z);box(w,.15,1.55,0,.075,0,C.dark,g);for(const dx of [-w/2+.15,w/2-.15]){box(.12,2.6,.12,dx,1.45,-.4,C.dark,g);beam([dx,.15,.6],[dx,2.65,-.4],.055,C.dark,g)}return g}
+const dispatch=stand(7,5.15,3.2);for(let i=0;i&lt;3;i++)frame(dispatch,0,.15,-.12+i*.29,2.65,2.25);
+function pallet(x,z){const g=group(x,0,z);for(const dx of [-.65,0,.65])box(.15,.16,1.45,dx,.08,0,C.wood,g);for(let k=0;k&lt;5;k++)box(1.65,.07,.23,0,.195,-.58+k*.29,C.wood,g);return g}
+function carton(g,x,y,z,w=.65,h=.65,d=.6){box(w,h,d,x,y+h/2,z,mat(&#x27;#ccad7b&#x27;),g);box(.08,.007,d+.005,x,y+h+.004,z,C.cream,g);box(.08,h,.007,x,y+h/2,z+d/2+.005,C.cream,g);box(w*.4,h*.3,.008,x+w*.2,y+h*.6,z+d/2+.01,C.paper,g)}
+const pal=pallet(9.6,3.4);for(const x of [-.4,.4])for(const z of [-.36,.36])carton(pal,x,.23,z);carton(pal,-.4,.88,-.36);
+// Fixed tool storage and workshop details.
+for(const x of [-6.8,0]){const g=group(x,0,6.65);box(2.7,.85,.75,0,.425,0,C.dark,g);box(2.85,.08,.85,0,.89,0,C.wood,g);for(let k=0;k&lt;3;k++){box(.8,.65,.03,-.87+k*.87,.48,.39,C.cream,g);box(.24,.04,.04,-.87+k*.87,.62,.425,C.gold,g)}}
+function plant(x,z){cyl(.35,.62,x,.31,z,C.wood);for(let k=0;k&lt;7;k++){const a=k*2.4;beam([x,.62,z],[x+Math.sin(a)*.3,1.15+(k%3)*.13,z+Math.cos(a)*.3],.025,C.leaf);ball(.22,.36,.17,x+Math.sin(a)*.28,1.13+(k%3)*.13,z+Math.cos(a)*.28,C.leaf)}}plant(-10.5,6.8);plant(10.5,-6.9);
+// Tiny wall tool board, fire extinguisher, bin, and a clock.
+box(2.5,1.25,.08,-8,2.1,-7.82,C.wood);for(let i=0;i&lt;5;i++){box(.06,.47,.06,-9+i*.45,2.05,-7.74,C.silver);box(.24,.08,.07,-9+i*.45,2.29,-7.73,C.dark)}cyl(.14,.55,-11.5,.72,-1.8,mat(&#x27;#ad5140&#x27;));box(.25,.08,.25,-11.5,.405,-1.8,C.dark);box(.05,.42,.05,-11.55,1.12,-1.8,C.dark);cyl(.32,.65,4.9,.325,-6.75,C.dark);cyl(.34,.07,4.9,.69,-6.75,C.gold);
+for(const [text,x,z] of [[&#x27;01  DESIGN&#x27;,-8,-3.48],[&#x27;05  CUTTING&#x27;,3,-3.58],[&#x27;06  ASSEMBLY&#x27;,-6.8,5.43],[&#x27;07  QUALITY&#x27;,0,5.40]])sign(text,2.3,.28,x,1.13,z,scene,&#x27;#354640&#x27;,&#x27;#f4e5c3&#x27;);
+// Characters use named joints. Feet contact the floor throughout walking.
+const workers=[];function worker(index,x,z,heading=0,parent=scene){const root=group(x,0,z,parent);root.rotation.y=heading;const rig=group(0,0,0,root);const shirt=mat([&#x27;#496d68&#x27;,&#x27;#b78e51&#x27;,&#x27;#6c7b8d&#x27;,&#x27;#ae7460&#x27;,&#x27;#627d58&#x27;][index]);
+ball(.28,.36,.18,0,1.02,0,shirt,rig);box(.44,.16,.27,0,.73,0,C.ink,rig);box(.43,.07,.29,0,.77,0,C.dark,rig);box(.1,.08,.018,0,.78,.158,C.gold,rig);box(.09,.14,.026,-.14,1.1,.175,C.cream,rig);cyl(.09,.14,0,1.39,0,C.skin,rig);
+ball(.235,.265,.22,0,1.62,0,C.skin,rig);ball(.247,.12,.23,0,1.80,-.025,C.dark,rig);box(.38,.035,.14,0,1.77,.2,C.dark,rig);for(const s of [-1,1]){ball(.052,.076,.052,s*.225,1.61,0,C.skin,rig);ball(.024,.031,.015,s*.087,1.65,.208,C.rubber,rig)}ball(.045,.045,.047,0,1.58,.223,C.skin,rig);box(.082,.012,.012,0,1.51,.207,mat(&#x27;#925f4c&#x27;),rig);
+const arms=[],legs=[];for(const s of [-1,1]){const shoulder=group(s*.29,1.25,0,rig);ball(.1,.16,.105,0,-.09,0,shirt,shoulder);const elbow=group(0,-.27,0,shoulder);ball(.075,.14,.075,0,-.11,0,C.skin,elbow);const hand=ball(.08,.085,.075,0,-.25,0,C.skin,elbow);arms.push({shoulder,elbow,hand});const hip=group(s*.12,.71,0,rig);box(.16,.29,.19,0,-.145,0,C.ink,hip);const knee=group(0,-.29,0,hip);box(.14,.27,.17,0,-.135,0,C.ink,knee);const foot=box(.2,.15,.32,0,-.345,.055,C.rubber,knee);legs.push({hip,knee,foot})}
+root.userData.info={title:&#x27;ช่าง &#x27;+(index+1),sub:&#x27;ตัวละครประกอบสถานะงาน ไม่ใช่ตำแหน่งช่างแบบสด&#x27;};pick.push(root);const w={root,rig,arms,legs,index,x,z,heading};workers.push(w);return w}
+const officeWorker=worker(0,-8,-2.92,Math.PI);const sawWorker=worker(1,3,-2.87,Math.PI);const assemblyWorker=worker(2,-6.8,2.18,0);const qcWorker=worker(3,0,2.25,0);
+// Transport group: platform is supported by four wheels; cargo stays on deck.
+const transport=group(-6,0,0);const trolley=group(0,0,0,transport);box(1.05,.13,1.45,0,.395,0,C.dark,trolley);for(const dx of [-.43,.43])for(const dz of [-.53,.53]){const wheel=cyl(.18,.1,dx,.18,dz,C.rubber,trolley);wheel.rotation.z=Math.PI/2;box(.1,.14,.12,dx,.3,dz,C.silver,trolley)}for(const dx of [-.44,.44])box(.055,.66,.055,dx,.76,-.67,C.silver,trolley);box(.94,.06,.06,0,1.09,-.67,C.silver,trolley);
+const cargo=group(0,0,0,trolley);carton(cargo,0,.46,.18,.86,.6,.83);const bars=group(0,0,0,trolley);for(let i=0;i&lt;5;i++)box(.075,.075,2.1,-.35+i*.175,.4975,.15,C.silver,bars);const deliverFrame=group(0,0,0,trolley);box(.9,.13,1.1,0,.525,0,C.wood,deliverFrame);frame(deliverFrame,0,.59,0,.85,1.55);for(const dx of [-.4,.4])beam([dx,.59,-.5],[dx,1.9,0],.035,C.dark,deliverFrame);
+const porter=worker(4,0,-1.2,0,transport);porter.arms.forEach(a=&gt;{a.shoulder.rotation.x=-.7;a.elbow.rotation.x=-.65});
+let active=0,hasJob=false,moving=!matchMedia(&#x27;(prefers-reduced-motion:reduce)&#x27;).matches,visible=window.sceneVisible,elapsed=0,last=0,raf=0;
+const workflow=[&#x27;เลือกบิล&#x27;,&#x27;สูตรและตรวจสต็อก&#x27;,&#x27;รอจัดซื้อ / รับเข้า&#x27;,&#x27;เบิกวัสดุ&#x27;,&#x27;ตัดวัสดุ&#x27;,&#x27;ประกอบและติดกระจก&#x27;,&#x27;ตรวจงาน&#x27;,&#x27;พร้อมส่ง / ส่งมอบ&#x27;];
+function stage(data){const n=Number(data.stage);if(!Number.isInteger(n)||n&lt;0||n&gt;7)return;active=n;hasJob=!!data.hasJob;document.getElementById(&#x27;stage-label&#x27;).textContent=hasJob?`${n+1}/8 · ${workflow[n]}`:&#x27;ภาพสาธิต · เลือกงานเพื่อดูสถานะ&#x27;;for(let i=0;i&lt;zones.length;i++){zones[i].pad.material=mat(hasJob&amp;&amp;i===n?&#x27;#d5be86&#x27;:&#x27;#e4ddca&#x27;);}zones[2].pad.visible=n!==7;zones[7].pad.visible=n===7;cargo.visible=n!==3&amp;&amp;n!==7;bars.visible=n===3;deliverFrame.visible=n===7;requestRender()}
+function pose(w,t,walk=false,work=false){const swing=Math.sin(t*6+w.index);for(let i=0;i&lt;2;i++){const leg=w.legs[i];leg.hip.rotation.x=walk?swing*(i===0?1:-1)*.34:0;leg.knee.rotation.x=walk?Math.max(0,-swing*(i===0?1:-1))*.35:0;w.arms[i].shoulder.rotation.x=walk?-swing*(i===0?1:-1)*.3:work?-.78+Math.sin(t*2+i)*.09:Math.sin(t*.9+i)*.025;w.arms[i].elbow.rotation.x=work?-.7+Math.sin(t*2+i)*.14:-.1;}
+// Normalize lowest sole to Y=0 after limb movement, without bobbing the whole body.
+for(const leg of w.legs){leg.hip.position.y=.71;leg.hip.updateMatrixWorld(true);const footBox=new THREE.Box3().setFromObject(leg.foot);const parentBox=new THREE.Vector3();w.root.getWorldPosition(parentBox);leg.hip.position.y=.71-(footBox.min.y-parentBox.y)}
 }
-const workflowLabel=document.createElement(&#x27;div&#x27;);workflowLabel.style.cssText=&#x27;position:absolute;left:14px;top:14px;background:#ffffffed;border:1px solid #dce7fa;border-radius:13px;padding:9px 13px;color:#22528d;font:700 14px sans-serif;z-index:4;pointer-events:none&#x27;;document.body.appendChild(workflowLabel);
-let activeWorkflow=0;let stageTransitionAt=0;
-function showWorkflow(stage){
- activeWorkflow=Math.max(0,Math.min(7,Number(stage)||0));stageTransitionAt=performance.now();
- sceneOriginals.forEach(o=&gt;o.visible=false);
- workflowGroups.forEach((g,i)=&gt;g.visible=i===activeWorkflow);
- workers.forEach((w,i)=&gt;{w.g.visible=true;w.g.position.set(-5+i*2.5,0,4.1);});
- camera.position.set(12,13,16);controls.target.set(0,.4,0);controls.update();
- workflowLabel.textContent=&#x27;🏭 ขั้นตอน &#x27;+(activeWorkflow+1)+&#x27;/8 · &#x27;+workflowNames[activeWorkflow];
- document.querySelector(&#x27;#detailTitle&#x27;).textContent=workflowNames[activeWorkflow];
- document.querySelector(&#x27;#detailText&#x27;).textContent=&#x27;ภาพจำลองเฉพาะขั้นตอนนี้ · ตัวละครยืนบนพื้นบริเวณทางเดิน ไม่ลอยหรือเดินทะลุโต๊ะ · ไม่เปลี่ยนสต็อก&#x27;;
+function animate(dt){elapsed+=dt;const t=elapsed;for(const w of workers.slice(0,4)){const relevant=!hasJob||([0,1,2,3].includes(active)&amp;&amp;w.index===0)||(active===4&amp;&amp;w.index===1)||(active===5&amp;&amp;w.index===2)||(active&gt;=6&amp;&amp;w.index===3);const cycle=(t+w.index*2)%14;const walk=relevant&amp;&amp;cycle&lt;3;const retreat=walk?Math.sin(cycle/3*Math.PI)*.35:0;w.root.position.z=w.z+(w.index&lt;2?retreat:-retreat);pose(w,t,walk,relevant&amp;&amp;!walk)}
+const travel=!hasJob||[2,3,7].includes(active);const cycle=t%26;const forward=cycle&lt;12;const back=cycle&gt;=13&amp;&amp;cycle&lt;25;const u=forward?cycle/12:back?1-(cycle-13)/12:cycle&lt;13?1:0;transport.position.x=travel?-8+16*u:-8;const smooth=v=&gt;v*v*(3-2*v);transport.rotation.y=forward?Math.PI/2:cycle&lt;13?Math.PI/2-Math.PI*smooth(cycle-12):back?-Math.PI/2:-Math.PI/2+Math.PI*smooth(cycle-25);pose(porter,t,travel&amp;&amp;(forward||back),false);porter.arms.forEach(a=&gt;{a.shoulder.rotation.x=-.7;a.elbow.rotation.x=-.65});
+if((!hasJob||active===4)&amp;&amp;(t+sawWorker.index*2)%14&gt;=3){blade.rotation.y+=dt*12;sawArm.rotation.z=Math.sin(t*1.8)*.12}else sawArm.rotation.z=0;
 }
-
-// V11.41: richer eight-stage workshop environments. Purely visual meshes.
-const scenicMat={yellow:mat(&#x27;#fbbf24&#x27;),orange:mat(&#x27;#fb923c&#x27;),ink:mat(&#x27;#173b62&#x27;),pale:mat(&#x27;#e9f4ff&#x27;),leaf:mat(&#x27;#58ae85&#x27;),red:mat(&#x27;#ef707b&#x27;),silver:mat(&#x27;#c5d5e5&#x27;)};
-function decor(g,w,h,d,x,y,z,m){return miniBox(g,w,h,d,x,y,z,m)}
-function shelf(g,x,z){for(let k=0;k&lt;3;k++){decor(g,3.4,.12,1.05,x,.45+k*1.03,z,C.navy);for(let j=0;j&lt;6;j++)decor(g,2.8,.075,.075,x,.56+k*1.03,z-.35+j*.14,j%3===0?C.white:C.steel)}for(const dx of [-1.6,1.6])for(const dz of [-.46,.46])decor(g,.10,3.0,.1,x+dx,1.5,z+dz,C.dark)}
-function cartons(g,x,z,n=4){for(let j=0;j&lt;n;j++){let bx=x+(j%2)*.8,bz=z+Math.floor(j/2)*.82;decor(g,.7,.65,.7,bx,.33,bz,C.wood);decor(g,.72,.04,.72,bx,.68,bz,scenicMat.yellow)}}
-function monitor(g,x,z){decor(g,1.35,.83,.10,x,2.05,z,scenicMat.ink);decor(g,1.14,.61,.12,x,2.06,z+.09,scenicMat.pale);decor(g,.11,.55,.1,x,1.45,z,C.dark);decor(g,.7,.06,.45,x,1.22,z,C.dark)}
-function plant(g,x,z){decor(g,.5,.45,.5,x,.23,z,C.wood);for(let j=0;j&lt;5;j++){const leaf=new THREE.Mesh(new THREE.SphereGeometry(.28,8,6),scenicMat.leaf);leaf.position.set(x+Math.sin(j*2.3)*.23,.65+(j%3)*.21,z+Math.cos(j*2.3)*.21);g.add(leaf)}}
-function doorFrame(g,x,z){miniFrame(g,x,z);decor(g,2.6,1.55,.045,x,1.1,z,C.glass)}
-workflowGroups.forEach((g,i)=&gt;{
- // warm architectural zoning: floor markings and window-like rear panels
- for(let j=0;j&lt;4;j++){decor(g,2.2,1.5,.055,-5.2+j*3.4,1.4,-4.89,C.glass);decor(g,.09,1.7,.10,-4.1+j*3.4,1.4,-4.78,C.navy)}
- decor(g,12,.055,.08,0,.02,4.65,scenicMat.yellow);
- plant(g,5.5,-3.8);
- if(i===0){monitor(g,1.8,-.15);decor(g,2.5,1.3,.3,-4,1.1,-3.8,C.wood);cartons(g,4,2.6,2)}
- if(i===1){shelf(g,-4,-3.1);shelf(g,3,-3.1);monitor(g,2,2.2);cartons(g,4.1,2.8,2)}
- if(i===2){shelf(g,-4,-3.2);cartons(g,-2.7,1.1,6);decor(g,3.4,.15,1.7,3,.25,1.3,C.navy)}
- if(i===3){shelf(g,-3,-3.2);shelf(g,3,-3.2);cartons(g,3.7,2.5,4)}
- if(i===4){shelf(g,-4,-3.5);decor(g,3,.08,.2,2.8,1.47,0,C.steel);cartons(g,4,3.1,2)}
- if(i===5){doorFrame(g,-3,1.1);doorFrame(g,3,1.1);shelf(g,0,-3.3)}
- if(i===6){doorFrame(g,2.8,.6);monitor(g,-4,1.8);decor(g,1.5,1.8,.09,4,1.5,-3.9,scenicMat.pale)}
- if(i===7){doorFrame(g,-3,0);cartons(g,2.5,2.2,5);decor(g,4,.09,.1,0,.03,3.6,scenicMat.yellow)}
-});
-
-showWorkflow(0);
-
-// Animated production props are visual-only and never modify Firestore.
-const animatedProps=[];
-function movingBox(stage,w,h,d,x,y,z,material){
- const o=miniBox(workflowGroups[stage],w,h,d,x,y,z,material);
- animatedProps.push({stage,o,x,y,z});return o;
-}
-const sheet=movingBox(0,1.0,.055,.65,0,1.42,0,miniMaterial.paper);
-const scanner=movingBox(1,.7,.08,.6,0,1.38,2,miniMaterial.accent);
-const delivery=movingBox(2,.9,.65,.9,-4.2,.35,2.5,C.wood);
-const picked=movingBox(3,1.8,.11,.14,-4,1.05,2.8,C.steel);
-const cutBar=movingBox(4,2.5,.1,.12,-3,1.39,0,C.steel);
-const sawBlade=cylinder(.42,.08,-2.6,1.6,0,C.steel,workflowGroups[4]);sawBlade.rotation.x=Math.PI/2;
-const glassPane=movingBox(4,1.5,.05,1.0,3,1.39,0,C.glass);
-const assemblyPane=movingBox(5,2.65,1.4,.035,0,1.08,1,C.glass);
-const checkCard=movingBox(6,.8,.06,.5,-3,1.4,2,miniMaterial.paper);
-const loadedFrame=movingBox(7,1.7,1.6,.09,-3,.95,3,C.glass);
-const truck=new THREE.Group();workflowGroups[7].add(truck);
-miniBox(truck,2.3,.6,1.5,0,.72,0,C.blue);
-miniBox(truck,1,.9,1.5,.65,1.3,0,C.white);
-for(const xx of [-.7,.7])for(const zz of [-.65,.65]){const wheel=cylinder(.28,.14,xx,.28,zz,C.dark,truck);wheel.rotation.x=Math.PI/2}
-let moving=true,clock=new THREE.Clock();
-function loop(){
- requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
- if(moving){
-   // Characters walk on ground and pause to operate at each station.
-   const destinations=[[-2.5,2.5],[-3,2.8],[-2.8,3.2],[-3,2.8],[-3,2.5],[0,3.2],[-3,3.4],[-2.7,3.8]];
-   const [baseX,baseZ]=destinations[activeWorkflow];
-   for(const w of workers){
-     const shift=w.i===0?0:(w.i-2)*1.05;
-     const walking=(t+w.phase)%8&lt;3.3;
-     const tx=Math.max(-5.8,Math.min(5.8,baseX+shift+(walking?Math.sin(t*.8+w.phase)*.45:0)));
-     const tz=baseZ+(w.i%2)*.7;
-     w.g.position.x+=(tx-w.g.position.x)*Math.min(dt*1.8,1);
-     w.g.position.z+=(tz-w.g.position.z)*Math.min(dt*1.8,1);
-     w.g.position.y=0;
-     w.g.rotation.y=Math.sin(t*.45+w.phase)*.16;
-     const limbs=w.g.children.filter(o=&gt;o.isMesh&amp;&amp;o.geometry?.type===&#x27;BoxGeometry&#x27;);
-     limbs.forEach((part,i)=&gt;{if(i&gt;=2)part.rotation.x=Math.sin(t*4+w.phase+i)*(walking?.24:.09)});
-   }
-   const cycle=(t%8)/8,tri=1-Math.abs(cycle*2-1);
-   sheet.position.x=tri*.45;
-   scanner.position.x=Math.sin(t*2)*.55;
-   delivery.position.x=-4.2+tri*6.2;
-   picked.position.x=-4+tri*5.5;
-   picked.position.y=1.05+Math.sin(Math.PI*cycle)*.5;
-   cutBar.position.x=-3+tri*.9;
-   sawBlade.rotation.z=t*13;
-   glassPane.position.z=Math.sin(t*1.2)*.36;
-   assemblyPane.position.y=.35+tri*.8;
-   checkCard.rotation.y=Math.sin(t*2)*.25;
-   loadedFrame.position.x=-3+tri*2.6;
-   truck.position.x=-4+tri*8;
- }
- controls.update();renderer.render(scene,camera);
-}loop();
-window.toggleMotion=()=&gt;{moving=!moving;document.querySelector(&#x27;#runBtn&#x27;).textContent=moving?&#x27;⏸ หยุดแอนิเมชัน&#x27;:&#x27;▶ เล่นแอนิเมชัน&#x27;};
-window.resetView=()=&gt;{camera.position.set(12,13,16);controls.target.set(0,.4,0);controls.update()};
-window.changeShift=()=&gt;{document.querySelector(&#x27;#detailText&#x27;).textContent=&#x27;หน้าที่ของช่างต้องอ้างอิงการมอบหมายงานจริง ไม่เปลี่ยนสถานะหรือหน้าที่จากแอนิเมชัน&#x27;};
-window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></template>
+function draw(now){raf=0;if(!visible||document.hidden)return;const dt=Math.min((now-last)/1000||0,.04);last=now;if(moving)animate(dt);controls.update();renderer.render(scene,camera);if(moving&amp;&amp;!raf)raf=requestAnimationFrame(draw)}
+function requestRender(){if(visible&amp;&amp;!document.hidden&amp;&amp;!raf){last=performance.now();raf=requestAnimationFrame(draw)}}
+function visibility(v){visible=v;if(!v){cancelAnimationFrame(raf);raf=0;}else requestRender()}
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);const a=w/h;const half=Math.max(11.6,17/a);camera.left=-half*a;camera.right=half*a;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();requestRender()}
+function reset(){camera.position.set(23,25,30);camera.zoom=1;controls.target.set(0,.4,0);camera.updateProjectionMatrix();controls.update();requestRender()}
+const motion=document.getElementById(&#x27;motion&#x27;);function motionLabel(){motion.textContent=moving?&#x27;Ⅱ หยุด&#x27;:&#x27;▶ เล่น&#x27;;motion.setAttribute(&#x27;aria-label&#x27;,moving?&#x27;หยุดแอนิเมชัน&#x27;:&#x27;เล่นแอนิเมชัน&#x27;);motion.setAttribute(&#x27;aria-pressed&#x27;,String(moving))}motion.onclick=()=&gt;{moving=!moving;motionLabel();requestRender()};motionLabel();
+document.getElementById(&#x27;reset&#x27;).onclick=reset;document.getElementById(&#x27;zoom-in&#x27;).onclick=()=&gt;{camera.zoom=Math.min(2.5,camera.zoom*1.15);camera.updateProjectionMatrix();requestRender()};document.getElementById(&#x27;zoom-out&#x27;).onclick=()=&gt;{camera.zoom=Math.max(.65,camera.zoom/1.15);camera.updateProjectionMatrix();requestRender()};controls.addEventListener(&#x27;change&#x27;,requestRender);document.addEventListener(&#x27;visibilitychange&#x27;,()=&gt;visibility(window.sceneVisible));addEventListener(&#x27;resize&#x27;,resize);matchMedia(&#x27;(prefers-reduced-motion:reduce)&#x27;).addEventListener(&#x27;change&#x27;,e=&gt;{moving=!e.matches;motionLabel();requestRender()});
+addEventListener(&#x27;message&#x27;,e=&gt;{if(e.source!==parent||!e.data)return;if(e.data.type===&#x27;sumran3d-stage&#x27;)stage(e.data);if(e.data.type===&#x27;sumran3d-visibility&#x27;)visibility(!!e.data.visible)});
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let down=null;renderer.domElement.addEventListener(&#x27;pointerdown&#x27;,e=&gt;down=[e.clientX,e.clientY]);renderer.domElement.addEventListener(&#x27;pointerup&#x27;,e=&gt;{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])&gt;6)return;pointer.set(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);ray.setFromCamera(pointer,camera);const hits=ray.intersectObjects(pick,true);if(hits.length){let o=hits[0].object;while(o&amp;&amp;!o.userData.info)o=o.parent;if(o){document.getElementById(&#x27;detail-title&#x27;).textContent=o.userData.info.title;document.getElementById(&#x27;detail-text&#x27;).textContent=o.userData.info.sub;document.getElementById(&#x27;detail&#x27;).style.display=&#x27;block&#x27;}}});document.getElementById(&#x27;close-detail&#x27;).onclick=()=&gt;document.getElementById(&#x27;detail&#x27;).style.display=&#x27;none&#x27;;
+renderer.domElement.addEventListener(&#x27;webglcontextlost&#x27;,e=&gt;{e.preventDefault();moving=false;cancelAnimationFrame(raf);window.sceneReady=false;window.sceneFallback()});
+resize();reset();animate(0);stage(window.scenePending);window.sceneReady=true;clearTimeout(window.sceneTimeout);document.getElementById(&#x27;loading&#x27;).hidden=true;parent.postMessage({type:&#x27;sumran3d-ready&#x27;},&#x27;*&#x27;);requestRender();
+// Diagnostics are read-only and contain no account or document data.
+window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:workers.length,meshes:renderer.info.render.calls,feet:workers.map(w=&gt;w.legs.map(l=&gt;new THREE.Box3().setFromObject(l.foot).min.y)),cargo:{carton:cargo.visible,bars:bars.visible,frame:deliverFrame.visible}});
+} catch(error) {console.error(&#x27;Workshop 3D:&#x27;,error);window.sceneFallback();}
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;
+"></iframe></template>
 </section>
  <div id="wh-load-diagnostic" role="status" style="display:none;padding:11px;margin:0 0 12px;border:1px solid #bfdbfe;border-radius:12px;font-size:12px"></div>
   <div class="wh-kpis"><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('all')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('all')" style="cursor:pointer">📦 วัสดุในทะเบียน<strong id="wh-kpi-items">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('low')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('low')" style="cursor:pointer">⚠️ วัสดุใกล้หมด<strong id="wh-kpi-low">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('out')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('out')" style="cursor:pointer">❌ วัสดุหมด<strong id="wh-kpi-out">0</strong>รายการ</div><div class="wh-kpi" role="button" tabindex="0" onclick="whShowInventoryCategory('ordered')" onkeydown="if(event.key==='Enter')whShowInventoryCategory('ordered')" style="cursor:pointer">🛒 งานที่รอซื้อ<strong id="wh-kpi-pending">0</strong>งาน</div></div>
@@ -4108,7 +4066,7 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
 
     // V11.33: read-only 3D visualization of existing warehouse plans.
     const wh3dStages=['เลือกบิล','สูตรและตรวจสต็อก','รอจัดซื้อ / รับเข้า','เบิกวัสดุ','ตัดวัสดุ','ประกอบและติดกระจก','ตรวจงาน','พร้อมส่ง / ส่งมอบ'];
-    let wh3dFrame=null,wh3dOpen=false,wh3dLastStage=0;
+    let wh3dFrame=null,wh3dOpen=false,wh3dLastStage=0,wh3dVisible=false,wh3dManuallyClosed=false;
     function wh3dRefresh(){
       const title=document.getElementById('s3d-job'),desc=document.getElementById('s3d-description'),steps=document.getElementById('s3d-steps');if(!title||!steps)return;
       const job=whDoc(),p=whPlan();let stage=0,info='เลือกบิลในรายการด้านล่าง เพื่อดูขั้นตอนของงาน';
@@ -4126,18 +4084,18 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
           info=st==='completed'?'ผลิตเสร็จแล้ว · ตรวจสอบสถานะส่งมอบจากระบบงาน':'กำลังผลิต · '+done.length+'/6 ขั้นตอนที่บันทึกเสร็จ';
         }else if(st==='planned'){stage=1;info='มีแผนวัสดุแล้ว · ตรวจสอบสต็อกก่อนเบิก';}
       }
-      // Keep 3D aligned with the existing 5-step workflow, even while an order is pending.
-      const currentStep=[...document.querySelectorAll('#tab-warehouse .wh-step')].findIndex(el=>el.classList.contains('on'));
-      if(currentStep===2 && stage<2){stage=2;info='อยู่ขั้นจัดซื้อ · รอรับเข้าคลังจริง';}
-      if(currentStep===3 && stage<3){stage=3;info='อยู่ขั้นเบิกจากคลัง · ตรวจยอดที่รับเข้าจริงก่อนเบิก';}
-      if(currentStep===4 && stage<4){stage=4;info='อยู่ขั้นเริ่มผลิต · ดูสถานะผลิตจากข้อมูลที่บันทึกจริง';}
       // Delivery state is intentionally not inferred from production completion.
       wh3dLastStage=stage;
       title.textContent=job?('งาน '+String(job.docNo||'')+' · '+String(job.custName||job.customerName||job.customer?.name||'ลูกค้า')):'เลือกบิลจากรายการงานด้านล่าง';
       desc.textContent=info;
       steps.innerHTML=wh3dStages.map((v,i)=>'<div class="s3d-step '+(i===stage?'active':i<stage?'done':'')+'">'+(i<stage?'✓ ':i===stage?'● ':'○ ')+(i+1)+'. '+v+'</div>').join('');
-      if(wh3dFrame?.contentWindow)wh3dFrame.contentWindow.postMessage({type:'sumran3d-stage',stage},'*');
+      if(wh3dFrame?.contentWindow)wh3dFrame.contentWindow.postMessage({type:'sumran3d-stage',stage,hasJob:!!job},'*');
     }
+    window.addEventListener('message',e=>{
+      if(e.source===wh3dFrame?.contentWindow && e.data?.type==='sumran3d-ready'){
+        wh3dRefresh();wh3dFrame.contentWindow.postMessage({type:'sumran3d-visibility',visible:wh3dVisible},'*');
+      }
+    });
     // Refresh 3D when the main workflow changes, without changing warehouse data.
     let wh3dSyncQueued=false;
     function wh3dScheduleSync(){
@@ -4152,10 +4110,10 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
       new MutationObserver(wh3dScheduleSync).observe(bar,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
     }
     document.addEventListener('DOMContentLoaded',wh3dObserveWorkflow);
-    function wh3dToggle(){
+    function wh3dToggle(automatic=false){
       const area=document.getElementById('s3d-scene'),btn=document.getElementById('s3d-toggle');if(!area)return;
-      if(wh3dOpen){area.innerHTML='<div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center">ฉาก 3D ปิดแล้ว · กดเปิดอีกครั้งได้</div>';wh3dFrame=null;wh3dOpen=false;btn.textContent='▶ เปิดฉาก 3D';return;}
-      wh3dObserveWorkflow();const template=document.getElementById('s3d-template');wh3dFrame=template.content.firstElementChild.cloneNode(true);area.replaceChildren(wh3dFrame);wh3dOpen=true;btn.textContent='⏹ ปิดฉาก 3D';wh3dFrame.addEventListener('load',()=>wh3dRefresh());wh3dRefresh();
+      if(wh3dOpen){wh3dManuallyClosed=!automatic;area.innerHTML='<div id="s3d-placeholder" style="display:grid;place-items:center;min-height:355px;color:#50759d;text-align:center">ฉาก 3D ปิดแล้ว · กดเปิดอีกครั้งได้</div>';wh3dFrame=null;wh3dOpen=false;btn.textContent='▶ เปิดฉาก 3D';return;}
+      wh3dManuallyClosed=false;wh3dObserveWorkflow();const template=document.getElementById('s3d-template');wh3dFrame=template.content.firstElementChild.cloneNode(true);area.replaceChildren(wh3dFrame);wh3dOpen=true;btn.textContent='⏹ ปิดฉาก 3D';wh3dFrame.addEventListener('load',()=>{wh3dRefresh();wh3dFrame?.contentWindow?.postMessage({type:'sumran3d-visibility',visible:wh3dVisible},'*');});wh3dRefresh();
     }
     // Automatically start the 3D scene once the warehouse visualization enters view.
     // This is display-only; it never performs inventory writes.
@@ -4165,14 +4123,13 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
       card.dataset.s3dAutoBound='1';
       if('IntersectionObserver' in window){
         const observer=new IntersectionObserver(entries=>{
-          if(entries.some(e=>e.isIntersecting)){
-            if(!wh3dOpen)wh3dToggle();
-            observer.disconnect();
-          }
+          wh3dVisible=entries.some(e=>e.isIntersecting);
+          if(wh3dVisible&&!wh3dOpen&&!wh3dManuallyClosed)wh3dToggle(true);
+          wh3dFrame?.contentWindow?.postMessage({type:'sumran3d-visibility',visible:wh3dVisible},'*');
         },{threshold:0.01});
         observer.observe(card);
       }else{
-        if(!wh3dOpen)wh3dToggle();
+        wh3dVisible=true;if(!wh3dOpen)wh3dToggle(true);
       }
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wh3dAutoStart);
@@ -4593,6 +4550,7 @@ window.addEventListener(&#x27;resize&#x27;,()=&gt;{camera.aspect=innerWidth/inne
       whBusy=true;try{await setDoc(cloudPath('warehouseSubcontracts',encodeURIComponent(whSelected)),{docNo:whSelected,lines,updatedAt:new Date().toISOString(),updatedBy:userId});whClose();whRender();showToast('บันทึกการจำแนกงานแล้ว · ยังไม่หักสต๊อก');}catch(e){cloudError('Save work routing',e);showToast('บันทึกไม่สำเร็จ: '+(e.message||''));}finally{whBusy=false;}
     }
     function whRender(){
+      wh3dScheduleSync();
       queueMicrotask(wh3dRefresh);
       if(!document.getElementById('wh-jobs'))return;
       const grouped=new Map();
