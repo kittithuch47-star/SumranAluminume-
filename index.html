@@ -795,7 +795,7 @@
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-bold tracking-tight flex items-center gap-2">
-            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">V11.42</span>
+            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">V11.43</span>
           </h1>
           <p class="text-xs text-sky-200/80">ระบบจัดการเอกสารและการเงินครบวงจร</p>
         </div>
@@ -2167,7 +2167,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       },e=>whLoadFail('history',e)));
 
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseColors'), snap=>{whSharedColors=snap.docs.map(d=>({id:d.id,...d.data()}));},e=>cloudError('Warehouse colors',e)));
-      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseMaterials'), snap=>{whItems=snap.docs.filter(d=>!d.id.startsWith('_counter_')).map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseMaterials');whRender();},e=>whLoadFail('warehouseMaterials',e)));
+      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseMaterials'), snap=>{whItems=snap.docs.filter(d=>!d.id.startsWith('_counter_')).map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseMaterials');whRender();whRefreshRecipeSearch();},e=>whLoadFail('warehouseMaterials',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseWorkRules'), snap=>{whRuleOverrides=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse work rules',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseSubcontracts'), snap=>{whSubcontracts=snap.docs.map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseSubcontracts');whRender();},e=>whLoadFail('warehouseSubcontracts',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseJobPlans'), snap=>{whPlans=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse plans',e)));
@@ -5451,19 +5451,44 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     function whShowHistory(){const ordered=[...whMoves].filter(m=>m.type!=='purchase_order').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));whOpen('ประวัติรับเข้าและเบิกวัสดุ',`<div class="wh-stocklist">${ordered.slice(0,100).map(m=>{const isIssue=m.type==='issue';const linked=state.history.filter(h=>h.docNo===m.docNo);const moveStatus=!m.docNo?'รับเข้าอิสระ':!linked.length?'ไม่พบเอกสาร':linked.some(h=>h.status==='cancelled')&&linked.some(h=>h.status!=='cancelled')?'เลขซ้ำ / ต้องตรวจสอบ':linked.every(h=>h.status==='cancelled')?'งานยกเลิก':'งานปกติ';const details=isIssue?(m.lines||[]).map(l=>{const item=whItems.find(i=>i.id===l.itemId);const snap=(m.stockSnapshots||[]).find(x=>x.itemId===l.itemId);return `<tr><td>${whEsc(item?whFullMaterialName(item):l.name||l.itemId)}</td><td>${whQtyText(whNum(l.qty))} ${whEsc(item?.unit||l.unit||'')}</td><td>${snap?whQtyText(snap.before):'—'}</td><td>${snap?whQtyText(snap.after):'—'}</td></tr>`}).join(''):'';return `<details class="wh-stockitem" style="display:block"><summary style="cursor:pointer"><b>${m.type==='stock_adjustment'?'⚖️ ปรับยอดสต็อก':m.type==='material_archived'?'🗃️ นำออกจากทะเบียน':m.type==='receive'?'📥 รับเข้า':m.type==='shared_empty'?'🔔 แจ้งหมด':m.type==='shared_return'?'↩ คืนจากช่าง':m.type==='shared_issue'?'👷 เบิกให้ช่าง':'📦 เบิกออก'} · ${whEsc(m.docNo||'ไม่ระบุงาน')}</b> <span style="font-size:11px;color:#b45309">[${whEsc(moveStatus)}]</span> — ${isIssue?(m.lines||[]).length+' รายการ':whNum(m.qty)+' '+whEsc(m.unit||whItems.find(i=>i.id===m.itemId)?.unit||'')}<div class="wh-sub">${whEsc(m.createdAt?.slice(0,16)||'')} · ${whEsc(m.note||'')}${m.type==='stock_adjustment'?' · '+whQtyText(m.before)+' → '+whQtyText(m.after)+' '+whEsc(m.unit||'')+' · ผู้อนุมัติ '+whEsc(m.approvedBy||''):''}</div></summary>${isIssue?`<div style="overflow:auto;margin-top:10px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>เบิก</th><th>ก่อนเบิก</th><th>หลังเบิก</th></tr></thead><tbody>${details}</tbody></table>${!m.stockSnapshots?' <p class="wh-sub">รายการเก่าก่อนอัปเดตไม่มีภาพยอดก่อนและหลังเบิก</p>':''}</div>`:''}</details>`}).join('')||'<p class="wh-sub">ยังไม่มีประวัติ</p>'}</div>`)}
     // RECIPE STUDIO V2: flexible work types; coefficients must be approved by a technician.
     const whRecipeOptions=()=>whMaterialOptions();
-    function whSearchRecipeMaterial(input){
+    // V11.43: recipe category describes calculation; search spans every material category.
+    function whRecipeSearchKey(value){
+      return String(value??'').normalize('NFKC').toLocaleLowerCase('th-TH').replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[\s·•_\-–—/]+/g,'');
+    }
+    function whRecipeMaterialLabel(i){return [i.registerNo,i.name,i.color||'ไม่ระบุสี'].filter(Boolean).join(' · ');}
+    function whSearchRecipeMaterial(input,append=false){
       const row=input.closest('.wh-recipe-line'),results=row?.querySelector('.wh-r-results');if(!row||!results)return;
-      const q=input.value.trim().toLocaleLowerCase();
-      const category=row.querySelector('.wh-r-category')?.value;const matches=whItems.filter(i=>!i.archived&&(!category||i.category===category)&&[i.name,i.registerNo,i.sku,i.system,i.color,whCategoryName(i.category)].join(' ').toLocaleLowerCase().includes(q)).slice(0,35);
-      results.style.display='block';
-      results.innerHTML=matches.map(i=>`<button type="button" class="wh-btn" style="display:block;width:100%;text-align:left;margin:3px 0;white-space:normal" onclick="whPickRecipeMaterial(this,'${whEsc(i.id)}')">${whEsc(i.registerNo||'')} · ${whEsc(i.name)} · ${whEsc(i.color||'ไม่ระบุสี')} · ${whEsc(i.sku||'')}</button>`).join('')||'<p class="wh-sub">ไม่พบวัสดุ</p>';
+      const selected=whItems.find(i=>i.id===row.querySelector('.wh-r-item')?.value);
+      const query=selected&&input.value===whRecipeMaterialLabel(selected)?'':input.value.trim();
+      const tokens=query.split(/[\s·•]+/).map(whRecipeSearchKey).filter(Boolean);
+      const matches=whItems.filter(i=>!i.archived&&!i.isCounter&&tokens.every(t=>whRecipeSearchKey([i.name,i.registerNo,i.sku,i.system,i.color||'ไม่ระบุสี',i.model,i.brand,whCategoryName(i.category)].filter(Boolean).join(' ')).includes(t)))
+        .sort((a,b)=>String(a.registerNo||a.name||'').localeCompare(String(b.registerNo||b.name||''),'th',{numeric:true}));
+      const limit=append?Number(results.dataset.limit||35)+35:35;
+      results.dataset.limit=String(limit);results.style.display='block';
+      results.innerHTML='<p class="wh-sub" role="status" style="margin:4px 0 8px">ค้นหาทุกหมวด · พบ '+matches.length+' รายการ'+(matches.length>limit?' · แสดง '+limit+' รายการแรก':'')+'</p>';
+      for(const i of matches.slice(0,limit)){
+        const button=document.createElement('button');button.type='button';button.className='wh-btn';
+        button.style.cssText='display:block;width:100%;text-align:left;margin:4px 0;white-space:normal';
+        const title=document.createElement('strong');title.textContent=whRecipeMaterialLabel(i);
+        const detail=document.createElement('small');detail.style.cssText='display:block;font-weight:400;margin-top:4px;line-height:1.6';
+        detail.textContent=[whCategoryName(i.category),i.sku,i.system,i.model,i.brand,'คงเหลือ '+whQtyText(whNum(i.qty))+' '+(i.unit||'หน่วย')].filter(Boolean).join(' · ');
+        button.append(title,detail);button.addEventListener('click',()=>whPickRecipeMaterial(button,i.id));results.append(button);
+      }
+      if(!matches.length){const hint=document.createElement('p');hint.className='wh-sub';hint.textContent='ไม่พบวัสดุ ลองค้นบางส่วนของชื่อ รหัสทะเบียน สี หรือรุ่น (รวมวัสดุคงเหลือ 0 ด้วย)';results.append(hint);}
+      if(matches.length>limit){const more=document.createElement('button');more.type='button';more.className='wh-btn';more.textContent='แสดงเพิ่มอีก 35 รายการ';more.addEventListener('click',()=>whSearchRecipeMaterial(input,true));results.append(more);}
+    }
+    function whRefreshRecipeSearch(){
+      document.querySelectorAll('#wh-recipe-lines .wh-r-search').forEach(input=>{
+        const results=input.closest('.wh-recipe-line')?.querySelector('.wh-r-results');
+        if(results&&results.style.display==='block')whSearchRecipeMaterial(input);
+      });
     }
     function whPickRecipeMaterial(btn,id){
-      const row=btn.closest('.wh-recipe-line'),i=whItems.find(x=>x.id===id);if(!row||!i)return;
+      const row=btn.closest('.wh-recipe-line'),i=whItems.find(x=>x.id===id);if(!row||!i||i.archived)return;
       row.querySelector('.wh-r-item').value=id;
       row.querySelector('.wh-r-role').value=i.name;
       row.querySelector('.wh-r-category').value=i.category||'OT';whRecipeUpdateLine(row.querySelector('.wh-r-category'));
-      row.querySelector('.wh-r-search').value=[i.registerNo,i.name,i.color||'ไม่ระบุสี'].join(' · ');
+      row.querySelector('.wh-r-search').value=whRecipeMaterialLabel(i);
       row.querySelector('.wh-r-results').style.display='none';
     }
     function whOpenRecipes(){
@@ -5473,11 +5498,11 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     // V9: template cut rules. Every profile has its own cutting plan.
     function whRecipeLineHtml(l={}){
       const item=whItems.find(i=>i.id===l.itemId);
-      const display=item?[item.registerNo,item.name,item.color||'ไม่ระบุสี'].join(' · '):'';
+      const display=item?whRecipeMaterialLabel(item):'';
       const mode=l.mode||'set';
       const modes=[['set','จำนวนต่อชุด (ชิ้น/ตัว)'],['cut_width','ตัดตามความกว้าง (ซม.)'],['cut_height','ตัดตามความสูง (ซม.)'],['cut_half_width','ตัดตามครึ่งความกว้าง (ซม.)'],['cut_custom','ตัดตามสูตร กว้าง×A + สูง×B + C'],['width','⚠️ สูตรเก่า: ความกว้างเป็นเมตร (ไม่ใช่เส้น)'],['height','⚠️ สูตรเก่า: ความสูงเป็นเมตร (ไม่ใช่เส้น)'],['perimeter','⚠️ สูตรเก่า: รอบวงเป็นเมตร (ไม่ใช่เส้น)'],['area','ใช้ตามพื้นที่ (ตร.ม.) — สูตรเดิม'],['fixed','จำนวนครั้งเดียวทั้งงาน']];
       return `<div class="wh-recipe-line" style="padding:13px;margin:10px 0;border:1px solid #dbeafe;border-radius:13px;background:#f8fbff">
-      <div class="wh-form-grid"><label>🔎 ค้นหาวัสดุ<input class="wh-input wh-r-search" type="search" autocomplete="off" value="${whEsc(display)}" onfocus="whSearchRecipeMaterial(this)" oninput="this.closest('.wh-recipe-line').querySelector('.wh-r-item').value='';whSearchRecipeMaterial(this)" placeholder="ชื่อ / รหัส / สี / รุ่น"><input type="hidden" class="wh-r-item" value="${whEsc(l.itemId||'')}"><div class="wh-r-results" style="display:none;max-height:240px;overflow:auto;border:1px solid #dbeafe;padding:7px;border-radius:12px;background:white"></div></label>
+      <div class="wh-form-grid"><label>🔎 ค้นหาวัสดุทุกหมวด<input class="wh-input wh-r-search" type="search" autocomplete="off" value="${whEsc(display)}" onfocus="whSearchRecipeMaterial(this)" oninput="this.closest('.wh-recipe-line').querySelector('.wh-r-item').value='';whSearchRecipeMaterial(this)" placeholder="ชื่อ / รหัสทะเบียน / สี / รุ่น — ทุกหมวด"><small class="wh-sub" style="display:block;margin-top:5px">เลือกวัสดุแล้วระบบจะตั้งประเภทให้ตรงทะเบียน · ค้นได้แม้ของคงเหลือ 0</small><input type="hidden" class="wh-r-item" value="${whEsc(l.itemId||'')}"><div class="wh-r-results" style="display:none;max-height:240px;overflow:auto;border:1px solid #dbeafe;padding:7px;border-radius:12px;background:white"></div></label>
       <label>ประเภทวัสดุในสูตร<select class="wh-input wh-r-category" onchange="whRecipeUpdateLine(this)">${[['AL','อะลูมิเนียม'],['GL','กระจก'],['HW','อุปกรณ์'],['RB','ยางและซีล'],['OT','อื่น ๆ']].map(([v,t])=>`<option value="${v}" ${(l.materialCategory||item?.category||'OT')===v?'selected':''}>${t}</option>`).join('')}</select></label>
       <label>หน้าที่วัสดุ (ไม่ระบุสี/ยี่ห้อ)<input class="wh-input wh-r-role" value="${whEsc(l.materialRole||item?.name||'')}" placeholder="เช่น เฟรมข้าง / กระจก / ล้อบานเลื่อน"></label>
       <div class="wh-r-glass" style="grid-column:1/-1;border:1px solid #bfdbfe;border-radius:12px;padding:12px;background:#eff6ff"><b>ตั้งค่าสูตรตัดกระจก — ช่างกรอกระยะหักจริง</b><div class="wh-form-grid" style="margin-top:8px"><label>จำนวนช่อง/แผ่นต่อชุด<input class="wh-input wh-r-panes" type="number" min="1" step="1" value="${whEsc(l.glassPanes??'')}"></label><label>ระยะหักความกว้างรวม (ซม.)<input class="wh-input wh-r-gdw" type="number" step="any" value="${whEsc(l.glassDeductWidthCm??'')}"></label><label>ระยะหักความสูง (ซม.)<input class="wh-input wh-r-gdh" type="number" step="any" value="${whEsc(l.glassDeductHeightCm??'')}"></label><label>ระยะซ้อนบานรวม (ซม.)<input class="wh-input wh-r-goverlap" type="number" step="any" value="${whEsc(l.glassOverlapCm??0)}"></label></div><small>สูตรกว้างกระจกต่อแผ่น = (กว้างหน้างาน − ระยะหักความกว้างรวม) ÷ จำนวนช่อง + ระยะซ้อนบานรวม; สูง = สูงหน้างาน − ระยะหักความสูง · ตัวอย่าง 120 × 120, จำนวน 2, หักกว้าง 23.5, หักสูง 16.5, ระยะซ้อน 1.5 ⇒ 49.75 × 103.5 ซม. จำนวน 2 แผ่น · ต้องให้ช่างยืนยันก่อนตัดจริง</small></div>
