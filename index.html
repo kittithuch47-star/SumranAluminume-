@@ -795,7 +795,7 @@
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-bold tracking-tight flex items-center gap-2">
-            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">V11.43</span>
+            Sumran Aluminum <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30">V11.46</span>
           </h1>
           <p class="text-xs text-sky-200/80">ระบบจัดการเอกสารและการเงินครบวงจร</p>
         </div>
@@ -916,7 +916,7 @@
 &lt;/style&gt;
 &lt;script type=&quot;importmap&quot;&gt;{&quot;imports&quot;:{&quot;three&quot;:&quot;https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js&quot;,&quot;three/addons/&quot;:&quot;https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/&quot;}}&lt;/script&gt;
 &lt;/head&gt;&lt;body&gt;
-&lt;div id=&quot;scene&quot;&gt;&lt;/div&gt;&lt;div class=&quot;badge&quot;&gt;&lt;small&gt;SUMRAN / WORKSHOP 3D&lt;/small&gt;&lt;b id=&quot;stage-label&quot;&gt;&lt;span&gt;&lt;/span&gt;ภาพสาธิต · เลือกงานเพื่อดูสถานะ&lt;/b&gt;&lt;/div&gt;
+&lt;div id=&quot;scene&quot;&gt;&lt;/div&gt;&lt;div class=&quot;badge&quot;&gt;&lt;small&gt;SUMRAN / WORKSHOP 3D&lt;/small&gt;&lt;b id=&quot;stage-label&quot;&gt;&lt;span&gt;&lt;/span&gt;ภาพสาธิต · เลือกงานเพื่อดูสถานะ&lt;/b&gt;&lt;div id=&quot;job-label&quot; style=&quot;font-size:12px;font-weight:600;margin-top:5px&quot;&gt;&lt;/div&gt;&lt;div id=&quot;job-materials&quot; style=&quot;font-size:10px;margin-top:3px&quot;&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;div class=&quot;detail&quot; id=&quot;detail&quot;&gt;&lt;button id=&quot;close-detail&quot; aria-label=&quot;ปิดรายละเอียด&quot;&gt;×&lt;/button&gt;&lt;b id=&quot;detail-title&quot;&gt;&lt;/b&gt;&lt;p id=&quot;detail-text&quot;&gt;&lt;/p&gt;&lt;/div&gt;
 &lt;div class=&quot;legend&quot;&gt;ลากเพื่อหมุน · แตะจุดทำงานเพื่อดูรายละเอียด&lt;/div&gt;
 &lt;div class=&quot;toolbar&quot; aria-label=&quot;ควบคุมฉาก&quot;&gt;&lt;button id=&quot;motion&quot; aria-label=&quot;หยุดแอนิเมชัน&quot;&gt;Ⅱ หยุด&lt;/button&gt;&lt;button id=&quot;zoom-in&quot; aria-label=&quot;ขยาย&quot;&gt;＋&lt;/button&gt;&lt;button id=&quot;zoom-out&quot; aria-label=&quot;ย่อ&quot;&gt;−&lt;/button&gt;&lt;button id=&quot;reset&quot; aria-label=&quot;มุมมองเริ่มต้น&quot;&gt;⌂&lt;/button&gt;&lt;/div&gt;
@@ -998,7 +998,12 @@ const cargo=group(0,0,0,trolley);carton(cargo,0,.46,.18,.86,.6,.83);const bars=g
 const porter=worker(4,0,-1.2,0,transport);porter.arms.forEach(a=&gt;{a.shoulder.rotation.x=-.7;a.elbow.rotation.x=-.65});
 let active=0,hasJob=false,moving=!matchMedia(&#x27;(prefers-reduced-motion:reduce)&#x27;).matches,visible=window.sceneVisible,elapsed=0,last=0,raf=0;
 const workflow=[&#x27;เลือกบิล&#x27;,&#x27;สูตรและตรวจสต็อก&#x27;,&#x27;รอจัดซื้อ / รับเข้า&#x27;,&#x27;เบิกวัสดุ&#x27;,&#x27;ตัดวัสดุ&#x27;,&#x27;ประกอบและติดกระจก&#x27;,&#x27;ตรวจงาน&#x27;,&#x27;พร้อมส่ง / ส่งมอบ&#x27;];
-function stage(data){const n=Number(data.stage);if(!Number.isInteger(n)||n&lt;0||n&gt;7)return;active=n;hasJob=!!data.hasJob;document.getElementById(&#x27;stage-label&#x27;).textContent=hasJob?`${n+1}/8 · ${workflow[n]}`:&#x27;ภาพสาธิต · เลือกงานเพื่อดูสถานะ&#x27;;for(let i=0;i&lt;zones.length;i++){zones[i].pad.material=mat(hasJob&amp;&amp;i===n?&#x27;#d5be86&#x27;:&#x27;#e4ddca&#x27;);}zones[2].pad.visible=n!==7;zones[7].pad.visible=n===7;cargo.visible=n!==3&amp;&amp;n!==7;bars.visible=n===3;deliverFrame.visible=n===7;requestRender()}
+let currentJobId=&quot;&quot;;
+function stage(data){const n=Number(data.stage);if(!Number.isInteger(n)||n&lt;0||n&gt;7)return;const changed=currentJobId!==String(data.jobId||&#x27;&#x27;);currentJobId=String(data.jobId||&#x27;&#x27;);active=n;hasJob=!!data.hasJob;
+if(changed){elapsed=0;document.getElementById(&#x27;detail&#x27;).style.display=&#x27;none&#x27;;}
+document.getElementById(&#x27;job-label&#x27;).textContent=hasJob?String(data.jobText||currentJobId):&#x27;&#x27;;
+document.getElementById(&#x27;job-materials&#x27;).textContent=hasJob?String(data.materialText||&#x27;&#x27;):&#x27;&#x27;;
+document.getElementById(&#x27;stage-label&#x27;).textContent=hasJob?`${n+1}/8 · ${data.statusText||workflow[n]}`:&#x27;ภาพสาธิต · เลือกงานเพื่อดูสถานะ&#x27;;for(let i=0;i&lt;zones.length;i++){zones[i].pad.material=mat(hasJob&amp;&amp;i===n?&#x27;#d5be86&#x27;:&#x27;#e4ddca&#x27;);}zones[2].pad.visible=n!==7;zones[7].pad.visible=n===7;cargo.visible=n!==3&amp;&amp;n!==7;bars.visible=n===3;deliverFrame.visible=n===7;requestRender()}
 function pose(w,t,walk=false,work=false){const swing=Math.sin(t*6+w.index);for(let i=0;i&lt;2;i++){const leg=w.legs[i];leg.hip.rotation.x=walk?swing*(i===0?1:-1)*.34:0;leg.knee.rotation.x=walk?Math.max(0,-swing*(i===0?1:-1))*.35:0;w.arms[i].shoulder.rotation.x=walk?-swing*(i===0?1:-1)*.3:work?-.78+Math.sin(t*2+i)*.09:Math.sin(t*.9+i)*.025;w.arms[i].elbow.rotation.x=work?-.7+Math.sin(t*2+i)*.14:-.1;}
 // Normalize lowest sole to Y=0 after limb movement, without bobbing the whole body.
 for(const leg of w.legs){leg.hip.position.y=.71;leg.hip.updateMatrixWorld(true);const footBox=new THREE.Box3().setFromObject(leg.foot);const parentBox=new THREE.Vector3();w.root.getWorldPosition(parentBox);leg.hip.position.y=.71-(footBox.min.y-parentBox.y)}
@@ -2118,6 +2123,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     async function attachCloudListenersForCurrentUser() {
       if(!userId || !db || !companyAccessReady) return;
       unsubscribeFns.forEach(fn=>{try{fn();}catch(_){}}); unsubscribeFns=[];
+      for(const k of Object.keys(whLoadState))whLoadState[k]='loading';whAutoPlanFailure='';
 
       unsubscribeFns.push(onSnapshot(cloudSettings(), snap=>{
         if(snap.exists()){
@@ -2168,10 +2174,10 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
 
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseColors'), snap=>{whSharedColors=snap.docs.map(d=>({id:d.id,...d.data()}));},e=>cloudError('Warehouse colors',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseMaterials'), snap=>{whItems=snap.docs.filter(d=>!d.id.startsWith('_counter_')).map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseMaterials');whRender();whRefreshRecipeSearch();},e=>whLoadFail('warehouseMaterials',e)));
-      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseWorkRules'), snap=>{whRuleOverrides=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse work rules',e)));
+      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseWorkRules'), snap=>{whRuleOverrides=snap.docs.map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseWorkRules');whRender();},e=>whLoadFail('warehouseWorkRules',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseSubcontracts'), snap=>{whSubcontracts=snap.docs.map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseSubcontracts');whRender();},e=>whLoadFail('warehouseSubcontracts',e)));
-      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseJobPlans'), snap=>{whPlans=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse plans',e)));
-      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseRecipes'), snap=>{whRecipes=snap.docs.map(d=>({id:d.id,...d.data()}));},e=>cloudError('Warehouse recipes',e)));
+      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseJobPlans'), snap=>{whPlans=snap.docs.map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseJobPlans');whRender();},e=>whLoadFail('warehouseJobPlans',e)));
+      unsubscribeFns.push(onSnapshot(cloudCollection('warehouseRecipes'), snap=>{whRecipes=snap.docs.map(d=>({id:d.id,...d.data()}));whLoadOk('warehouseRecipes');whRender();},e=>whLoadFail('warehouseRecipes',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseConsumableBoxes'), snap=>{whBoxes=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Consumable boxes',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseConsumableAlerts'), snap=>{whBoxAlerts=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Consumable alerts',e)));
       unsubscribeFns.push(onSnapshot(cloudCollection('warehouseMovements'), snap=>{whMoves=snap.docs.map(d=>({id:d.id,...d.data()}));whRender();},e=>cloudError('Warehouse movements',e)));
@@ -4089,7 +4095,19 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       title.textContent=job?('งาน '+String(job.docNo||'')+' · '+String(job.custName||job.customerName||job.customer?.name||'ลูกค้า')):'เลือกบิลจากรายการงานด้านล่าง';
       desc.textContent=info;
       steps.innerHTML=wh3dStages.map((v,i)=>'<div class="s3d-step '+(i===stage?'active':i<stage?'done':'')+'">'+(i<stage?'✓ ':i===stage?'● ':'○ ')+(i+1)+'. '+v+'</div>').join('');
-      if(wh3dFrame?.contentWindow)wh3dFrame.contentWindow.postMessage({type:'sumran3d-stage',stage,hasJob:!!job},'*');
+      const current=job&&whAutoReady()?whCurrentRecipePlan(job,p):null;
+      const lines=current?.lines||p?.lines||[];
+      const issued=['issued','producing','completed'].includes(p?.status);
+      const shortages=issued?0:lines.filter(l=>Number(l.qty)>Number(whItems.find(i=>i.id===l.itemId)?.qty||0)).length;
+      if(p?.status==='planned'&&shortages){stage=2;info='วัสดุขาด '+shortages+' รายการ · รอจัดซื้อ / รับเข้า';}
+      if(p?.status==='cancelled'){stage=0;info='งานนี้ยกเลิกแล้ว';}
+      if(p?.delivery?.deliveredAt){stage=7;info='ส่งมอบแล้ว';}
+      const items=job?whInvoiceItems(job):[];
+      const jobText=job?String(job.docNo||'')+' · '+items.length+' รายการในบิล':'';
+      const materialText=job?(lines.length?'วัสดุ '+lines.length+' รายการ · '+(issued?'เบิกแล้ว':shortages?'ขาด '+shortages+' รายการ':'ครบตามแผน'):'กำลังตรวจสูตร / ยังไม่มีแผนวัสดุ'):'';
+      wh3dLastStage=stage;desc.textContent=info;
+      steps.innerHTML=wh3dStages.map((v,i)=>'<div class="s3d-step '+(i===stage?'active':i<stage?'done':'')+'">'+(i<stage?'✓ ':i===stage?'● ':'○ ')+(i+1)+'. '+v+'</div>').join('');
+      if(wh3dFrame?.contentWindow)wh3dFrame.contentWindow.postMessage({type:'sumran3d-stage',stage,hasJob:!!job,jobId:String(job?.docNo||''),jobText,materialText,statusText:info},'*');
     }
     window.addEventListener('message',e=>{
       if(e.source===wh3dFrame?.contentWindow && e.data?.type==='sumran3d-ready'){
@@ -4101,7 +4119,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     function wh3dScheduleSync(){
       if(wh3dSyncQueued)return;
       wh3dSyncQueued=true;
-      requestAnimationFrame(()=>{wh3dSyncQueued=false;if(wh3dOpen)wh3dRefresh();});
+      requestAnimationFrame(()=>{wh3dSyncQueued=false;wh3dRefresh();});
     }
     function wh3dObserveWorkflow(){
       const bar=document.querySelector('#tab-warehouse .wh-steps');
@@ -4148,8 +4166,8 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
 
     // WAREHOUSE V1 — independent collections. No writes to quotations/receipts.
     let whItems=[],whPlans=[],whMoves=[],whRecipes=[],whSubcontracts=[],whSelected='',whBusy=false;
-    const whLoadState={history:'loading',warehouseMaterials:'loading',warehouseSubcontracts:'loading'};
-    function whLoadNote(){const names={history:'เอกสาร',warehouseMaterials:'ทะเบียนวัสดุ',warehouseSubcontracts:'ข้อมูลจ้างภายนอก'};const failed=Object.entries(whLoadState).filter(([k,v])=>v.startsWith('error:'));const loading=Object.entries(whLoadState).filter(([k,v])=>v==='loading');const el=document.getElementById('wh-load-diagnostic');if(!el)return;el.style.display=failed.length||loading.length?'block':'none';el.style.background=failed.length?'#fff1f2':'#eff6ff';el.style.borderColor=failed.length?'#fecdd3':'#bfdbfe';el.textContent=failed.length?'⚠ โหลดข้อมูลไม่ครบ: '+failed.map(([k,v])=>names[k]+' ('+v.slice(6)+')').join(', ')+' · ตรวจสอบ Firestore Rules และ Console':loading.length?'กำลังโหลดข้อมูล: '+loading.map(([k])=>names[k]).join(', '):'';}
+    const whLoadState={history:'loading',warehouseMaterials:'loading',warehouseSubcontracts:'loading',warehouseRecipes:'loading',warehouseJobPlans:'loading',warehouseWorkRules:'loading'};
+    function whLoadNote(){const names={history:'เอกสาร',warehouseMaterials:'ทะเบียนวัสดุ',warehouseSubcontracts:'ข้อมูลจ้างภายนอก',warehouseRecipes:'สูตรวัสดุ',warehouseJobPlans:'แผนวัสดุ',warehouseWorkRules:'ประเภทงาน'};const failed=Object.entries(whLoadState).filter(([k,v])=>v.startsWith('error:'));const loading=Object.entries(whLoadState).filter(([k,v])=>v==='loading');const el=document.getElementById('wh-load-diagnostic');if(!el)return;el.style.display=failed.length||loading.length?'block':'none';el.style.background=failed.length?'#fff1f2':'#eff6ff';el.style.borderColor=failed.length?'#fecdd3':'#bfdbfe';el.textContent=failed.length?'⚠ โหลดข้อมูลไม่ครบ: '+failed.map(([k,v])=>names[k]+' ('+v.slice(6)+')').join(', ')+' · ตรวจสอบ Firestore Rules และ Console':loading.length?'กำลังโหลดข้อมูล: '+loading.map(([k])=>names[k]).join(', '):'';}
     function whLoadOk(k){whLoadState[k]='ok';whLoadNote();}
     function whLoadFail(k,e){whLoadState[k]='error:'+(e?.code||e?.message||'unknown');whLoadNote();cloudError('Load '+k,e);}
     const whEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4366,17 +4384,80 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       const grid=(a,b)=>Math.floor((sw+kerf)/(a+kerf))*Math.floor((sh+kerf)/(b+kerf));
       return Math.max(grid(w,h),grid(h,w));
     }
+    // V11.46: current recipes are authoritative for unissued in-house plans.
+    let whGlassReviewSignature='',whAutoPlanTask=null,whAutoPlanFailure='';
+    const whAutoLoadKeys=['history','warehouseMaterials','warehouseRecipes','warehouseJobPlans','warehouseSubcontracts','warehouseWorkRules'];
+    const whAutoReady=()=>userId&&companyAccessReady&&whAutoLoadKeys.every(k=>whLoadState[k]==='ok');
+    function whCurrentRecipePlan(job,plan){
+      if(!job||['issued','producing','completed','cancelled'].includes(plan?.status))return null;
+      const summary=whAutoSummary(job);
+      if(!summary.valid.length||summary.blocked.length||!whInvoiceItems(job).every((it,index)=>whWorkClass(job,index,it)==='internal'))return null;
+      const glassValid=!!plan?.glassCutPlan&&plan.glassCutPlan.signature===whGlassSignature(job);
+      const glassLines=glassValid?(plan.lines||[]).filter(l=>whItems.find(i=>i.id===l.itemId)?.category==='GL'):[];
+      return {lines:[...summary.lines,...glassLines],cutDetails:summary.valid.flatMap(m=>m.cutDetails),glassCutPlan:glassValid?plan.glassCutPlan:null,recipeSource:'automatic',summary};
+    }
+    function whAutoPlanFields(current){const {summary,...fields}=current;return fields;}
+    function whAutoPlanSame(plan,current){return !!plan&&Object.entries(whAutoPlanFields(current)).every(([k,v])=>JSON.stringify(plan[k]??(k==='glassCutPlan'?null:undefined))===JSON.stringify(v));}
+    function whAutoPlanKey(){return JSON.stringify([userId,whSelected,whDoc(),whPlan(),whRecipes,whItems,whSubcontracts,whRuleOverrides]);}
+    function whRecipePlanNotice(job,plan){
+      if(!whCurrentRecipePlan(job,plan))return '';
+      return '<p class="wh-sub" style="margin-top:8px">'+(whAutoPlanFailure===whAutoPlanKey()?'ยังบันทึกแผนอัตโนมัติไม่สำเร็จ กรุณาตรวจการเชื่อมต่อก่อนเบิก':'คำนวณอุปกรณ์จากสูตรล่าสุดอัตโนมัติ · จำนวนต่อชุด × จำนวนชุดในบิล รวมค่าเผื่อที่กำหนด')+'</p>';
+    }
+    function whScheduleAutoPlan(){
+      if(!whAutoReady()||whBusy||whAutoPlanTask||whAutoPlanFailure===whAutoPlanKey())return;
+      const current=whCurrentRecipePlan(whDoc(),whPlan());
+      if(!current||whAutoPlanSame(whPlan(),current))return;
+      void whEnsureAutoPlan().catch(err=>{whAutoPlanFailure=whAutoPlanKey();showToast(err.message||'บันทึกแผนอัตโนมัติไม่สำเร็จ');whRender();});
+    }
+    async function whEnsureAutoPlan(){
+      if(whAutoPlanTask){await whAutoPlanTask;return whEnsureAutoPlan();}
+      if(!whAutoReady())throw Error('กำลังโหลดสูตรและวัสดุ กรุณารอข้อมูลครบ');
+      const job=whDoc(),plan=whPlan(),current=whCurrentRecipePlan(job,plan);
+      if(!current||whAutoPlanSame(plan,current))return;
+      if(whIssuedForJob())return;
+      const selected=whSelected,uid=userId,key=whAutoPlanKey();
+      const id=plan?.id||encodeURIComponent(job.docNo),jobId=whJobKey(job);
+      const siblingIds=[...new Set([...whGroupDocs(job).map(d=>encodeURIComponent(d.docNo)),...whGroupPlans().map(p=>p.id),id])];
+      const fields={...whAutoPlanFields(current),updatedAt:new Date().toISOString(),updatedBy:uid};
+      const operation=(async()=>{
+        await runTransaction(db,async tx=>{
+          if(uid!==userId||selected!==whSelected||key!==whAutoPlanKey())throw Error('ข้อมูลกำลังเปลี่ยน กรุณารอการคำนวณใหม่');
+          const reads=[];for(const siblingId of siblingIds){const ref=cloudPath('warehouseJobPlans',siblingId);reads.push({ref,snap:await tx.get(ref)});}
+          const lock=await tx.get(cloudPath('warehouseJobPlans','_issue_lock_'+encodeURIComponent(jobId)));
+          if(lock.exists()&&lock.data().issued||reads.some(r=>r.snap.exists()&&['issued','producing','completed'].includes(r.snap.data().status)))throw Error('งานนี้เบิกวัสดุแล้ว ไม่เปลี่ยนยอดย้อนหลัง');
+          const target=reads.find(r=>r.ref.id===id),live=target.snap.exists()?target.snap.data():null;
+          if(live?.status==='cancelled')throw Error('แผนนี้ยกเลิกแล้ว');
+          // Do not overwrite another device's newer plan while its snapshot is arriving.
+          if(Boolean(live)!==Boolean(plan)||(live&&(JSON.stringify(live.lines||[])!==JSON.stringify(plan.lines||[])||live.updatedAt!==plan.updatedAt||JSON.stringify(live.glassCutPlan||null)!==JSON.stringify(plan.glassCutPlan||null))))throw Error('ข้อมูลแผนกำลังอัปเดต กรุณารอสักครู่');
+          if(uid!==userId||selected!==whSelected||key!==whAutoPlanKey())throw Error('สูตรหรือบิลเปลี่ยนระหว่างคำนวณ');
+          if(live)tx.update(target.ref,fields);else tx.set(target.ref,{docNo:job.docNo,jobId,status:'planned',...fields});
+        });
+        if(uid===userId){
+          const saved={...(plan||{docNo:job.docNo,jobId,status:'planned'}),...fields,id};
+          const i=whPlans.findIndex(p=>p.id===id);
+          // A newer snapshot (e.g. issued on another device) must win.
+          if(i<0)whPlans.push(saved);else if(JSON.stringify(whPlans[i])===JSON.stringify(plan)||whPlans[i].updatedAt===fields.updatedAt)whPlans[i]=saved;
+        }
+        whAutoPlanFailure='';
+      })();
+      whAutoPlanTask=operation;
+      try{await operation;}finally{whAutoPlanTask=null;}
+      whRender();
+    }
     function whOpenGlassCutPlan(){
       const job=whDoc();if(!job){showToast('กรุณาเลือกบิลก่อน');return;}
       const needs=whGlassNeeds(job);
       if(!needs.length){showToast('ยังไม่มีสูตรกระจกที่จับคู่กับบิลนี้');return;}
       const plan=whPlan();if(['issued','producing','completed'].includes(plan?.status)){showToast('งานนี้เบิกวัสดุแล้ว ไม่สามารถเปลี่ยนแผนตัดย้อนหลัง');return;}
       const saved=plan?.glassCutPlan;
+      whGlassReviewSignature=whGlassSignature(job);
+      const useSaved=saved?.signature===whGlassReviewSignature;
       const cards=needs.map((n,k)=>{
         const g=n.glass;
         const options=whItems.filter(i=>whGlassStockMatches(i,n.spec)&&Number(i.sheetWidthCm)>0&&Number(i.sheetHeightCm)>0);
-        const prev=saved?.entries?.find(x=>x.index===n.index&&x.spec===n.spec);
-        return `<div class="wh-glass-cut-entry" data-index="${n.index}" style="border:1px solid #bfdbfe;border-radius:12px;padding:12px;margin:12px 0;background:#f8fbff">
+        const prior=saved?.entries?.[k];
+        const prev=useSaved&&prior?.index===n.index&&prior?.spec===n.spec?prior:null;
+        return `<div class="wh-glass-cut-entry" data-index="${n.index}" data-need="${k}" style="border:1px solid #bfdbfe;border-radius:12px;padding:12px;margin:12px 0;background:#f8fbff">
           <div style="font-size:14px;font-weight:800;color:#123052">รายการที่ ${n.index+1}: ${whEsc(n.jobName)}</div><div class="wh-sub">ขนาดหน้างาน ${whQtyText(n.jobWidthCm)} × ${whQtyText(n.jobHeightCm)} ซม. · ${whQtyText(n.jobSets)} ชุด · รายการบิลลำดับ ${n.index+1}</div><b style="display:block;margin-top:7px">${k+1}. ${whEsc(n.spec||'ไม่ระบุชนิดกระจก')}</b><div class="wh-sub">สูตรคำนวณทดลอง: ${g.error?whEsc(g.error):`${whQtyText(g.widthCm)} × ${whQtyText(g.heightCm)} ซม. · ${g.count} ชิ้น`}</div>
           ${g.error?'<p style="color:#b91c1c">ต้องแก้สูตรกระจกก่อนยืนยัน</p>':''}
           <div class="wh-form-grid" style="margin-top:9px">
@@ -4389,13 +4470,13 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
           ${!options.length?`<button class="wh-btn" style="margin-top:8px" onclick="whRegisterGlassFromBill(${n.index})">＋ เพิ่มกระจกจากบิลลงทะเบียน</button><p class="wh-sub">ต้องมีทะเบียนกระจกที่ระบุขนาดแผ่นก่อนจัดซื้อหรือเบิก</p>`:''}
         </div>`;
       }).join('');
-      whOpen('🪟 ตรวจและยืนยันแผนตัดกระจก',`<p class="wh-sub">บิล ${whEsc(job.docNo)} · ช่างต้องตรวจชนิด ความหนา ขนาดตัดจริง และแผ่นสต๊อก · การยืนยันยังไม่หักสต๊อก</p><div style="background:#fff7ed;padding:10px;border-radius:10px;color:#9a3412;margin-top:8px">⚠ สูตรระยะหักที่ใส่ทดลองยังไม่ใช่ขนาดตัดจริง ช่างต้องตรวจสอบก่อนยืนยัน · ระบบคำนวณจำนวนแผ่นด้วยการจัดวางแบบตารางเบื้องต้น ไม่ใช่ผังตัดที่รับรองแล้ว</div><div id="wh-glass-cut-list">${cards}</div><label style="display:flex;gap:8px;align-items:center;margin:12px 0"><input type="checkbox" id="wh-glass-verified"> ฉันตรวจสอบขนาดตัดและชนิดกระจกกับช่างแล้ว</label><button class="wh-btn primary" onclick="whSaveGlassCutPlan()">✓ ยืนยันแผนตัดและบันทึกแผนเบิก</button><p class="wh-sub" style="margin-top:8px">หากแผ่นสต๊อกไม่พอ ให้เปิด “ตรวจวัสดุและจัดซื้อ” แล้วรับของเข้าคลังก่อนกดเบิก · ไม่มีการสั่งซื้อหรือหักสต๊อกอัตโนมัติ</p>`);
+      whOpen('🪟 ตรวจและยืนยันแผนตัดกระจก',`<p class="wh-sub">บิล ${whEsc(job.docNo)} · ช่างต้องตรวจชนิด ความหนา ขนาดตัดจริง และแผ่นสต๊อก · การยืนยันยังไม่หักสต๊อก</p><div style="background:#fff7ed;padding:10px;border-radius:10px;color:#9a3412;margin-top:8px">⚠ สูตรระยะหักที่ใส่ทดลองยังไม่ใช่ขนาดตัดจริง ช่างต้องตรวจสอบก่อนยืนยัน · ระบบคำนวณจำนวนแผ่นด้วยการจัดวางแบบตารางเบื้องต้น ไม่ใช่ผังตัดที่รับรองแล้ว</div>${saved&&!useSaved?'<p class="wh-notice">สูตรหรือบิลเปลี่ยนแล้ว ขนาดและจำนวนชิ้นด้านล่างคำนวณใหม่จากสูตรล่าสุด กรุณาเลือกแผ่นสต๊อกและยืนยันอีกครั้ง</p>':''}<div id="wh-glass-cut-list">${cards}</div><label style="display:flex;gap:8px;align-items:center;margin:12px 0"><input type="checkbox" id="wh-glass-verified"> ฉันตรวจสอบขนาดตัดและชนิดกระจกกับช่างแล้ว</label><button class="wh-btn primary" onclick="whSaveGlassCutPlan()">✓ ยืนยันแผนตัดและบันทึกแผนเบิก</button><p class="wh-sub" style="margin-top:8px">หากแผ่นสต๊อกไม่พอ ให้เปิด “ตรวจวัสดุและจัดซื้อ” แล้วรับของเข้าคลังก่อนกดเบิก · ไม่มีการสั่งซื้อหรือหักสต๊อกอัตโนมัติ</p>`);
       document.querySelectorAll('#wh-glass-cut-list input').forEach(el=>el.addEventListener('input',whGlassRecalculate));
       whGlassRecalculate();
     }
     function whGlassCutRows(){
       return [...document.querySelectorAll('#wh-glass-cut-list .wh-glass-cut-entry')].map(row=>{
-        const index=Number(row.dataset.index),need=whGlassNeeds(whDoc()).find(x=>x.index===index);
+        const index=Number(row.dataset.index),need=whGlassNeeds(whDoc())[Number(row.dataset.need)];
         const itemId=row.querySelector('.wh-g-stock').value,widthCm=Number(row.querySelector('.wh-g-width').value),heightCm=Number(row.querySelector('.wh-g-height').value),count=Number(row.querySelector('.wh-g-count').value),kerfCm=Number(row.querySelector('.wh-g-kerf').value);
         const stock=whItems.find(i=>i.id===itemId);
         const capacity=stock?whGlassCapacity(stock,widthCm,heightCm,kerfCm):0;
@@ -4414,6 +4495,9 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     async function whSaveGlassCutPlan(){
       if(!whCanWrite()||whBusy||!whSelected||!whPlanWriteAllowed())return;
       if(!document.getElementById('wh-glass-verified')?.checked){showToast('กรุณาให้ช่างตรวจและติ๊กยืนยันขนาดก่อน');return;}
+      const selected=whSelected;
+      try{await whEnsureAutoPlan();}catch(err){showToast(err.message);return;}
+      if(selected!==whSelected)return;
       const job=whDoc(),needs=whGlassNeeds(job),entries=whGlassCutRows();
       if(!needs.length||entries.length!==needs.length){showToast('รายการกระจกไม่ครบ');return;}
       for(const r of entries){
@@ -4421,20 +4505,23 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       }
       const byStock=new Map();for(const r of entries)byStock.set(r.itemId,(byStock.get(r.itemId)||0)+r.sheets);
       const existing=whPlan();
+      if(whGlassReviewSignature!==whGlassSignature(job)){showToast('สูตรหรือบิลเปลี่ยนแล้ว กรุณาเปิดแผนตัดใหม่');return;}
+      if(needs.some(n=>n.glass.error)){showToast('กรุณาแก้สูตรกระจกก่อนยืนยัน');return;}
       // Only use non-glass automatic materials if every other recipe warning is resolved.
       const auto=whAutoDetect(job);
       const otherWarnings=auto.flatMap(m=>m.warnings.filter(w=>!w.startsWith('กระจก ')&&!/ยังไม่พบแผ่นสต๊อก/.test(w)));
-      const nonGlass=existing?(existing.lines||[]).filter(l=>whItems.find(i=>i.id===l.itemId)?.category!=='GL'):(otherWarnings.length?[]:auto.flatMap(m=>m.lines).filter(l=>whItems.find(i=>i.id===l.itemId)?.category!=='GL'));
+      const latest=whCurrentRecipePlan(job,existing);
+      const nonGlass=latest?latest.summary.lines:existing?(existing.lines||[]).filter(l=>whItems.find(i=>i.id===l.itemId)?.category!=='GL'):(otherWarnings.length?[]:auto.flatMap(m=>m.lines).filter(l=>whItems.find(i=>i.id===l.itemId)?.category!=='GL'));
       if(!existing&&otherWarnings.length){showToast('มีสูตรวัสดุอื่นที่ยังตรวจไม่ผ่าน กรุณาแก้ให้ครบก่อนบันทึกแผน: '+otherWarnings[0]);return;}
       const total=new Map();for(const l of nonGlass)total.set(l.itemId,(total.get(l.itemId)||0)+Number(l.qty));for(const [id,qty] of byStock)total.set(id,(total.get(id)||0)+qty);
-      const now=new Date().toISOString(),id=encodeURIComponent(whSelected),signature=whGlassSignature(job);
+      const now=new Date().toISOString(),id=existing?.id||encodeURIComponent(whSelected),signature=whGlassSignature(job);
       if(!confirm('บันทึกแผนตัดกระจกที่ช่างตรวจแล้วสำหรับ '+whSelected+'? ยังไม่หักสต๊อก และต้องกดเบิกอีกครั้ง'))return;
       whBusy=true;
       try{
         await runTransaction(db,async tx=>{
           const ref=cloudPath('warehouseJobPlans',id),snap=await tx.get(ref);
-          if(snap.exists()&&['issued','producing'].includes(snap.data().status))throw Error('งานนี้เบิกไปแล้ว');
-          if(snap.exists()&&existing&&JSON.stringify(snap.data().lines||[])!==JSON.stringify(existing.lines||[]))throw Error('แผนถูกแก้จากอุปกรณ์อื่น กรุณาเปิดใหม่');
+          if(snap.exists()&&['issued','producing','completed','cancelled'].includes(snap.data().status))throw Error('งานนี้ไม่สามารถแก้แผนได้');
+          if(snap.exists()!==Boolean(existing)||(snap.exists()&&(JSON.stringify(snap.data().lines||[])!==JSON.stringify(existing.lines||[])||snap.data().updatedAt!==existing.updatedAt)))throw Error('แผนถูกแก้จากอุปกรณ์อื่น กรุณาเปิดใหม่');
           const fields={docNo:whSelected,lines:[...total].map(([itemId,qty])=>({itemId,qty})),glassCutPlan:{signature,entries:entries.map(({stock,capacity,...r})=>r),confirmedAt:now,confirmedBy:userId},status:snap.exists()?snap.data().status||'planned':'planned',updatedAt:now,updatedBy:userId};
           if(snap.exists())tx.update(ref,fields);else tx.set(ref,fields);
         });
@@ -4446,7 +4533,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       const summary=whAutoSummary(job),items=whInvoiceItems(job);
       const detail=items.map((it,index)=>`<div style="padding:9px 0;border-bottom:1px solid #e2e8f0"><b>${index+1}. ${whEsc(it.name||'ไม่ระบุรายการ')}</b><div class="wh-sub">${whEsc(it.type==='alu'?'งานกระจก/อะลูมิเนียม':'งานทั่วไป')} · ${whEsc(it.aluColor&&it.aluColor!=='-'?'สี '+it.aluColor+' · ':'')}${Number(it.width)>0&&Number(it.height)>0?whQtyText(it.width*100)+' × '+whQtyText(it.height*100)+' ซม. · ':''}${whQtyText(it.qty||0)} ${whEsc(it.unit||'ชุด')}${whBillSystem(it)?' · ชุด '+whEsc(whBillSystem(it)):''}${whBillGlass(it)?' · กระจก '+whEsc(whBillGlass(it)):''}</div></div>`).join('');
       const checks=summary.matches.map(m=>`<div style="padding:8px 0;border-bottom:1px solid #e2e8f0"><b>${whEsc(m.name)}</b> ${m.warnings.length?'<span style="color:#b91c1c;font-weight:700">⚠ ต้องตรวจสอบ</span>':'<span style="color:#15803d;font-weight:700">✓ จับคู่สูตรแล้ว</span>'}<div class="wh-sub">${m.recipe?'สูตร: '+whEsc(m.recipe.name)+' · ':''}${whQtyText(m.w)} × ${whQtyText(m.h)} ซม. · ${whQtyText(m.sets)} ชุด</div>${m.warnings.length?`<div style="color:#b91c1c;font-size:12px">${m.warnings.map(whEsc).join(' · ')}</div>`:''}${whBillGlass(m.it)&&m.warnings.some(x=>/ไม่พบในทะเบียน|ยังไม่พบแผ่นสต๊อก|ไม่พบวัสดุ/.test(x))?`<button class="wh-btn primary" style="margin-top:8px" onclick="whRegisterGlassFromBill(${m.index})">＋ เพิ่มกระจก ${whEsc(whBillGlass(m.it))} จากบิลลงทะเบียน</button><div class="wh-sub">สร้างทะเบียนก่อน (ยอด 0) → จัดซื้อ → รับเข้าคลัง → ตรวจแผนตัดกับช่างก่อนเบิก</div>`:''}</div>`).join('');
-      return `<div style="border:1px solid #bfdbfe;border-radius:13px;padding:12px;background:#f8fbff"><b>📄 รายละเอียดจากบิล ${whEsc(job.docNo)}</b><div class="wh-sub">${whEsc(job.customerName||job.custName||'')} · ${whEsc(job.project||'')} · ${items.length} รายการ</div><details style="margin:9px 0"><summary style="cursor:pointer;color:#075985;font-weight:700">ดูรายการสินค้าและขนาดทั้งหมดในบิล</summary>${detail||'<p class="wh-sub">ไม่พบรายการสินค้าในข้อมูลบิล</p>'}</details>${whGlassNeeds(job).length?`<button class="wh-btn primary" style="margin:10px 0" onclick="whOpenGlassCutPlan()">🪟 ${plan?.glassCutPlan?.signature===whGlassSignature(job)?'แผนตัดกระจกยืนยันแล้ว ✓':'ขั้นตอนถัดไป: ตรวจขนาดกระจก'}</button>`:''}${summary.matches.length?`<details style="margin-top:12px" ${summary.blocked.length?'open':''}><summary style="cursor:pointer;font-weight:700;color:#075985">🧮 รายละเอียดการตรวจสูตร ${summary.blocked.length?'· ต้องแก้ '+summary.blocked.length+' รายการ':'· ผ่านแล้ว ✓'} (กดเพื่อดู/ซ่อน)</summary>${checks}</details>`:'<p class="wh-sub" style="margin-top:8px">ไม่พบรายการงานกระจก/อะลูมิเนียมที่มีข้อมูลสำหรับจับคู่สูตร · งานประเภทอื่นใช้ปุ่มกำหนดวัสดุของงานได้</p>'}${summary.blocked.length?`<div class="wh-notice">⚠ มีข้อมูลสูตรที่ต้องแก้จริง: เปิดรายละเอียดด้านบนเพื่อดูรายการที่ผิด · การยืนยันกระจกทำผ่านปุ่มตรวจขนาดกระจก</div>`:''}${summary.valid.length&&!plan&&!whGlassNeeds(job).length?`<p class="wh-sub" style="margin-top:10px">ตารางด้านล่างเป็นการคำนวณอัตโนมัติจากบิล ยังไม่บันทึกแผนหรือเบิกสต็อก</p><button class="wh-btn primary" style="margin-top:8px" ${summary.blocked.length?'disabled title="ตรวจสอบรายการที่จับคู่ไม่ได้ก่อน"':''} onclick="whSaveAutoJobPlan()">✓ ยืนยันแผนวัสดุจากบิลนี้</button>`:''}${plan?'<p class="wh-sub" style="margin-top:8px">มีแผนวัสดุที่บันทึกไว้แล้ว ระบบแสดงแผนเดิมเพื่อป้องกันการเปลี่ยนยอดเบิกโดยไม่ตั้งใจ</p>':''}</div>`;
+      return `<div style="border:1px solid #bfdbfe;border-radius:13px;padding:12px;background:#f8fbff"><b>📄 รายละเอียดจากบิล ${whEsc(job.docNo)}</b><div class="wh-sub">${whEsc(job.customerName||job.custName||'')} · ${whEsc(job.project||'')} · ${items.length} รายการ</div><details style="margin:9px 0"><summary style="cursor:pointer;color:#075985;font-weight:700">ดูรายการสินค้าและขนาดทั้งหมดในบิล</summary>${detail||'<p class="wh-sub">ไม่พบรายการสินค้าในข้อมูลบิล</p>'}</details>${whGlassNeeds(job).length?`<button class="wh-btn primary" style="margin:10px 0" onclick="whOpenGlassCutPlan()">🪟 ${plan?.glassCutPlan?.signature===whGlassSignature(job)?'แผนตัดกระจกยืนยันแล้ว ✓':'ขั้นตอนถัดไป: ตรวจขนาดกระจก'}</button>`:''}${summary.matches.length?`<details style="margin-top:12px" ${summary.blocked.length?'open':''}><summary style="cursor:pointer;font-weight:700;color:#075985">🧮 รายละเอียดการตรวจสูตร ${summary.blocked.length?'· ต้องแก้ '+summary.blocked.length+' รายการ':'· ผ่านแล้ว ✓'} (กดเพื่อดู/ซ่อน)</summary>${checks}</details>`:'<p class="wh-sub" style="margin-top:8px">ไม่พบรายการงานกระจก/อะลูมิเนียมที่มีข้อมูลสำหรับจับคู่สูตร · งานประเภทอื่นใช้ปุ่มกำหนดวัสดุของงานได้</p>'}${summary.blocked.length?`<div class="wh-notice">⚠ มีข้อมูลสูตรที่ต้องแก้จริง: เปิดรายละเอียดด้านบนเพื่อดูรายการที่ผิด · การยืนยันกระจกทำผ่านปุ่มตรวจขนาดกระจก</div>`:''}${whRecipePlanNotice(job,plan)}${plan?'<p class="wh-sub" style="margin-top:8px">งานที่ยังไม่เบิกและจับคู่สูตรครบจะอัปเดตจำนวนวัสดุอัตโนมัติ งานที่เบิกแล้วแสดงยอดเบิกจริง</p>':''}</div>`;
     }
     async function whSaveAutoJobPlan(){
       if(!whSelected||!whCanWrite()||!whPlanWriteAllowed())return;
@@ -4577,8 +4664,10 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
       document.getElementById('wh-selected-no').textContent=whSelected||'';
       document.getElementById('wh-customer').textContent=job?.custName||job?.customerName||'เลือกงานจากด้านซ้าย';
       const autoSummary=job&&!plan?whAutoSummary(job):null;
+      const latest=whAutoReady()?whCurrentRecipePlan(job,plan):null;
+      queueMicrotask(whScheduleAutoPlan);
       const preview=document.getElementById('wh-auto-job-preview');if(preview)preview.innerHTML=whAutoJobHtml(job,plan);const subcontractBox=document.getElementById('wh-outsourced-work');if(subcontractBox)subcontractBox.innerHTML=whSubcontractPanel(job);
-      const lines=plan?.lines||(autoSummary&&!autoSummary.blocked.length?autoSummary.lines:[])||[];const alreadyIssued=['issued','producing','completed'].includes(plan?.status);let good=0,bad=0;
+      const lines=latest?.lines||plan?.lines||(autoSummary&&!autoSummary.blocked.length?autoSummary.lines:[])||[];const alreadyIssued=['issued','producing','completed'].includes(plan?.status);let good=0,bad=0;
       const rows=lines.map(l=>{const item=whItems.find(i=>i.id===l.itemId);const qty=whNum(l.qty),have=whNum(item?.qty),ok=alreadyIssued||!!item&&have>=qty,unit=whEsc(item?.unit||l.unit||'ชิ้น');if(ok)good++;else bad++;return `<tr><td><b>${whEsc(item?whFullMaterialName(item):(l.name||'วัสดุถูกลบ'))}</b><div class="wh-sub">${unit}</div></td><td>${qty} ${unit}</td><td class="${ok?'':'wh-short-number'}">${alreadyIssued?'— (เบิกแล้ว)':have+' '+unit}${ok?'':`<div class="wh-short-label">⚠ ขาด ${whQtyText(Math.max(0,qty-have))} ${unit}${item?'':' · ไม่พบทะเบียนวัสดุ'}</div>`}</td><td><span class="wh-tag ${ok?'':'bad'}">${alreadyIssued?'✓ เบิกแล้ว':ok?'✓ พอใช้':'ขาด '+whQtyText(Math.max(0,qty-have))+' '+unit}</span></td></tr>`}).join('');
       document.getElementById('wh-plan-rows').innerHTML=rows||'<tr><td colspan="4" class="wh-sub">ยังไม่มีรายการวัสดุที่จับคู่ได้ — ตรวจรายละเอียดบิลด้านบน หรือใช้กำหนดวัสดุของงานสำหรับงานอื่น</td></tr>';
       const total=lines.length,percentage=total?good/total*100:0;
@@ -4683,7 +4772,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
         tx.set(cloudPath('warehouseMovements',whId()),{type:'receive_purchase',purchaseOrderId:id,docNo:po.docNo||'',lines:reads.map(r=>({itemId:r.itemId,qty:r.qty})),note:String(new FormData(e.target).get('note')||''),createdAt:now,createdBy:userId});
       });whOpenPurchaseOrders();showToast('รับสินค้าและเพิ่มสต๊อกเรียบร้อย');}catch(err){cloudError('Receive purchase order',err);showToast(err.message||'รับสินค้าไม่สำเร็จ');}finally{whBusy=false;}
     }
-    function whSelect(no){whSelected=no;whRender();}
+    function whSelect(no){whSelected=no;wh3dRefresh();whRender();}
     function whOpen(title,html){document.getElementById('wh-modal-title').textContent=title;document.getElementById('wh-modal-content').innerHTML=html;document.getElementById('wh-modal').style.display='grid';document.querySelectorAll('#wh-modal select[data-selected]').forEach(el=>{if(el.dataset.selected)el.value=el.dataset.selected;});}
     function whClose(){document.getElementById('wh-modal').style.display='none';}
     let whBoxes=[];let whBoxAlerts=[];
@@ -4992,7 +5081,12 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     }
     async function whSaveReceive(e){e.preventDefault();if(!whCanWrite()||whBusy)return;const f=new FormData(e.target),id=String(f.get('itemId')),inputQty=Number(f.get('qty')),mode=String(f.get('receiveUnit')||'base'),selected=whItems.find(i=>i.id===id),qty=whDecimal(inputQty*(mode==='pack'&&whIsShared(selected)?whPackSize(selected):1));if(!selected||!(inputQty>0&&Number.isFinite(inputQty))||!(qty>0&&Number.isFinite(qty))){showToast('กรุณาเลือกวัสดุและระบุจำนวนรับให้ถูกต้อง');return;}whBusy=true;try{const moveId=whId();await runTransaction(db,async tx=>{const ref=cloudPath('warehouseMaterials',id),snap=await tx.get(ref);if(!snap.exists())throw Error('ไม่พบวัสดุ');const live=snap.data();if(mode==='pack'&&!whIsShared(live))throw Error('วัสดุนี้ไม่ได้ตั้งหน่วยบรรจุ');const actual=whDecimal(inputQty*(mode==='pack'?whPackSize(live):1));tx.update(ref,{qty:whDecimal(whNum(live.qty)+actual)});tx.set(cloudPath('warehouseMovements',moveId),{type:'receive',itemId:id,qty:whDecimal(inputQty*(mode==='pack'?whPackSize(snap.data()):1)),inputQty,inputUnit:mode==='pack'?whBuyUnit(snap.data()):whPackUnit(snap.data()),docNo:whSelected||'',note:String(f.get('note')||''),createdAt:new Date().toISOString(),createdBy:userId});});whClose();showToast('รับเข้าและอัปเดตสต็อกแล้ว');}catch(err){cloudError('Receive material',err)}finally{whBusy=false;}}
     async function whIssue(){
+      if(!whCanWrite()||whBusy)return;
+      const selected=whSelected;
+      try{await whEnsureAutoPlan();}catch(err){showToast(err.message);return;}
+      if(selected!==whSelected)return;
       const p=whPlan(),job=whDoc();
+      if(p?.recipeSource==='automatic'&&!whCurrentRecipePlan(job,p)&&!whIssuedForJob()){showToast('สูตรหรือประเภทงานยังตรวจไม่ผ่าน กรุณาแก้ข้อมูลก่อนเบิก');return;}
       if(!p||!whCanWrite()||whBusy)return;
       if(whIssuedForJob()){showToast('งานนี้เบิกวัสดุแล้ว ไม่สามารถเบิกซ้ำจากใบอื่นได้');return;}
       if(job&&whGlassNeeds(job).length&&p.glassCutPlan?.signature!==whGlassSignature(job)){showToast('ต้องให้ช่างยืนยันแผนตัดกระจกก่อนเบิก');return;}
@@ -5013,7 +5107,9 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
           if(planReads.some(r=>r.snap.exists()&&whIssuedStatuses.includes(r.snap.data().status)))throw Error('งานนี้เคยเบิกวัสดุผ่านเอกสารอื่นแล้ว');
           if(!['planned','ordered'].includes(active.snap.data().status))throw Error('สถานะแผนไม่อนุญาตให้เบิก');
           if(job&&whGlassNeeds(job).length&&active.snap.data().glassCutPlan?.signature!==whGlassSignature(job))throw Error('แผนตัดกระจกยังไม่ได้รับการยืนยันหรือบิลเปลี่ยน');
-          const lines=active.snap.data().lines||[];
+          const livePlan=active.snap.data(),expected=whCurrentRecipePlan(job,livePlan);
+          if(livePlan.recipeSource==='automatic'&&(!expected||!whAutoPlanSame(livePlan,expected)))throw Error('สูตรหรือแผนเปลี่ยนระหว่างเบิก กรุณารอการคำนวณอัตโนมัติ');
+          const lines=livePlan.lines||[];
           if(!lines.length)throw Error('ไม่มีวัสดุให้เบิก');
           const requested=new Map();
           for(const l of lines){const qty=Number(l.qty);if(!l.itemId||!Number.isFinite(qty)||qty<=0)throw Error('จำนวนวัสดุในแผนไม่ถูกต้อง');requested.set(l.itemId,(requested.get(l.itemId)||0)+qty);}
@@ -5451,7 +5547,7 @@ window.workshopDiagnostics=()=&gt;({stage:active,hasJob,moving,visible,workers:w
     function whShowHistory(){const ordered=[...whMoves].filter(m=>m.type!=='purchase_order').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));whOpen('ประวัติรับเข้าและเบิกวัสดุ',`<div class="wh-stocklist">${ordered.slice(0,100).map(m=>{const isIssue=m.type==='issue';const linked=state.history.filter(h=>h.docNo===m.docNo);const moveStatus=!m.docNo?'รับเข้าอิสระ':!linked.length?'ไม่พบเอกสาร':linked.some(h=>h.status==='cancelled')&&linked.some(h=>h.status!=='cancelled')?'เลขซ้ำ / ต้องตรวจสอบ':linked.every(h=>h.status==='cancelled')?'งานยกเลิก':'งานปกติ';const details=isIssue?(m.lines||[]).map(l=>{const item=whItems.find(i=>i.id===l.itemId);const snap=(m.stockSnapshots||[]).find(x=>x.itemId===l.itemId);return `<tr><td>${whEsc(item?whFullMaterialName(item):l.name||l.itemId)}</td><td>${whQtyText(whNum(l.qty))} ${whEsc(item?.unit||l.unit||'')}</td><td>${snap?whQtyText(snap.before):'—'}</td><td>${snap?whQtyText(snap.after):'—'}</td></tr>`}).join(''):'';return `<details class="wh-stockitem" style="display:block"><summary style="cursor:pointer"><b>${m.type==='stock_adjustment'?'⚖️ ปรับยอดสต็อก':m.type==='material_archived'?'🗃️ นำออกจากทะเบียน':m.type==='receive'?'📥 รับเข้า':m.type==='shared_empty'?'🔔 แจ้งหมด':m.type==='shared_return'?'↩ คืนจากช่าง':m.type==='shared_issue'?'👷 เบิกให้ช่าง':'📦 เบิกออก'} · ${whEsc(m.docNo||'ไม่ระบุงาน')}</b> <span style="font-size:11px;color:#b45309">[${whEsc(moveStatus)}]</span> — ${isIssue?(m.lines||[]).length+' รายการ':whNum(m.qty)+' '+whEsc(m.unit||whItems.find(i=>i.id===m.itemId)?.unit||'')}<div class="wh-sub">${whEsc(m.createdAt?.slice(0,16)||'')} · ${whEsc(m.note||'')}${m.type==='stock_adjustment'?' · '+whQtyText(m.before)+' → '+whQtyText(m.after)+' '+whEsc(m.unit||'')+' · ผู้อนุมัติ '+whEsc(m.approvedBy||''):''}</div></summary>${isIssue?`<div style="overflow:auto;margin-top:10px"><table class="wh-table"><thead><tr><th>วัสดุ</th><th>เบิก</th><th>ก่อนเบิก</th><th>หลังเบิก</th></tr></thead><tbody>${details}</tbody></table>${!m.stockSnapshots?' <p class="wh-sub">รายการเก่าก่อนอัปเดตไม่มีภาพยอดก่อนและหลังเบิก</p>':''}</div>`:''}</details>`}).join('')||'<p class="wh-sub">ยังไม่มีประวัติ</p>'}</div>`)}
     // RECIPE STUDIO V2: flexible work types; coefficients must be approved by a technician.
     const whRecipeOptions=()=>whMaterialOptions();
-    // V11.43: recipe category describes calculation; search spans every material category.
+    // V11.46: recipe category describes calculation; search spans every material category.
     function whRecipeSearchKey(value){
       return String(value??'').normalize('NFKC').toLocaleLowerCase('th-TH').replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[\s·•_\-–—/]+/g,'');
     }
